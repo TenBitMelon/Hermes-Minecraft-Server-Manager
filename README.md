@@ -1,1 +1,1 @@
-# Frontend Sveltekit website with pnpm
+# Frontend / Backend Sveltekit website with pnpm
