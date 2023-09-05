@@ -1,10 +1,7 @@
-<p>Navigation and stuff</p>
-<div>
-	<slot />
-</div>
+<script>
+  import '../app.css';
+</script>
 
-<style>
-	div {
-		background-color: aquamarine;
-	}
-</style>
+<div class="flex h-full w-full flex-col items-center p-8">
+  <slot />
+</div>
