@@ -1,12 +1,36 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
-		<meta name="viewport" content="width=device-width" />
-		%sveltekit.head%
-	</head>
-	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents">%sveltekit.body%</div>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
+    <meta name="viewport" content="width=device-width" />
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="0" width="0">
+      <defs>
+        <filter id="turbulence-hover">
+          <feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="1">
+            <animate attributeName="seed" dur="5s" values="0;1;2;3;4;5;6;7;8;9" repeatCount="indefinite" />
+          </feTurbulence>
+        </filter>
+        <filter id="displacement-hover">
+          <feDisplacementMap in="SourceGraphic" scale="10">
+            <animate attributeName="xChannelSelector" dur="5s" values="R;G;B;R;G;B" repeatCount="indefinite" />
+            <animate attributeName="yChannelSelector" dur="5s" values="R;G;B;R;G;B" repeatCount="indefinite" />
+          </feDisplacementMap>
+        </filter>
+        <filter id="combined-hover">
+          <feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="1">
+            <animate attributeName="seed" dur="5s" values="0;1;2;3;4;5;6;7;8;9" repeatCount="indefinite" />
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" scale="10">
+            <animate attributeName="xChannelSelector" dur="5s" values="R;G;B;R;G;B" repeatCount="indefinite" />
+            <animate attributeName="yChannelSelector" dur="5s" values="R;G;B;R;G;B" repeatCount="indefinite" />
+          </feDisplacementMap>
+        </filter>
+      </defs>
+    </svg>
+  </body>
 </html>
