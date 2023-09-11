@@ -2,7 +2,6 @@ import { Collections, Difficulty, Gamemode, ServerSoftware, ServerSoftwareOption
 import { z } from 'zod';
 import PocketBase from 'pocketbase';
 import { faker } from '@faker-js/faker';
-import fs from 'node:fs';
 import { objectFormData } from '$lib';
 import { PUBLIC_PORT_MAX, PUBLIC_PORT_MIN } from '$env/static/public';
 import { addServerRecords } from './cloudflare';
@@ -100,25 +99,32 @@ function up(str: string) {
 export async function createNewServer(data: z.infer<typeof ServerCreationSchema>) {
   const usedPorts = (await pb.collection(Collections.Servers).getFullList<ServerResponse>()).map((server) => server.port);
   let port: number = PORT_RANGE[0];
-  while (usedPorts.includes(port)) port = Math.floor(Math.random() * (PORT_RANGE[1] - PORT_RANGE[0] + 1)) + PORT_RANGE[0];
+  // Find first unused port
+  while (usedPorts.includes(port)) if (port++ > PORT_RANGE[1]) throw new Error('No available ports');
 
-  const record = await pb.collection(Collections.Servers).create<ServerResponse>(
-    objectFormData({
-      port,
-      title: data.title,
-      icon: data.icon ? data.icon : new File([fs.readFileSync('src/assets/default-server-icon.png')], 'default-server-icon.png'),
-      subdomain: data.subdomain,
-      serverSoftware: data.serverSoftware,
-      gameVersion: data.gameVersion,
-      worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : null,
-      timeToLive: data.timeToLive,
-      deletionDate: null,
-      shutdownDate: null,
-      shutdown: false,
-      canBeDeleted: true,
-      serverFilesZiped: null
-    })
-  );
+  const record = await pb
+    .collection(Collections.Servers)
+    .create<ServerResponse>(
+      objectFormData({
+        port,
+        title: data.title,
+        icon: data.icon ? data.icon : new File([Bun.file('src/assets/default-server-icon.png')], 'default-server-icon.png'),
+        subdomain: data.subdomain,
+        serverSoftware: data.serverSoftware,
+        gameVersion: data.gameVersion,
+        worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : null,
+        timeToLive: data.timeToLive,
+        deletionDate: null,
+        shutdownDate: null,
+        shutdown: false,
+        canBeDeleted: true,
+        serverFilesZiped: null
+      })
+    )
+    .catch((e) => {
+      console.error(e);
+      throw new Error('Failed to create server record');
+    });
 
   const serverFolderPath = `servers/${record.id}`;
   const serverFilesPath = `${serverFolderPath}/server-files`;
@@ -205,5 +211,8 @@ services:
   fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, dockerCompose);
 
   addServerRecords(data.subdomain, port);
+
+  // Start the mc server's docker-compose file
+
   return record;
 }
