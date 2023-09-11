@@ -3,12 +3,14 @@ import { z } from 'zod';
 import PocketBase from 'pocketbase';
 import { faker } from '@faker-js/faker';
 import { objectFormData } from '$lib';
+import fs from 'node:fs';
 import { PUBLIC_PORT_MAX, PUBLIC_PORT_MIN } from '$env/static/public';
+import { POCKETBASE_INTERNAL_ADMIN_EMAIL, POCKETBASE_INTERNAL_ADMIN_PASSWORD } from '$env/static/private';
 import { addServerRecords } from './cloudflare';
 
 const pb = new PocketBase('http://127.0.0.1:8090');
 pb.autoCancellation(false);
-pb.admins.authWithPassword('server@schmitigal.com', '4jnYsjmm5$PXEPmb');
+pb.admins.authWithPassword(POCKETBASE_INTERNAL_ADMIN_EMAIL, POCKETBASE_INTERNAL_ADMIN_PASSWORD);
 
 const PORT_RANGE = [+PUBLIC_PORT_MIN, +PUBLIC_PORT_MAX];
 
@@ -108,7 +110,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       objectFormData({
         port,
         title: data.title,
-        icon: data.icon ? data.icon : new File([Bun.file('src/assets/default-server-icon.png')], 'default-server-icon.png'),
+        icon: data.icon ? data.icon : new File([fs.readFileSync('src/assets/default-server-icon.png')], 'default-server-icon.png'),
         subdomain: data.subdomain,
         serverSoftware: data.serverSoftware,
         gameVersion: data.gameVersion,
