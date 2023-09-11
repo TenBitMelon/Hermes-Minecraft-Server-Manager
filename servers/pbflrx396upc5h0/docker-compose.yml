@@ -1,0 +1,44 @@
+version: "3.9"
+services:
+  minecraft:
+    image: itzg/minecraft-server
+    ports:
+      - "25558:25565"
+    volumes:
+      - ./server-files:/data
+    environment:
+      EULA: "true"
+      MEMORY: "2G"
+
+      TYPE: "VANILLA"
+      VERSION: "1.20.1"
+      MOTD: "A Hermes Minecraft Server"
+      ICON: "http://127.0.0.1:8090/api/files/4qdnujs2qade2j5/pbflrx396upc5h0/default_server_icon_OWqkXWbZTq.png"
+      OVERRIDE_ICON: "true"
+      
+      DIFFICULTY: "NORMAL"
+      MODE: "survival"
+      MAX_PLAYERS: "10"
+      ALLOW_NETHER: "true"
+      ENABLE_COMMAND_BLOCK: "true"
+      HARDCORE: "false"
+      PVP: "true"
+      ALLOW_FLIGHT: "true"
+      
+      SPAWN_PROTECTION: "0"
+      VIEW_DISTANCE: "16"
+      SIMULATION_DISTANCE: "10"
+
+      ENABLED_WHITELIST: "TRUE"
+      WHITELIST: ""
+
+      SEED: ""
+      LEVEL_TYPE: "normal"
+      
+
+      ENABLE_AUTOPAUSE: "true"
+      AUTOPAUSE_TIMEOUT_EST: "7200"
+      
+      
+      
+    restart: unless-stopped
