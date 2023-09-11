@@ -7,6 +7,7 @@ export enum Collections {
 export type IsoDateString = string;
 export type RecordIdString = string;
 export type HTMLString = string;
+export type FileNameString = string;
 
 // System fields
 export type BaseSystemFields<T = never> = {
@@ -30,40 +31,41 @@ export type UsersRecord = {
   avatar?: string;
 };
 
-export type ServersRecord = {
-  title?: string;
-  icon?: string;
-  subdomain?: string;
-  serverSoftware?: ServerSoftware;
-  serverSoftwareVersion?: string;
-  gameVersion?: string;
-  worldType?: WorldType;
-  timeToLive?: TimeToLive;
-  deletionDate?: IsoDateString;
-  shutdownDate?: IsoDateString;
-  shutdown?: boolean;
-  canBeDeleted?: boolean;
-  serverFilesZiped?: string;
+export type ServerRecord = {
+  port: number;
+  title: string;
+  icon: FileNameString;
+  subdomain: string;
+  serverSoftware: ServerSoftware;
+  gameVersion: string;
+  worldType: WorldType;
+  timeToLive: TimeToLive;
+  deletionDate: IsoDateString | null;
+  shutdownDate: IsoDateString | null;
+  shutdown: boolean;
+  canBeDeleted: boolean;
+  serverFilesZiped: FileNameString | null;
 };
 
 // Response types include system fields and match responses from the PocketBase API
-export type ServersResponse<Texpand = unknown> = Required<ServersRecord> & BaseSystemFields<Texpand>;
+export type ServerResponse<Texpand = unknown> = Required<ServerRecord> & BaseSystemFields<Texpand>;
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
 
 export type CollectionRecords = {
-  servers: ServersRecord;
+  servers: ServerRecord;
   users: UsersRecord;
 };
 
 export type CollectionResponses = {
-  servers: ServersResponse;
+  servers: ServerResponse;
   users: UsersResponse;
 };
 
 export enum TimeToLive {
   '12 hr Inactivity' = '12_hr_inactivity',
+  '24 hr Inactivity' = '24_hr_inactivity',
   '1 Day' = '1_day',
   '7 Days' = '7_days'
 }
@@ -89,7 +91,8 @@ export const ServerSoftwareOptions: {
 } = {
   [ServerSoftware.Vanilla]: {
     newWorld: true,
-    fromSource: true,
+    // fromSource: true,
+    fromSource: false,
     modsUpload: false,
     pluginsUpload: false,
     versions: [
@@ -175,13 +178,13 @@ export const ServerSoftwareOptions: {
 
 export enum WorldCreationMethod {
   'New' = 'new',
-  'Upload' = 'upload'
+  'Source' = 'source'
 }
 
 export enum WorldType {
   'Normal' = 'normal',
-  'Large Biomes' = 'large biomes',
-  'Superflat' = 'superflat',
+  'Large Biomes' = 'large_biomes',
+  'Flat' = 'flat',
   'Amplified' = 'amplified'
 }
 

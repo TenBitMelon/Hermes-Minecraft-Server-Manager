@@ -31,6 +31,10 @@
       Server Icon
       <input type="file" name="icon" placeholder="Server Icon" />
     </label>
+    <label class={`${errors.motd ? 'error-outline' : ''}`}>
+      <textarea name="motd" class="w-full" placeholder="A Hermes Minecraft Server" />
+      <a href="https://minecraft.tools/motd.php" target="_blank" rel="noopener noreferrer" class="underline">Formatting Codes</a>
+    </label>
   </div>
   <div class="flex w-full justify-center gap-4">
     {#each Object.keys(ServerSoftwareOptions) as software}
@@ -67,7 +71,7 @@
     {/if}
   </div>
   {#if ServerSoftwareOptions[selectedSoftware]?.newWorld || ServerSoftwareOptions[selectedSoftware]?.fromSource}
-    <div class="w-fit bg-gray-100 p-4">
+    <div class="w-fit bg-gray-900 p-4">
       {#if worldCreator == 'new' && ServerSoftwareOptions[selectedSoftware]?.newWorld}
         <div class="flex flex-col items-stretch gap-1">
           <label class={`${errors.worldSeed ? 'error-outline' : ''}`}>
@@ -81,7 +85,7 @@
               </label>
             {/each}
           </div>
-          {#if worldType == 'superflat'}
+          {#if worldType == 'flat'}
             <div>
               <!-- Superflat creator -->
               <div class={`flex flex-col gap-1 ${errors.superflatLayers ? 'error-outline' : ''}`}>
@@ -97,7 +101,7 @@
                 {/each}
                 <button
                   type="button"
-                  class="rounded-md bg-gray-200 p-2 px-4"
+                  class="rounded-md bg-gray-800 p-2 px-4"
                   on:click={() => {
                     superflatLayers = [...superflatLayers, { block: 'grass', height: 1 }];
                   }}>Add Layer</button>
@@ -193,13 +197,13 @@
       PvP
     </label>
     <label class={`${errors.whitelist ? 'error-outline' : ''}`}>
-      <textarea name="whitelist" placeholder="Whitelist" />
+      <textarea class="w-full" name="whitelist" placeholder="Whitelist" />
     </label>
     <label class={`${errors.ops ? 'error-outline' : ''}`}>
-      <textarea name="ops" placeholder="Ops" />
+      <textarea class="w-full" name="ops" placeholder="Ops" />
     </label>
     <label class={`${errors.bannedPlayers ? 'error-outline' : ''}`}>
-      <textarea name="bannedPlayers" placeholder="Banned Players" />
+      <textarea class="w-full" name="bannedPlayers" placeholder="Banned Players" />
     </label>
     <div class="col-span-3 flex flex-col">
       <div class="text-lg font-bold">Server Properties</div>
@@ -221,7 +225,7 @@
       <input type="checkbox" name="eula" value="true" />
       I agree to the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
     </label>
-    <button type="submit" class="rounded-md bg-blue-300 p-2 px-4 text-lg font-bold">Create</button>
+    <button type="submit" class="rounded-md bg-blue-700 p-2 px-4 text-lg font-bold">Create</button>
   </div>
 </form>
 
@@ -240,7 +244,13 @@
     filter: url(#combined-hover);
   }
 
+  input,
+  textarea,
+  select {
+    background: transparent;
+  }
+
   label {
-    @apply rounded-md bg-gray-200 p-2 px-4;
+    @apply rounded-md bg-gray-800 p-2 px-4;
   }
 </style>

@@ -4,7 +4,13 @@
 
 body,
 html {
+  color: white;
   height: 100%;
   margin: 0;
   padding: 0;
+  background: black;
+}
+
+.pixelated {
+  image-rendering: pixelated;
 }
