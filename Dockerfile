@@ -1,16 +1,44 @@
 # Dockerfile
 
-FROM node:16-alpine
+FROM alpine:latest
 
-RUN npm install -g pnpm
+### WEBSITE SETUP
+
+RUN curl -fsSL https://bun.sh/install | bash
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
+# Copy all files except the ones in .dockerignore
 COPY . .
-RUN pnpm build
+RUN bun build
 
 # Website internal port
 EXPOSE 3000
-CMD ["node", "build"]
+
+### DATABASE SETUP
+
+ARG PB_VERSION=0.18.3
+
+RUN apk add --no-cache \
+  unzip \
+  ca-certificates
+
+# download and unzip PocketBase
+ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip /tmp/pb.zip
+RUN unzip /tmp/pb.zip -d ./database/
+
+# Database internal port
+EXPOSE 8090
+
+### DOCKER COMPOSE SETUP
+
+ADD https://get.docker.com/ /tmp/get-docker.sh
+RUN sh /tmp/get-docker.sh
+
+# Run both the website and the database
+CMD bun run build & \
+  ./database/pocketbase serve; \
+  wait -n; \
+  exit $?

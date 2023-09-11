@@ -10,7 +10,12 @@ export const actions: Actions = {
     const data = ServerCreationSchema.safeParse(formData);
     if (!data.success) return fail(400, { errors: data.error.flatten().fieldErrors });
 
-    createNewServer(data.data);
+    try {
+      createNewServer(data.data);
+    } catch (e: unknown) {
+      if (e instanceof Error) return fail(500, { errors: {}, message: e.message });
+      return fail(500, { errors: {}, message: 'Unknown error' });
+    }
 
     throw redirect(303, '/');
     return { errors: {}, success: true };

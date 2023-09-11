@@ -1,8 +1,10 @@
 version: '3'
 services:
   app:
-    image: "hermes-mcsm-website-image"
-    container_name: "hermes-mcsm-website"
+    image: "hermes-mcsm-image"
+    container_name: "hermes-mcsm"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       # Website external port (feel free to change): internal port
       - "3100:3000"
