@@ -9,6 +9,9 @@ ADD https://bun.sh/install /tmp/bun-install.sh
 RUN chmod +x /tmp/bun-install.sh
 RUN /tmp/bun-install.sh
 
+RUN which bun || echo "bun command not found"
+RUN echo $PATH
+
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN bun install --frozen-lockfile

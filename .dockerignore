@@ -1,4 +1,8 @@
 database
 servers
 node_modules
+docker-compose.yml
 .svelte-kit
+.github
+.gitignore
+.git
