@@ -1,7 +1,7 @@
 # Dockerfile
 
 FROM alpine:latest
-SHELL ["/bin/bash", "-c"]
+RUN apk update && apk add bash
 
 ### WEBSITE SETUP
 
