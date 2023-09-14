@@ -1,7 +1,7 @@
 version: '3'
 services:
   app:
-    image: "hermes-mcsm-image"
+    image: "hermes-minecraft-server-manager:latest"
     container_name: "hermes-mcsm"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
