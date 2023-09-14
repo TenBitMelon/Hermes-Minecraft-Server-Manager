@@ -15,8 +15,7 @@ ENV PATH="~/.bun/bin:$PATH"
 RUN echo $PATH
 RUN ls ~/.bun/bin
 
-SHELL ["~/.bun/bin/bun"]
-RUN --version
+RUN ~/.bun/bin/bun --version
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
