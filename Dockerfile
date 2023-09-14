@@ -1,25 +1,11 @@
 # Dockerfile
 
-FROM alpine:latest
-RUN apk update && apk add bash curl
-SHELL ["/bin/bash", "-c"]
+FROM oven/bun
 
 ### WEBSITE SETUP
-
-RUN curl -fsSL https://bun.sh/install | bash
-
-RUN grep "PATH=" /etc/*
-
-# After the bun installation, add the bun directory to the PATH
-ENV PATH="~/.bun/bin:$PATH"
-RUN echo $PATH
-RUN ls ~/.bun/bin
-
-RUN ~/.bun/bin/bun --version
-
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN ~/.bun/bin/bun install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 # Copy all files except the ones in .dockerignore
 COPY . .
@@ -53,7 +39,7 @@ RUN systemctl stop docker
 RUN systemctl mask docker
 
 # Run both the website and the database
-CMD ~/.bun/bin/bun run build & \
+CMD bun run build & \
   ./database/pocketbase serve; \
   wait -n; \
   exit $?
