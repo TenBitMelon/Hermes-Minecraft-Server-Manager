@@ -1,6 +1,7 @@
 # Dockerfile
 
 FROM alpine:latest
+SHELL ["/bin/bash", "-c"]
 
 ### WEBSITE SETUP
 
