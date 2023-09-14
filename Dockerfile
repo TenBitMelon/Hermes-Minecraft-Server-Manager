@@ -2,6 +2,7 @@
 
 FROM alpine:latest
 RUN apk update && apk add bash curl
+SHELL ["/bin/bash", "-c"]
 
 ### WEBSITE SETUP
 
@@ -14,7 +15,8 @@ ENV PATH="~/.bun/bin:$PATH"
 RUN echo $PATH
 RUN ls ~/.bun/bin
 
-RUN ~/.bun/bin/bun --version
+SHELL ["~/.bun/bin/bun"]
+RUN --version
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
