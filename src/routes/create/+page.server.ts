@@ -14,6 +14,7 @@ export const actions: Actions = {
       createNewServer(data.data);
     } catch (e: unknown) {
       if (e instanceof Error) return fail(500, { errors: {}, message: e.message });
+      console.error(e);
       return fail(500, { errors: {}, message: 'Unknown error' });
     }
 
