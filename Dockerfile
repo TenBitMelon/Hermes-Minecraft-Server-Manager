@@ -4,8 +4,8 @@ FROM oven/bun
 
 ### WEBSITE SETUP
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN bun install --frozen-lockfile
+COPY package.json ./
+RUN bun install --production
 
 # Copy all files except the ones in .dockerignore
 COPY . .
