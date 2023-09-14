@@ -5,6 +5,8 @@ FROM oven/bun
 ### WEBSITE SETUP
 WORKDIR /app
 COPY package.json ./
+RUN bun install
+RUN rm -rf node_modules
 RUN bun install --production
 
 # Copy all files except the ones in .dockerignore
