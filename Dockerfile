@@ -9,8 +9,10 @@ ADD https://bun.sh/install /tmp/bun-install.sh
 RUN chmod +x /tmp/bun-install.sh
 RUN /tmp/bun-install.sh
 
-RUN which bun || echo "bun command not found"
-RUN echo $PATH
+# After the bun installation, add the bun directory to the PATH
+RUN echo 'export BUN_INSTALL="$HOME/.bun"' >> ~/.bashrc
+RUN echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc
+RUN source ~/.bashrc
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
