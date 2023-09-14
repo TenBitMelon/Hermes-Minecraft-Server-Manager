@@ -14,6 +14,13 @@ RUN echo 'export BUN_INSTALL="$HOME/.bun"' >> ~/.bashrc
 RUN echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc
 RUN source ~/.bashrc
 
+# Check if bun is installed and where it is located
+SHELL ["/bin/bash", "-c"]
+RUN which bun || echo "bun command not found"
+RUN echo $PATH
+
+RUN bun --version
+
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN bun install --frozen-lockfile
