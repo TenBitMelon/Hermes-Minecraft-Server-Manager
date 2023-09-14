@@ -7,6 +7,8 @@ RUN apk update && apk add bash curl
 
 RUN curl -fsSL https://bun.sh/install | bash
 
+RUN grep "PATH=" /etc/*
+
 # After the bun installation, add the bun directory to the PATH
 RUN echo 'export BUN_INSTALL="$HOME/.bun"' >> ~/.bashrc
 RUN echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc
