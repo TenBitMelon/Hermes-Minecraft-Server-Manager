@@ -6,8 +6,6 @@ FROM oven/bun
 WORKDIR /app
 COPY package.json ./
 RUN bun install
-RUN rm -rf node_modules
-RUN bun install --production
 
 # Copy all files except the ones in .dockerignore
 COPY . .
@@ -15,6 +13,9 @@ RUN bun vite build
 
 # Website internal port
 EXPOSE 3000
+
+RUN rm -rf node_modules
+RUN bun install --production
 
 ### DATABASE SETUP
 
