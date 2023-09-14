@@ -10,12 +10,10 @@ RUN curl -fsSL https://bun.sh/install | bash
 RUN grep "PATH=" /etc/*
 
 # After the bun installation, add the bun directory to the PATH
-RUN echo 'export BUN_INSTALL="$HOME/.bun"' >> ~/.bashrc
-RUN echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc
-RUN source ~/.bashrc
+RUN echo 'export BUN_INSTALL="$HOME/.bun"' >> /etc/profile
+RUN echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> /etc/profile
 
 # Check if bun is installed and where it is located
-SHELL ["/bin/bash", "-c"]
 RUN which bun || echo "bun command not found"
 RUN echo $PATH
 
