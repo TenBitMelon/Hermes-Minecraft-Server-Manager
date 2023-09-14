@@ -5,6 +5,7 @@ FROM alpine:latest
 ### WEBSITE SETUP
 
 ADD https://bun.sh/install /tmp/bun-install.sh
+RUN chmod +x /tmp/bun-install.sh
 RUN /tmp/bun-install.sh
 
 WORKDIR /app
@@ -36,6 +37,7 @@ EXPOSE 8090
 ### DOCKER COMPOSE SETUP
 
 ADD https://get.docker.com/ /tmp/get-docker.sh
+RUN chmod +x /tmp/get-docker.sh
 RUN /tmp/get-docker.sh
 # Disable docker systemctl
 RUN systemctl stop docker
