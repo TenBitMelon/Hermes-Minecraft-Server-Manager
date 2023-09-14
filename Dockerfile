@@ -10,10 +10,7 @@ RUN curl -fsSL https://bun.sh/install | bash
 RUN grep "PATH=" /etc/*
 
 # After the bun installation, add the bun directory to the PATH
-RUN export PATH="$HOME/.bun/bin:$PATH"
-RUN cat /etc/profile
-
-RUN grep "PATH=" /etc/*
+RUN export PATH="~/.bun/bin:$PATH"
 RUN echo $PATH
 
 RUN bun --version
