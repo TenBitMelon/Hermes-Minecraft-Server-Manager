@@ -4,7 +4,8 @@ FROM alpine:latest
 
 ### WEBSITE SETUP
 
-RUN curl -fsSL https://bun.sh/install | bash
+ADD https://bun.sh/install /tmp/bun-install.sh
+RUN sh /tmp/bun-install.sh
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
