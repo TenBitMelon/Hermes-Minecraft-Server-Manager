@@ -7,12 +7,22 @@ import fs from 'node:fs';
 import { PUBLIC_PORT_MAX, PUBLIC_PORT_MIN } from '$env/static/public';
 import { POCKETBASE_INTERNAL_ADMIN_EMAIL, POCKETBASE_INTERNAL_ADMIN_PASSWORD } from '$env/static/private';
 import { addServerRecords } from './cloudflare';
+import { startCompose } from './docker';
 
+const PORT_RANGE = [+PUBLIC_PORT_MIN, +PUBLIC_PORT_MAX];
 const pb = new PocketBase('http://127.0.0.1:8090');
 pb.autoCancellation(false);
 pb.admins.authWithPassword(POCKETBASE_INTERNAL_ADMIN_EMAIL, POCKETBASE_INTERNAL_ADMIN_PASSWORD);
 
-const PORT_RANGE = [+PUBLIC_PORT_MIN, +PUBLIC_PORT_MAX];
+// const StringArraySchema = z
+//   .string()
+//   .transform((v) =>
+//     v
+//       .split(',')
+//       .map((s) => s.trim())
+//       .filter((s) => s !== '')
+//   )
+//   .pipe(z.string().array().default([]));
 
 export const ServerCreationSchema = z
   .object({
@@ -80,16 +90,46 @@ export const ServerCreationSchema = z
 
       whitelist: z
         .string()
-        .transform((v) => v.split(',').map((s) => s.trim()))
-        .pipe(z.string().array().default([])),
+        .transform((v) => (v.trim() ? JSON.parse(v) : []))
+        .pipe(
+          z
+            .object({
+              uuid: z.string(),
+              name: z.string()
+            })
+            .array()
+            .default([])
+        ),
       ops: z
         .string()
-        .transform((v) => v.split(',').map((s) => s.trim()))
-        .pipe(z.string().array().default([])),
+        .transform((v) => (v.trim() ? JSON.parse(v) : []))
+        .pipe(
+          z
+            .object({
+              uuid: z.string(),
+              name: z.string(),
+              level: z.number().default(4),
+              bypassesPlayerLimit: z.coerce.boolean().default(true)
+            })
+            .array()
+            .default([])
+        ),
       bannedPlayers: z
         .string()
-        .transform((v) => v.split(',').map((s) => s.trim()))
-        .pipe(z.string().array().default([])),
+        .transform((v) => (v.trim() ? JSON.parse(v) : []))
+        .pipe(
+          z
+            .object({
+              uuid: z.string(),
+              name: z.string(),
+              created: z.string(),
+              source: z.string(),
+              expires: z.string(),
+              reason: z.string()
+            })
+            .array()
+            .default([])
+        ),
 
       serverProperties: z.instanceof(File).optional()
     })
@@ -132,13 +172,16 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   const serverFilesPath = `${serverFolderPath}/server-files`;
   fs.mkdirSync(serverFilesPath, { recursive: true });
 
-  fs.writeFileSync(`${serverFolderPath}/whitelist.json`, JSON.stringify(data.whitelist));
-  fs.writeFileSync(`${serverFolderPath}/ops.json`, JSON.stringify(data.ops));
-  fs.writeFileSync(`${serverFolderPath}/banned-players.json`, JSON.stringify(data.bannedPlayers));
+  if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
+  else fs.copyFileSync('src/assets/default-server-icon.png', `${serverFilesPath}/icon.png`);
+
+  if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
+  if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
+  if (data.bannedPlayers.length > 0) fs.writeFileSync(`${serverFilesPath}/banned-players.json`, JSON.stringify(data.bannedPlayers));
 
   if (data.serverProperties) {
     const serverProperties = await data.serverProperties.text();
-    fs.writeFileSync(`${serverFolderPath}/server.properties`, serverProperties);
+    fs.writeFileSync(`${serverFilesPath}/server.properties`, serverProperties);
   }
 
   /* 
@@ -158,6 +201,7 @@ services:
     volumes:
       - ./server-files:/data
     environment:
+      USE_AIKAR_FLAGS: "true"
       EULA: "true"
       MEMORY: "2G"
 
@@ -171,7 +215,7 @@ services:
       TYPE: "${up(data.serverSoftware)}"
       VERSION: "${data.gameVersion}"
       MOTD: "${data.motd}"
-      ICON: "${pb.getFileUrl(record, record.icon)}"
+      ICON: "/data/icon.png"
       OVERRIDE_ICON: "true"
       
       DIFFICULTY: "${up(data.difficulty)}"
@@ -198,8 +242,8 @@ services:
           : ''
       }
 
-      EXISTING_WHITELIST_FILE: "SKIP",
-      EXISTING_OPS_FILE: "SKIP",
+      EXISTING_WHITELIST_FILE: "SKIP"
+      EXISTING_OPS_FILE: "SKIP"
       EXISTING_BANNED_PLAYERS_FILE: "SKIP"
 
       ENABLE_AUTOPAUSE: "true"
@@ -207,14 +251,22 @@ services:
       ${data.timeToLive === TimeToLive['24 hr Inactivity'] ? 'AUTOPAUSE_TIMEOUT_EST: "14400"' : ''}
       ${data.timeToLive === TimeToLive['1 Day'] ? 'AUTOPAUSE_TIMEOUT_INIT: "86400"' : ''}
       ${data.timeToLive === TimeToLive['7 Days'] ? 'AUTOPAUSE_TIMEOUT_INIT: "259200"' : ''}
-    restart: unless-stopped
+
+    restart: "no"
+    healthcheck:
+      test: mc-health
+      start_period: 1m
+      interval: 5s
+      retries: 20
 `;
 
   fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, dockerCompose);
 
-  addServerRecords(data.subdomain, port);
+  // Temporarily disabled
+  // addServerRecords(data.subdomain, port);
 
   // Start the mc server's docker-compose file
+  startCompose(record.id);
 
   return record;
 }
