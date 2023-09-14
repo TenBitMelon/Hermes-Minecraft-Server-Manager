@@ -14,11 +14,11 @@ ENV PATH="~/.bun/bin:$PATH"
 RUN echo $PATH
 RUN ls ~/.bun/bin
 
-RUN bun --version
+RUN ~/.bun/bin/bun --version
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN bun install --frozen-lockfile
+RUN ~/.bun/bin/bun install --frozen-lockfile
 
 # Copy all files except the ones in .dockerignore
 COPY . .
@@ -52,7 +52,7 @@ RUN systemctl stop docker
 RUN systemctl mask docker
 
 # Run both the website and the database
-CMD bun run build & \
+CMD ~/.bun/bin/bun run build & \
   ./database/pocketbase serve; \
   wait -n; \
   exit $?
