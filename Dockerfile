@@ -12,6 +12,7 @@ RUN grep "PATH=" /etc/*
 # After the bun installation, add the bun directory to the PATH
 ENV PATH="~/.bun/bin:$PATH"
 RUN echo $PATH
+RUN ls ~/.bun/bin
 
 RUN bun --version
 
