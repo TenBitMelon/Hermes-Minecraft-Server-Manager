@@ -42,7 +42,7 @@ RUN systemctl stop docker
 RUN systemctl mask docker
 
 # Run both the website and the database
-CMD bun run build & \
+CMD bun run ./build & \
   ./database/pocketbase serve; \
   wait -n; \
   exit $?
