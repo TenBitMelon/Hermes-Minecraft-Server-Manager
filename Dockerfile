@@ -40,7 +40,7 @@ ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/po
 RUN unzip /tmp/pb.zip -d ./database/
 
 # Copy migrations schema
-COPY ./database/pb_migrations ./database/pb_migrations
+COPY ./database/pb_migrations/ ./database/pb_migrations/
 
 # Database internal port
 EXPOSE 8090
