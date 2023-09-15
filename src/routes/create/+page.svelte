@@ -71,7 +71,7 @@
     {/if}
   </div>
   {#if ServerSoftwareOptions[selectedSoftware]?.newWorld || ServerSoftwareOptions[selectedSoftware]?.fromSource}
-    <div class="w-fit bg-gray-900 p-4">
+    <div class="bg-gray-900 w-fit p-4">
       {#if worldCreator == 'new' && ServerSoftwareOptions[selectedSoftware]?.newWorld}
         <div class="flex flex-col items-stretch gap-1">
           <label class={`${errors.worldSeed ? 'error-outline' : ''}`}>
@@ -101,7 +101,7 @@
                 {/each}
                 <button
                   type="button"
-                  class="rounded-md bg-gray-800 p-2 px-4"
+                  class="bg-gray-800 rounded-md p-2 px-4"
                   on:click={() => {
                     superflatLayers = [...superflatLayers, { block: 'grass', height: 1 }];
                   }}>Add Layer</button>
@@ -225,7 +225,7 @@
       <input type="checkbox" name="eula" value="true" />
       I agree to the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
     </label>
-    <button type="submit" class="rounded-md bg-blue-700 p-2 px-4 text-lg font-bold">Create</button>
+    <button type="submit" class="bg-blue-700 rounded-md p-2 px-4 text-lg font-bold">Create</button>
   </div>
 </form>
 
@@ -251,6 +251,6 @@
   }
 
   label {
-    @apply rounded-md bg-gray-800 p-2 px-4;
+    @apply bg-gray-800 rounded-md p-2 px-4;
   }
 </style>

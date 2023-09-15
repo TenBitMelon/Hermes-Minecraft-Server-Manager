@@ -126,7 +126,7 @@
 </script>
 
 <div>
-  <div id="editor" contenteditable="true" class="h-24 w-[30rem] border-4 border-white p-2" on:input={(e) => insertTextAtCursor(e.data)}>
+  <div id="editor" contenteditable="true" class="border-white h-24 w-[30rem] border-4 p-2" on:input={(e) => insertTextAtCursor(e.data)}>
     {@html components
       .map((c) => {
         const styles = [];
@@ -138,20 +138,20 @@
       .join('')}
   </div>
   <textarea name={formName} hidden>{createMinecraftJSON(components)}</textarea>
-  <button type="button" id="bold-button" class="mr-2 bg-gray-800 p-2 hover:bg-gray-300"> Bold </button>
-  <button type="button" id="italic-button" class="mr-2 bg-gray-800 p-2 hover:bg-gray-300">Italic</button>
-  <button type="button" id="underline-button" class="mr-2 bg-gray-800 p-2 hover:bg-gray-300">Underline</button>
+  <button type="button" id="bold-button" class="bg-gray-800 hover:bg-gray-300 mr-2 p-2"> Bold </button>
+  <button type="button" id="italic-button" class="bg-gray-800 hover:bg-gray-300 mr-2 p-2">Italic</button>
+  <button type="button" id="underline-button" class="bg-gray-800 hover:bg-gray-300 mr-2 p-2">Underline</button>
   <div>
-    <button type="button" id="color-red" class="mr-2 bg-red-500 p-2 hover:bg-red-300">Red</button>
-    <button type="button" id="color-green" class="mr-2 bg-green-500 p-2 hover:bg-green-300">Green</button>
-    <button type="button" id="color-blue" class="mr-2 bg-blue-500 p-2 hover:bg-blue-300">Blue</button>
-    <button type="button" id="color-yellow" class="mr-2 bg-yellow-500 p-2 hover:bg-yellow-300">Yellow</button>
-    <button type="button" id="color-purple" class="mr-2 bg-purple-500 p-2 hover:bg-purple-300">Purple</button>
-    <button type="button" id="color-pink" class="mr-2 bg-pink-500 p-2 hover:bg-pink-300">Pink</button>
-    <button type="button" id="color-orange" class="mr-2 bg-orange-500 p-2 hover:bg-orange-300">Orange</button>
-    <button type="button" id="color-gray" class="mr-2 bg-gray-500 p-2 hover:bg-gray-300">Gray</button>
-    <button type="button" id="color-black" class="mr-2 bg-black p-2 hover:bg-gray-300">Black</button>
-    <button type="button" id="color-white" class="mr-2 bg-white p-2 hover:bg-gray-300">White</button>
+    <button type="button" id="color-red" class="bg-red-500 hover:bg-red-300 mr-2 p-2">Red</button>
+    <button type="button" id="color-green" class="bg-green-500 hover:bg-green-300 mr-2 p-2">Green</button>
+    <button type="button" id="color-blue" class="bg-blue-500 hover:bg-blue-300 mr-2 p-2">Blue</button>
+    <button type="button" id="color-yellow" class="bg-yellow-500 hover:bg-yellow-300 mr-2 p-2">Yellow</button>
+    <button type="button" id="color-purple" class="bg-purple-500 hover:bg-purple-300 mr-2 p-2">Purple</button>
+    <button type="button" id="color-pink" class="bg-pink-500 hover:bg-pink-300 mr-2 p-2">Pink</button>
+    <button type="button" id="color-orange" class="bg-orange-500 hover:bg-orange-300 mr-2 p-2">Orange</button>
+    <button type="button" id="color-gray" class="bg-gray-500 hover:bg-gray-300 mr-2 p-2">Gray</button>
+    <button type="button" id="color-black" class="bg-black hover:bg-gray-300 mr-2 p-2">Black</button>
+    <button type="button" id="color-white" class="bg-white hover:bg-gray-300 mr-2 p-2">White</button>
   </div>
   {createMinecraftJSON(components)}
   {JSON.stringify(components)}

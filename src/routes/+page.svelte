@@ -7,17 +7,17 @@
 </script>
 
 <div class="flex w-full items-center">
-  <div class="h-px w-full bg-gray-800" />
+  <div class="bg-gray-800 h-px w-full" />
   <div class="mx-4 whitespace-nowrap text-sm font-thin">Servers</div>
-  <div class="h-px w-full bg-gray-800" />
+  <div class="bg-gray-800 h-px w-full" />
 </div>
 
 {#each data.servers as server}
-  <a class="my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800" href={`/${server.id}`}>
+  <a class="bg-gray-800 my-2 flex w-full max-w-2xl flex-col rounded-md" href={`/${server.id}`}>
     {#if server.shutdown}
-      <div class="flex w-full items-center justify-between bg-red-800 p-1 px-4">
+      <div class="bg-red-800 flex w-full items-center justify-between p-1 px-4">
         Will be deleted {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
-        <button class="rounded-sm bg-green-600 p-1 px-3">Revive</button>
+        <button class="bg-green-600 rounded-sm p-1 px-3">Revive</button>
       </div>
     {/if}
     <div class="flex gap-4 p-4">
@@ -25,7 +25,7 @@
       <div>
         <h2 class="text-xl font-bold">
           {server.title}
-          <span class="px-2 text-sm font-thin text-gray-400">{server.id}</span>
+          <span class="text-gray-400 px-2 text-sm font-thin">{server.id}</span>
         </h2>
         <p class="">{server.gameVersion} {server.serverSoftware} {server.worldType} world</p>
         <p class="">{server.subdomain}.{PUBLIC_ROOT_DOMAIN}</p>
