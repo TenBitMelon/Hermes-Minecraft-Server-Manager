@@ -1,5 +1,6 @@
 <script>
   import '../app.css';
+  import { version } from '$app/environment';
 </script>
 
 <div class="flex h-full w-full flex-col items-center gap-4 p-8">
@@ -8,7 +9,10 @@
       <img src="/wing.png" alt="Logo" class="h-10 w-10" />
       <a href="/" class="text-3xl font-black">Hermes</a>
     </div>
-    <a href="/create" class="bg-tertiary rounded-md p-2 px-4 text-lg font-bold">Create</a>
+    <a href="/create" class="rounded-md bg-tertiary p-2 px-4 text-lg font-bold">Create</a>
   </div>
   <slot />
+  <p>
+    Version: {version}
+  </p>
 </div>

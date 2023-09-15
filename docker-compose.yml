@@ -5,7 +5,30 @@ services:
     container_name: "hermes-mcsm"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./servers:/app/servers
+    # Database volume
+    # Uncomment if you want to keep your data when updating the container
+    # - ./database:/app/database/pb_data
     ports:
-      # Website external port (feel free to change): internal port
+    # Website external port (feel free to change): internal port
       - "3100:3000"
+    # Database external port (feel free to change): internal port
+      - "8090:8090"
+    environment:
+    # Default user account for managing the database
+      - DB_EMAIL=pb_user
+      - DB_PASSWORD=pb_password
+
+      - PUBLIC_ROOT_DOMAIN="example.com"
+      - PUBLIC_PORT_MIN=25565
+      - PUBLIC_PORT_MAX=25565
+
+      - CLOUDFLARE_TOKEN=""
+      - CLOUDFLARE_ZONE_ID=""
+ 
+      - POCKETBASE_INTERNAL_ADMIN_EMAIL="internal@example.com"
+      - POCKETBASE_INTERNAL_ADMIN_PASSWORD="password"
+
+    
+
     restart: unless-stopped
