@@ -4,15 +4,16 @@ import PocketBase from 'pocketbase';
 import { faker } from '@faker-js/faker';
 import { objectFormData } from '$lib';
 import fs from 'node:fs';
-import { PUBLIC_PORT_MAX, PUBLIC_PORT_MIN } from '$env/static/public';
-import { POCKETBASE_INTERNAL_ADMIN_EMAIL, POCKETBASE_INTERNAL_ADMIN_PASSWORD } from '$env/static/private';
+import { env as penv } from '$env/dynamic/public';
+import { env } from '$env/dynamic/private';
 import { addServerRecords } from './cloudflare';
 import { startCompose } from './docker';
+import {} from '$app/stores';
 
-const PORT_RANGE = [+PUBLIC_PORT_MIN, +PUBLIC_PORT_MAX];
+const PORT_RANGE = [+penv.PUBLIC_PORT_MIN, +penv.PUBLIC_PORT_MAX];
 const pb = new PocketBase('http://127.0.0.1:8090');
 pb.autoCancellation(false);
-pb.admins.authWithPassword(POCKETBASE_INTERNAL_ADMIN_EMAIL, POCKETBASE_INTERNAL_ADMIN_PASSWORD);
+pb.collection(Collections.Users).authWithPassword(env.POCKETBASE_INTERNAL_ADMIN_EMAIL, env.POCKETBASE_INTERNAL_ADMIN_PASSWORD);
 
 // const StringArraySchema = z
 //   .string()

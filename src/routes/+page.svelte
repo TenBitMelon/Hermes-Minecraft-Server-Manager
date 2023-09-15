@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PUBLIC_ROOT_DOMAIN } from '$env/static/public';
+  import { env } from '$env/dynamic/public';
   import { timeUntil } from '$lib';
 
   import type { PageServerData } from './$types';
@@ -28,7 +28,7 @@
           <span class="text-gray-400 px-2 text-sm font-thin">{server.id}</span>
         </h2>
         <p class="">{server.gameVersion} {server.serverSoftware} {server.worldType} world</p>
-        <p class="">{server.subdomain}.{PUBLIC_ROOT_DOMAIN}</p>
+        <p class="">{server.subdomain}.{env.PUBLIC_ROOT_DOMAIN}</p>
       </div>
     </div>
   </a>

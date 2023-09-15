@@ -5,6 +5,7 @@
   "packageManager": "pnpm@8.6.12 | bun@1.0",
   "scripts": {
     "dev": "concurrently 'vite dev' './database/pocketbase serve'",
+    "vitedev": "vite dev",
     "typegen": "pocketbase-typegen --db ./database/pb_data/data.db -o ./src/lib/database/_types.ts",
     "build": "vite build",
     "preview": "vite preview",
