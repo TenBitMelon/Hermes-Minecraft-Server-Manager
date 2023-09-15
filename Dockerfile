@@ -9,7 +9,7 @@ RUN bun install
 
 # Copy all files except the ones in .dockerignore
 COPY . .
-RUN bun vite build
+RUN bun run build
 
 # Website internal port
 EXPOSE 3000
