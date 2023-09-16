@@ -1,29 +1,15 @@
 import { Collections, Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType, type ServerResponse, WorldCreationMethod } from '$lib/database/types';
 import { z } from 'zod';
-import PocketBase from 'pocketbase';
+import type PocketBase from 'pocketbase';
 import { faker } from '@faker-js/faker';
 import { objectFormData } from '$lib';
 import fs from 'node:fs';
 import { env as penv } from '$env/dynamic/public';
-import { env } from '$env/dynamic/private';
 import { addServerRecords } from './cloudflare';
 import { startCompose } from './docker';
 import {} from '$app/stores';
 
 const PORT_RANGE = [+penv.PUBLIC_PORT_MIN, +penv.PUBLIC_PORT_MAX];
-const pb = new PocketBase('http://127.0.0.1:8090');
-pb.autoCancellation(false);
-pb.collection(Collections.Users).authWithPassword(env.POCKETBASE_INTERNAL_ADMIN_EMAIL, env.POCKETBASE_INTERNAL_ADMIN_PASSWORD);
-
-// const StringArraySchema = z
-//   .string()
-//   .transform((v) =>
-//     v
-//       .split(',')
-//       .map((s) => s.trim())
-//       .filter((s) => s !== '')
-//   )
-//   .pipe(z.string().array().default([]));
 
 export const ServerCreationSchema = z
   .object({
@@ -139,7 +125,7 @@ export const ServerCreationSchema = z
 function up(str: string) {
   return str.toUpperCase();
 }
-export async function createNewServer(data: z.infer<typeof ServerCreationSchema>) {
+export async function createNewServer(pb: PocketBase, data: z.infer<typeof ServerCreationSchema>) {
   const usedPorts = (await pb.collection(Collections.Servers).getFullList<ServerResponse>()).map((server) => server.port);
   let port: number = PORT_RANGE[0];
   // Find first unused port
