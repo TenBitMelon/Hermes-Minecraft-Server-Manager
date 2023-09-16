@@ -1,5 +1,6 @@
 # Dockerfile
 FROM oven/bun
+WORKDIR /app
 
 ENV PUBLIC_ROOT_DOMAIN=example.com
 ENV PUBLIC_PORT_MIN=25565
@@ -10,22 +11,6 @@ ENV CLOUDFLARE_ZONE_ID=""
 
 ENV POCKETBASE_INTERNAL_ADMIN_EMAIL=""
 ENV POCKETBASE_INTERNAL_ADMIN_PASSWORD=""
-
-
-### WEBSITE SETUP
-WORKDIR /app
-COPY package.json ./
-RUN bun install
-
-# Copy all files except the ones in .dockerignore
-COPY . .
-RUN bun run build
-
-# Website internal port
-EXPOSE 3000
-
-RUN rm -rf node_modules
-RUN bun install --production
 
 ### DATABASE SETUP
 
@@ -42,6 +27,24 @@ RUN unzip /tmp/pb.zip -d ./database/
 # Database internal port
 EXPOSE 8090
 
+### WEBSITE SETUP
+COPY package.json ./
+RUN bun install
+
+# Copy all files except the ones in .dockerignore
+COPY . .
+RUN ./database/pocketbase serve & \
+  bun run build; \
+  wait -n; \
+  exit $?; \
+  kill %1
+
+# Website internal port
+EXPOSE 3000
+
+RUN rm -rf node_modules
+RUN bun install --production
+
 ### DOCKER COMPOSE SETUP
 
 ADD https://get.docker.com/ /tmp/get-docker.sh
@@ -52,7 +55,7 @@ RUN systemctl stop docker
 RUN systemctl mask docker
 
 # Run both the website and the database
-CMD bun run ./build & \
+CMD bun run ./build/index.js & \
   ./database/pocketbase serve; \
   wait -n; \
   exit $?
