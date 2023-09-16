@@ -1,7 +1,7 @@
 version: '3'
 services:
   app:
-    image: "hermes-minecraft-server-manager:latest"
+    image: "melonboy10/hermes-minecraft-server-manager:latest"
     container_name: "hermes-mcsm"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -16,19 +16,16 @@ services:
       - "8090:8090"
     environment:
     # Default user account for managing the database
-      - DB_EMAIL=pb_user
-      - DB_PASSWORD=pb_password
-
       - PUBLIC_ROOT_DOMAIN="example.com"
       - PUBLIC_PORT_MIN=25565
       - PUBLIC_PORT_MAX=25565
 
       - CLOUDFLARE_TOKEN=""
       - CLOUDFLARE_ZONE_ID=""
- 
+
+    # This is the default user account for managing the database used by the server internally
+    # Feel free to change the email and password, but only the first time you run the container
       - POCKETBASE_INTERNAL_ADMIN_EMAIL="internal@example.com"
       - POCKETBASE_INTERNAL_ADMIN_PASSWORD="password"
-
-    
 
     restart: unless-stopped
