@@ -16,9 +16,7 @@ ENV POCKETBASE_INTERNAL_ADMIN_PASSWORD=""
 
 ARG PB_VERSION=0.18.3
 
-RUN apk add --no-cache \
-  unzip \
-  ca-certificates
+RUN apt-get update && apt-get install -y unzip ca-certificates
 
 # download and unzip PocketBase
 ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip /tmp/pb.zip
