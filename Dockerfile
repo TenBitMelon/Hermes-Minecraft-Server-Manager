@@ -13,6 +13,20 @@ ENV CLOUDFLARE_ZONE_ID=""
 ENV POCKETBASE_INTERNAL_ADMIN_EMAIL=""
 ENV POCKETBASE_INTERNAL_ADMIN_PASSWORD=""
 
+### WEBSITE SETUP
+COPY package.json ./
+RUN bun install
+
+# Copy all files except the ones in .dockerignore
+COPY . .
+RUN bun run build
+
+# Website internal port
+EXPOSE 3000
+
+# RUN rm -rf node_modules
+# RUN bun install --production
+
 ### DATABASE SETUP
 
 ARG PB_VERSION=0.18.3
@@ -25,22 +39,6 @@ RUN unzip /tmp/pb.zip -d ./database/
 
 # Database internal port
 EXPOSE 8090
-
-### WEBSITE SETUP
-COPY package.json ./
-RUN bun install
-
-# Copy all files except the ones in .dockerignore
-COPY . .
-RUN ./database/pocketbase serve & \
-  bun run build && \
-  kill $!
-
-# Website internal port
-EXPOSE 3000
-
-RUN rm -rf node_modules
-RUN bun install --production
 
 ### DOCKER COMPOSE SETUP
 

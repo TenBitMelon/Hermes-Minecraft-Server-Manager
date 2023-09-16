@@ -11,7 +11,7 @@ services:
     # - ./database:/app/database/pb_data
     ports:
     # Website external port (feel free to change): internal port
-      - "3100:3000"
+      - "3000:3000"
     # Database external port (feel free to change): internal port
       - "8090:8090"
     environment:
