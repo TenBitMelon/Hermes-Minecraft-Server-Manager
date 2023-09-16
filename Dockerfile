@@ -48,11 +48,7 @@ ADD https://get.docker.com/ /tmp/get-docker.sh
 RUN chmod +x /tmp/get-docker.sh
 RUN /tmp/get-docker.sh
 # Disable docker systemctl
-RUN systemctl stop docker
 RUN systemctl mask docker
 
 # Run both the website and the database
-CMD bun run ./build/index.js & \
-  ./database/pocketbase serve; \
-  wait -n; \
-  exit $?
+CMD bun run ./build/index.js & ./database/pocketbase serve
