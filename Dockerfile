@@ -34,8 +34,7 @@ COPY . .
 RUN ./database/pocketbase serve & \
   bun run build; \
   wait -n; \
-  exit $?; \
-  kill %1
+  exit $?
 
 # Website internal port
 EXPOSE 3000
