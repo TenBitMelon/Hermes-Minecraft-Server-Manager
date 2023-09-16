@@ -1,6 +1,7 @@
 # Dockerfile
 FROM oven/bun
 WORKDIR /app
+SHELL [ "/bin/bash", "-c" ]
 
 ENV PUBLIC_ROOT_DOMAIN=example.com
 ENV PUBLIC_PORT_MIN=25565
@@ -32,9 +33,8 @@ RUN bun install
 # Copy all files except the ones in .dockerignore
 COPY . .
 RUN ./database/pocketbase serve & \
-  bun run build; \
-  wait -n; \
-  exit $?
+  bun run build && \
+  kill $!
 
 # Website internal port
 EXPOSE 3000
