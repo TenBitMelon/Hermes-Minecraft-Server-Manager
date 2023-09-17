@@ -12,4 +12,8 @@ migrate((db) => {
   dao.saveAdmin(admin);
 
   console.log(`Creating admin account with email ${adminEmail}, password ${adminPassword}`);
+
+  // Verify that the admin account was created
+  console.log(dao.totalAdmins());
+  console.log(dao.findAdminByEmail(adminEmail));
 });
