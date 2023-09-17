@@ -15,6 +15,20 @@
   let worldCreator: 'new' | 'source' = 'new';
   let worldType: WorldType = WorldType.Normal;
   let superflatLayers: { block: string; height: number }[] = [{ block: 'grass', height: 1 }];
+
+  let iconImageElement: HTMLImageElement;
+  let iconFileElement: HTMLInputElement;
+
+  function handleIconChange() {
+    if (iconFileElement?.files?.length) {
+      const file = iconFileElement.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        iconImageElement.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 </script>
 
 <form method="post" class="flex flex-col items-center gap-4" enctype="multipart/form-data" use:enhance>
@@ -27,9 +41,10 @@
         <input type="text" name="subdomain" placeholder="Subdomain" />
       </label>
     </div>
-    <label class={`${errors.serverIcon ? 'error-outline' : ''}`}>
+    <label class={`${errors.serverIcon ? 'error-outline' : ''} flex items-center gap-2`}>
+      <img class="h-10 w-10" alt="" bind:this={iconImageElement} />
       Server Icon
-      <input type="file" name="icon" placeholder="Server Icon" />
+      <input type="file" name="icon" placeholder="Server Icon" bind:this={iconFileElement} on:change={handleIconChange} />
     </label>
     <label class={`${errors.motd ? 'error-outline' : ''}`}>
       <textarea name="motd" class="w-full" placeholder="A Hermes Minecraft Server" />
@@ -71,7 +86,7 @@
     {/if}
   </div>
   {#if ServerSoftwareOptions[selectedSoftware]?.newWorld || ServerSoftwareOptions[selectedSoftware]?.fromSource}
-    <div class="bg-gray-900 w-fit p-4">
+    <div class="w-fit bg-gray-900 p-4">
       {#if worldCreator == 'new' && ServerSoftwareOptions[selectedSoftware]?.newWorld}
         <div class="flex flex-col items-stretch gap-1">
           <label class={`${errors.worldSeed ? 'error-outline' : ''}`}>
@@ -101,7 +116,7 @@
                 {/each}
                 <button
                   type="button"
-                  class="bg-gray-800 rounded-md p-2 px-4"
+                  class="rounded-md bg-gray-800 p-2 px-4"
                   on:click={() => {
                     superflatLayers = [...superflatLayers, { block: 'grass', height: 1 }];
                   }}>Add Layer</button>
@@ -225,7 +240,7 @@
       <input type="checkbox" name="eula" value="true" />
       I agree to the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
     </label>
-    <button type="submit" class="bg-blue-700 rounded-md p-2 px-4 text-lg font-bold">Create</button>
+    <button type="submit" class="rounded-md bg-blue-700 p-2 px-4 text-lg font-bold">Create</button>
   </div>
 </form>
 
@@ -251,6 +266,6 @@
   }
 
   label {
-    @apply bg-gray-800 rounded-md p-2 px-4;
+    @apply rounded-md bg-gray-800 p-2 px-4;
   }
 </style>

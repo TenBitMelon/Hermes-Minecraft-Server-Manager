@@ -11,7 +11,7 @@ export async function handle({ event, resolve }) {
     console.log(`Authenticating with PocketBase using email: ${env.POCKETBASE_INTERNAL_ADMIN_EMAIL} password: ${env.POCKETBASE_INTERNAL_ADMIN_PASSWORD}`);
     event.locals.pb.admins.authWithPassword(env.POCKETBASE_INTERNAL_ADMIN_EMAIL, env.POCKETBASE_INTERNAL_ADMIN_PASSWORD);
   } catch (e) {
-    console.error('Failed to authenticate with PocketBase (thats not good)');
+    console.log('Failed to authenticate with PocketBase (thats not good)');
   }
 
   const response = await resolve(event);
