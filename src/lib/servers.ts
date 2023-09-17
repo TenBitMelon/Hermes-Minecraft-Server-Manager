@@ -249,8 +249,7 @@ services:
 
   fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, dockerCompose);
 
-  // Temporarily disabled
-  // addServerRecords(data.subdomain, port);
+  addServerRecords(data.subdomain, port);
 
   // Start the mc server's docker-compose file
   startCompose(record.id);
