@@ -5,7 +5,7 @@ migrate((db) => {
   const adminEmail = $os.getenv('POCKETBASE_INTERNAL_ADMIN_EMAIL');
   const adminPassword = $os.getenv('POCKETBASE_INTERNAL_ADMIN_PASSWORD');
 
-  console.log(`Creating admin account with email ${adminEmail}`);
+  console.log(`Creating admin account with email ${adminEmail}, password ${adminPassword}`);
 
   const admin = new Admin();
   admin.email = adminEmail;
