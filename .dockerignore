@@ -1,4 +1,5 @@
-database
+database/*
+!database/pb_migrations
 servers
 node_modules
 docker-compose.yml
