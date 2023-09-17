@@ -49,4 +49,4 @@ RUN /tmp/get-docker.sh
 RUN systemctl mask docker
 
 # Run both the website and the database
-CMD bun run ./build/index.js & ./database/pocketbase serve
+CMD bun run ./build/index.js & ./database/pocketbase serve --http=0.0.0.0:8090
