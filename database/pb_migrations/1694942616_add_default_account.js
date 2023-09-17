@@ -15,5 +15,8 @@ migrate((db) => {
 
   // Verify that the admin account was created
   console.log(dao.totalAdmins());
-  console.log(dao.findAdminByEmail(adminEmail));
+  const aa = dao.findAdminByEmail(adminEmail);
+  console.log(aa.created);
+  console.log(aa.validatePassword(adminPassword));
+  console.log(aa.email);
 });
