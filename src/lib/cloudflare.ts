@@ -1,7 +1,9 @@
 import { env } from '$env/dynamic/private';
 import { env as penv } from '$env/dynamic/public';
+import { dev } from '$app/environment';
 
 export async function addServerRecords(subdomain: string, port: number) {
+  if (dev) return true;
   return (
     await Promise.allSettled([
       fetch(`https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records`, {
