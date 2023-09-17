@@ -1,6 +1,6 @@
 <script>
   import '../app.css';
-  import { version } from '$app/environment';
+  import { PUBLIC_VERSION } from '$env/static/public';
 </script>
 
 <div class="flex h-full w-full flex-col items-center gap-4 p-8">
@@ -13,6 +13,6 @@
   </div>
   <slot />
   <p>
-    Version: {version}
+    Version: {PUBLIC_VERSION}
   </p>
 </div>
