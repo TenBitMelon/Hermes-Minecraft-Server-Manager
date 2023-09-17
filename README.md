@@ -1,3 +1,5 @@
+[![Docker Image CI](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml/badge.svg)](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml)
+
 # Frontend / Backend Sveltekit website with pnpm 🚀🚀🚀🚀🚀🚀🚀🚀
 
 🚀
