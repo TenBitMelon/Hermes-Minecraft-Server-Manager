@@ -102,15 +102,16 @@
           </div>
           {#if worldType == 'flat'}
             <div>
+              <input type="text" name="superflatLayers" bind:value={superflatLayers} hidden />
               <!-- Superflat creator -->
               <div class={`flex flex-col gap-1 ${errors.superflatLayers ? 'error-outline' : ''}`}>
                 {#each superflatLayers as layer}
                   <div class="flex gap-1">
                     <label>
-                      <input type="text" name="superflatLayer" placeholder="Block" class="w-full" bind:value={layer.block} />
+                      <input type="text" placeholder="Block" class="w-full" bind:value={layer.block} />
                     </label>
                     <label>
-                      <input type="number" name="superflatLayer" placeholder="Height" bind:value={layer.height} />
+                      <input type="number" placeholder="Height" bind:value={layer.height} />
                     </label>
                   </div>
                 {/each}
