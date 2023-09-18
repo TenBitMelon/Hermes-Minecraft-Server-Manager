@@ -6,7 +6,6 @@ onAdminAuthRequest((e) => {
   console.log(e.token);
 
   console.log($app.dao().totalAdmins());
-  $app.dao().findAdminByEmail(e.admin);
 });
 onAdminBeforeAuthWithPasswordRequest((e) => {
   console.log('onAdminBeforeAuthWithPasswordRequest');
