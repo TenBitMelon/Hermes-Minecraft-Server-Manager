@@ -34,14 +34,14 @@
 <form method="post" class="flex flex-col items-center gap-4" enctype="multipart/form-data" use:enhance>
   <div class="flex flex-col gap-4">
     <div class="flex gap-4">
-      <label class={`${errors.title ? 'error-outline' : ''}`}>
+      <label class={`w-full ${errors.title ? 'error-outline' : ''}`}>
         <input type="text" name="title" id="title" placeholder="Server Title" />
       </label>
       <label class={`${errors.subdomain ? 'error-outline' : ''}`}>
         <input type="text" name="subdomain" placeholder="Subdomain" />
       </label>
     </div>
-    <label class={`${errors.serverIcon ? 'error-outline' : ''} flex items-center gap-2`}>
+    <label class={`flex w-full items-center gap-2 ${errors.serverIcon ? 'error-outline' : ''}`}>
       <img class="h-10 w-10" alt="" bind:this={iconImageElement} />
       Server Icon
       <input type="file" name="icon" placeholder="Server Icon" bind:this={iconFileElement} on:change={handleIconChange} />
@@ -53,7 +53,7 @@
   </div>
   <div class="flex w-full justify-center gap-4">
     {#each Object.keys(ServerSoftwareOptions) as software}
-      <label class={`flex cursor-pointer items-center gap-2  ${errors.serverSoftware ? 'error-outline' : ''}`}>
+      <label class={`flex cursor-pointer items-center gap-2 capitalize  ${errors.serverSoftware ? 'error-outline' : ''}`}>
         <input type="radio" name="serverSoftware" value={software} bind:group={selectedSoftware} />
         {software}
       </label>
@@ -61,9 +61,9 @@
   </div>
   <div class="flex justify-around gap-1">
     {#each ServerSoftwareOptions[selectedSoftware]?.versions ?? [] as version}
-      <div class="group flex w-full flex-col">
+      <div class="group flex w-full flex-col gap-1">
         {#each version as versionNumber}
-          <label class={`${(version[0] == versionNumber && !version.includes(selectedGameVersion)) || selectedGameVersion == versionNumber ? 'block' : 'hidden'} ${errors.gameVersion ? 'error-outline' : ''} flex cursor-pointer items-center gap-2  checked:block group-hover:block`}>
+          <label class={`flex cursor-pointer items-center gap-2  checked:block group-hover:flex ${(version[0] == versionNumber && !version.includes(selectedGameVersion)) || selectedGameVersion == versionNumber ? 'block' : 'hidden'} ${errors.gameVersion ? 'error-outline' : ''}`}>
             <input type="radio" name="gameVersion" value={versionNumber} bind:group={selectedGameVersion} />
             {versionNumber}
           </label>
@@ -72,13 +72,13 @@
     {/each}
   </div>
   <div class="flex justify-center gap-4">
-    {#if ServerSoftwareOptions[selectedSoftware]?.newWorld ?? []}
+    {#if ServerSoftwareOptions[selectedSoftware]?.newWorld}
       <label class="flex cursor-pointer items-center gap-2">
         <input type="radio" name="worldCreator" value="new" bind:group={worldCreator} />
         New World
       </label>
     {/if}
-    {#if ServerSoftwareOptions[selectedSoftware]?.fromSource ?? []}
+    {#if ServerSoftwareOptions[selectedSoftware]?.fromSource}
       <label class="flex cursor-pointer items-center gap-2">
         <input type="radio" name="worldCreator" value="source" bind:group={worldCreator} />
         From Source
