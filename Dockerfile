@@ -49,6 +49,8 @@ RUN /tmp/get-docker.sh
 RUN systemctl mask docker
 
 # Run both the website and the database
+ENV ORIGIN=http://localhost:3000
+
 CMD bun run ./build/index.js & \
   if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_ADMIN_PASSWORD" ]; then \
   ./database/pocketbase serve --http=0.0.0.0:8090; \
