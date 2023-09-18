@@ -49,9 +49,10 @@ RUN /tmp/get-docker.sh
 RUN systemctl mask docker
 
 # Run both the website and the database
+# ./database/pocketbase serve --http=0.0.0.0:8090; \
 CMD bun run ./build/index.js & \
   if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_ADMIN_PASSWORD" ]; then \
-  ./database/pocketbase serve --http=0.0.0.0:8090; \
+  echo "Starting PocketBase database..."; \
   else \
   echo "PocketBase admin credentials not set. Skipping database startup."; \
   fi

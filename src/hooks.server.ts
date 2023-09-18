@@ -44,6 +44,11 @@ export async function handle({ event, resolve }) {
         .then((e) => e.text())
         .catch(() => 'failed')
     );
+    console.log(
+      await fetch('http://0.0.0.0:8090/api/health')
+        .then((e) => e.text())
+        .catch(() => 'failed')
+    );
     event.locals.pb.admins.authWithPassword(env.POCKETBASE_INTERNAL_ADMIN_EMAIL, env.POCKETBASE_INTERNAL_ADMIN_PASSWORD);
     console.log('Authenticated with PocketBase');
   } catch (e) {

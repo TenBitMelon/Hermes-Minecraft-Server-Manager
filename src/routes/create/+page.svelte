@@ -241,7 +241,7 @@
       <input type="checkbox" name="eula" value="true" />
       I agree to the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
     </label>
-    <button type="submit" class="rounded-md bg-blue-700 p-2 px-4 text-lg font-bold">Create</button>
+    <button type="submit" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Create</button>
   </div>
 </form>
 
