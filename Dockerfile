@@ -16,7 +16,7 @@ EXPOSE 3000
 ### DATABASE SETUP
 
 ARG PB_VERSION=0.18.3
-RUN apt-get update && apt-get install -y unzip ca-certificates
+RUN apk add --no-cache unzip ca-certificates
 
 # download and unzip PocketBase
 ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip /tmp/pb.zip
