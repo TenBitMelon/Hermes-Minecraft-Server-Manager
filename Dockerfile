@@ -1,6 +1,8 @@
 # Dockerfile
 FROM node:20-alpine3.17
 WORKDIR /app
+RUN apk add --no-cache bash
+SHELL [ "/bin/bash", "-c" ]
 
 RUN npm install -g pnpm
 COPY package.json ./
