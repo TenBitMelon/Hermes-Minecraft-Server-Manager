@@ -12,25 +12,36 @@ export async function handle({ event, resolve }) {
     console.log(
       'fake',
       await fetch('http://mmsdmfmsdmfmsdmf.mdmd')
-        .then((e) => e.json())
+        .then((e) => e.text())
         .catch(() => 'failed')
     );
     console.log(
       'localhost',
       await fetch('http://localhost:8090/api')
-        .then((e) => e.json())
+        .then((e) => e.text())
         .catch(() => 'failed')
     );
     console.log(
       '127',
       await fetch('http://127.0.0.1:8090/api')
-        .then((e) => e.json())
+        .then((e) => e.text())
         .catch(() => 'failed')
     );
     console.log(
       '0',
       await fetch('http://0.0.0.0:8090/api')
-        .then((e) => e.json())
+        .then((e) => e.text())
+        .catch(() => 'failed')
+    );
+    console.log(
+      fetch('http://0.0.0.0:8090/api/admins/auth-with-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          identity: env.POCKETBASE_INTERNAL_ADMIN_EMAIL,
+          password: env.POCKETBASE_INTERNAL_ADMIN_PASSWORD
+        })
+      })
+        .then((e) => e.text())
         .catch(() => 'failed')
     );
     event.locals.pb.admins.authWithPassword(env.POCKETBASE_INTERNAL_ADMIN_EMAIL, env.POCKETBASE_INTERNAL_ADMIN_PASSWORD);
