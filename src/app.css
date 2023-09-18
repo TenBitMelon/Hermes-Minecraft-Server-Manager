@@ -13,7 +13,7 @@ html {
 
 html {
   height: 100vh;
-  --sz: 10px;
+  --sz: 20px;
   /*** size ***/
   --c0: black;
   --c1: rgb(3, 3, 3);

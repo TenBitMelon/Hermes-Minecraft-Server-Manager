@@ -16,16 +16,16 @@ services:
       - "8090:8090"
     environment:
     # Default user account for managing the database
-      - PUBLIC_ROOT_DOMAIN="example.com"
+      - PUBLIC_ROOT_DOMAIN=example.com
       - PUBLIC_PORT_MIN=25565
       - PUBLIC_PORT_MAX=25565
 
-      - CLOUDFLARE_TOKEN=""
-      - CLOUDFLARE_ZONE_ID=""
+      - CLOUDFLARE_TOKEN=<token>
+      - CLOUDFLARE_ZONE_ID=<zone_id>
 
     # This is the default user account for managing the database used by the server internally
     # Feel free to change the email and password, it will create the account if it doesn't exist
-      - POCKETBASE_INTERNAL_ADMIN_EMAIL="internal@example.com"
-      - POCKETBASE_INTERNAL_ADMIN_PASSWORD="password"
+      - POCKETBASE_INTERNAL_ADMIN_EMAIL=internal@example.com
+      - POCKETBASE_INTERNAL_ADMIN_PASSWORD=password
 
     restart: unless-stopped
