@@ -34,7 +34,7 @@ export async function handle({ event, resolve }) {
         .catch(() => 'failed')
     );
     console.log(
-      fetch('http://0.0.0.0:8090/api/admins/auth-with-password', {
+      await fetch('http://0.0.0.0:8090/api/admins/auth-with-password', {
         method: 'POST',
         body: JSON.stringify({
           identity: env.POCKETBASE_INTERNAL_ADMIN_EMAIL,
