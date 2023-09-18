@@ -29,11 +29,7 @@ EXPOSE 8090
 
 ### DOCKER COMPOSE SETUP
 
-ADD https://get.docker.com/ /tmp/get-docker.sh
-RUN chmod +x /tmp/get-docker.sh
-RUN /tmp/get-docker.sh
-# Disable docker systemctl
-RUN systemctl mask docker
+RUN apk add --no-cache docker-cli
 
 # Run both the website and the database
 ENV ORIGIN=http://localhost:3000
