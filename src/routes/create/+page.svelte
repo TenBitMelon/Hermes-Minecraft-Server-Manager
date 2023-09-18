@@ -237,7 +237,7 @@
         {/each}
       </select>
     </label>
-    <label class={`${errors.eula ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
+    <label class={`flex cursor-pointer items-center gap-2 ${errors.eula ? 'error-outline' : ''}`}>
       <input type="checkbox" name="eula" value="true" />
       I agree to the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
     </label>
