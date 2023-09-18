@@ -266,6 +266,11 @@
     background: transparent;
   }
 
+  input[type='checkbox'],
+  input[type='radio'] {
+    @apply accent-secondary;
+  }
+
   label {
     @apply rounded-md bg-gray-800 p-2 px-4;
   }

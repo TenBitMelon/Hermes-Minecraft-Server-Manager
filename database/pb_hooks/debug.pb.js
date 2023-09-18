@@ -4,6 +4,9 @@ onAdminAuthRequest((e) => {
   console.log(e.httpContext);
   console.log(e.admin);
   console.log(e.token);
+
+  $app.dao().totalAdmins();
+  $app.dao().findAdminByEmail(e.admin);
 });
 onAdminBeforeAuthWithPasswordRequest((e) => {
   console.log('onAdminBeforeAuthWithPasswordRequest');
@@ -11,6 +14,8 @@ onAdminBeforeAuthWithPasswordRequest((e) => {
   console.log(e.admin);
   console.log(e.identity);
   console.log(e.password);
+
+  $app.dao().totalAdmins();
 });
 onAdminAfterAuthWithPasswordRequest((e) => {
   console.log('onAdminAfterAuthWithPasswordRequest');
@@ -18,4 +23,6 @@ onAdminAfterAuthWithPasswordRequest((e) => {
   console.log(e.admin);
   console.log(e.identity);
   console.log(e.password);
+
+  $app.dao().totalAdmins();
 });
