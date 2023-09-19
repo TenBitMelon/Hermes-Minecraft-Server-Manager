@@ -136,7 +136,8 @@ export async function createNewServer(pb: PocketBase, data: z.infer<typeof Serve
     .create<ServerResponse>({
       port,
       title: data.title,
-      icon: data.icon ? data.icon : new File([fs.readFileSync(DefaultIcon)], 'default-server-icon.png'),
+      icon: data.icon,
+      // icon: data.icon ? data.icon : new File([fs.readFileSync(DefaultIcon)], 'default-server-icon.png'),
       subdomain: data.subdomain,
       serverSoftware: data.serverSoftware,
       gameVersion: data.gameVersion,
@@ -156,8 +157,8 @@ export async function createNewServer(pb: PocketBase, data: z.infer<typeof Serve
   const serverFilesPath = `${serverFolderPath}/server-files`;
   fs.mkdirSync(serverFilesPath, { recursive: true });
 
-  if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
-  else fs.copyFileSync(DefaultIcon, `${serverFilesPath}/icon.png`);
+  // if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
+  // else fs.copyFileSync(DefaultIcon, `${serverFilesPath}/icon.png`);
 
   if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
   if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
