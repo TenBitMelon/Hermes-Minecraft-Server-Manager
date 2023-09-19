@@ -1,6 +1,7 @@
 import { Collections, Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType, type ServerResponse, WorldCreationMethod } from '$lib/database/types';
 import { z } from 'zod';
-import { randomWord, serverPB } from '$lib';
+import { randomWord } from '$lib';
+import { serverPB } from '$lib/database';
 import fs from 'node:fs';
 import DefaultIcon from '$lib/default-server-icon.png';
 import { env as penv } from '$env/dynamic/public';
@@ -297,4 +298,4 @@ export async function updateServerStates() {
   }
 }
 
-if (!building && !dev) setInterval(updateServerStates, 1000 * 60 * 5); // 5 minutes
+if (!building) setInterval(updateServerStates, 1000 * 60 * 5); // 5 minutes
