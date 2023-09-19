@@ -30,8 +30,10 @@ RUN unzip /tmp/pb.zip -d ./database/
 EXPOSE 8090
 
 ### DOCKER COMPOSE SETUP
-
-RUN apk add --no-cache docker-cli docker-compose-plugin
+RUN http://ftp.halifax.rwth-aachen.de/alpine/v3.16/main >> /etc/apk/repositories; \
+  http://ftp.halifax.rwth-aachen.de/alpine/v3.16/community >> /etc/apk/repositories; \
+  apk update; \
+  apk add --no-cache docker docker-compose-plugin
 
 # Run both the website and the database
 CMD ORIGIN=https://$PUBLIC_ROOT_DOMAIN node build & \
