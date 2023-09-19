@@ -133,23 +133,21 @@ export async function createNewServer(pb: PocketBase, data: z.infer<typeof Serve
 
   const record = await pb
     .collection(Collections.Servers)
-    .create<ServerResponse>(
-      objectFormData({
-        port,
-        title: data.title,
-        icon: data.icon ? data.icon : new File([fs.readFileSync('src/assets/default-server-icon.png')], 'default-server-icon.png'),
-        subdomain: data.subdomain,
-        serverSoftware: data.serverSoftware,
-        gameVersion: data.gameVersion,
-        worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : null,
-        timeToLive: data.timeToLive,
-        deletionDate: null,
-        shutdownDate: null,
-        shutdown: false,
-        canBeDeleted: true,
-        serverFilesZiped: null
-      })
-    )
+    .create<ServerResponse>({
+      port,
+      title: data.title,
+      icon: data.icon ? data.icon : new File([fs.readFileSync('src/assets/default-server-icon.png')], 'default-server-icon.png'),
+      subdomain: data.subdomain,
+      serverSoftware: data.serverSoftware,
+      gameVersion: data.gameVersion,
+      worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : null,
+      timeToLive: data.timeToLive,
+      deletionDate: null,
+      shutdownDate: null,
+      shutdown: false,
+      canBeDeleted: true,
+      serverFilesZiped: null
+    })
     .catch((e) => {
       console.error(e);
       throw new Error('Failed to create server record');
