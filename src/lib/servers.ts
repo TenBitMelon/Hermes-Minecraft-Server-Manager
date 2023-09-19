@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type PocketBase from 'pocketbase';
 import { objectFormData, randomWord } from '$lib';
 import fs from 'node:fs';
+import DefaultIcon from '$assets/default-server-icon.png';
 import { env as penv } from '$env/dynamic/public';
 import { addServerRecords } from './cloudflare';
 import { startCompose } from './docker';
@@ -135,7 +136,7 @@ export async function createNewServer(pb: PocketBase, data: z.infer<typeof Serve
     .create<ServerResponse>({
       port,
       title: data.title,
-      icon: data.icon ? data.icon : new File([fs.readFileSync('src/assets/default-server-icon.png')], 'default-server-icon.png'),
+      icon: data.icon ? data.icon : new File([fs.readFileSync(DefaultIcon)], 'default-server-icon.png'),
       subdomain: data.subdomain,
       serverSoftware: data.serverSoftware,
       gameVersion: data.gameVersion,
@@ -156,7 +157,7 @@ export async function createNewServer(pb: PocketBase, data: z.infer<typeof Serve
   fs.mkdirSync(serverFilesPath, { recursive: true });
 
   if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
-  else fs.copyFileSync('src/assets/default-server-icon.png', `${serverFilesPath}/icon.png`);
+  else fs.copyFileSync(DefaultIcon, `${serverFilesPath}/icon.png`);
 
   if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
   if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
