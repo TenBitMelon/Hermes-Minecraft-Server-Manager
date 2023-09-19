@@ -6,7 +6,7 @@ import DefaultIcon from '$lib/default-server-icon.png';
 import { env as penv } from '$env/dynamic/public';
 import { addServerRecords } from './cloudflare';
 import { getServerRunningStatus, startCompose, zipServerFiles } from './docker';
-import {} from '$app/stores';
+import { building, dev } from '$app/environment';
 
 const PORT_RANGE = [+penv.PUBLIC_PORT_MIN, +penv.PUBLIC_PORT_MAX];
 
@@ -297,4 +297,4 @@ export async function updateServerStates() {
   }
 }
 
-setInterval(updateServerStates, 1000 * 60 * 5); // 5 minutes
+if (!building && !dev) setInterval(updateServerStates, 1000 * 60 * 5); // 5 minutes
