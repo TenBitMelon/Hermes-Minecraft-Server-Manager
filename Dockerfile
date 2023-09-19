@@ -32,9 +32,7 @@ EXPOSE 8090
 RUN apk add --no-cache docker-cli
 
 # Run both the website and the database
-ENV ORIGIN=https://servers.craftingcomrades.net
-
-CMD ORIGIN=https://servers.craftingcomrades.net node build & \
+CMD ORIGIN=https://$PUBLIC_ROOT_DOMAIN node build & \
   if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_ADMIN_PASSWORD" ]; then \
   ./database/pocketbase serve --http=0.0.0.0:8090; \
   else \
