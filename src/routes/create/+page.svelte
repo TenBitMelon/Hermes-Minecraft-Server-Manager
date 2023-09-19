@@ -90,7 +90,7 @@
       {#if worldCreator == 'new' && ServerSoftwareOptions[selectedSoftware]?.newWorld}
         <div class="flex flex-col items-stretch gap-1">
           <label class={`${errors.worldSeed ? 'error-outline' : ''}`}>
-            <input type="text" name="worldSeed" placeholder="World Seed" />
+            <input type="text" class="w-full" name="worldSeed" placeholder="World Seed" />
           </label>
           <div class="flex gap-1">
             {#each Object.values(WorldType) as type}
@@ -129,11 +129,11 @@
       {#if worldCreator == 'source' && ServerSoftwareOptions[selectedSoftware]?.fromSource}
         <div class="flex flex-col gap-1">
           <label class={`${errors.worldSourceURL ? 'error-outline' : ''}`}>
-            <input type="url" name="worldSourceURL" placeholder="World Source" />
+            <input type="url" class="w-96" name="worldSourceURL" placeholder="World Source Download URL" />
           </label>
-          <label class={`${errors.worldSource ? 'error-outline' : ''}`}>
+          <!-- <label class={`${errors.worldSource ? 'error-outline' : ''}`}>
             <input type="file" name="worldSource" placeholder="World Source" />
-          </label>
+          </label> -->
         </div>
       {/if}
     </div>
@@ -212,14 +212,14 @@
       <input type="checkbox" value="true" checked name="enablePVP" />
       PvP
     </label>
-    <label class={`${errors.whitelist ? 'error-outline' : ''}`}>
-      <textarea class="w-full" name="whitelist" placeholder="Whitelist" />
+    <label class={`min-h-[16rem] ${errors.whitelist ? 'error-outline' : ''}`}>
+      <textarea class="h-full w-full" name="whitelist" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000",\n\t\tname: "username"\n\t}\n]`} />
     </label>
-    <label class={`${errors.ops ? 'error-outline' : ''}`}>
-      <textarea class="w-full" name="ops" placeholder="Ops" />
+    <label class={`min-h-[16rem] ${errors.ops ? 'error-outline' : ''}`}>
+      <textarea class="h-full w-full" name="ops" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000"\n\t\tname: "username"\n\t\tlevel: 4,\n\t\tbypassesPlayerLimit: true\n\t}\n]`} />
     </label>
-    <label class={`${errors.bannedPlayers ? 'error-outline' : ''}`}>
-      <textarea class="w-full" name="bannedPlayers" placeholder="Banned Players" />
+    <label class={`min-h-[16rem] ${errors.bannedPlayers ? 'error-outline' : ''}`}>
+      <textarea class="h-full w-full whitespace-pre" name="bannedPlayers" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000",\n\t\tname: "username",\n\t\tcreated: "1970-01-01T00:00:00.000Z",\n\t\tsource: "username",\n\t\texpires: "1970-01-01T00:00:00.000Z",\n\t\treason: "Ban Hammer"\n\t}\n]`} />
     </label>
     <div class="col-span-3 flex flex-col">
       <div class="text-lg font-bold">Server Properties</div>

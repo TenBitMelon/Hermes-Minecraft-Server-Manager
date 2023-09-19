@@ -1,35 +1,34 @@
 import { Collections, Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType, type ServerResponse, WorldCreationMethod } from '$lib/database/types';
 import { z } from 'zod';
-import type PocketBase from 'pocketbase';
-import { objectFormData, randomWord } from '$lib';
+import { randomWord, serverPB } from '$lib';
 import fs from 'node:fs';
-import DefaultIcon from '$assets/default-server-icon.png';
+import DefaultIcon from '$lib/default-server-icon.png';
 import { env as penv } from '$env/dynamic/public';
 import { addServerRecords } from './cloudflare';
-import { startCompose } from './docker';
+import { getServerRunningStatus, startCompose, zipServerFiles } from './docker';
 import {} from '$app/stores';
 
 const PORT_RANGE = [+penv.PUBLIC_PORT_MIN, +penv.PUBLIC_PORT_MAX];
 
 export const ServerCreationSchema = z
   .object({
-    title: z.string().min(3).max(63),
-    subdomain: z
+    title: z.string().min(3).max(63), // CONFIRMED WORKING
+    subdomain: z // CONFIRMED WORKING
       .string()
       .min(3)
       .max(63)
       .or(z.literal(''))
       .transform((v) => (v ? v.toLowerCase() : randomWord())),
     icon: z.instanceof(File).optional(),
-    motd: z
+    motd: z // CONFIRMED WORKING
       .string()
       .transform((s) => (s ? s : 'A Hermes Minecraft Server'))
       .default('A Hermes Minecraft Server'),
-    serverSoftware: z.nativeEnum(ServerSoftware),
-    gameVersion: z.string(),
+    serverSoftware: z.nativeEnum(ServerSoftware), // CONFIRMED WORKING
+    gameVersion: z.string(), // CONFIRMED WORKING
 
     timeToLive: z.nativeEnum(TimeToLive),
-    eula: z.literal(true).or(z.literal('true'))
+    eula: z.literal(true).or(z.literal('true')) // CONFIRMED WORKING
   })
   .refine(
     (data) => {
@@ -43,37 +42,42 @@ export const ServerCreationSchema = z
     z.discriminatedUnion('worldCreator', [
       z.object({
         worldCreator: z.literal(WorldCreationMethod.Source),
-        worldSourceURL: z.string().url(),
-        worldSource: z.instanceof(File)
+        worldSourceURL: z.string().url().optional(),
+        worldSource: z.instanceof(File).optional()
       }),
       z.object({
         worldCreator: z.literal(WorldCreationMethod.New),
-        worldSeed: z.string().default(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + ''),
+        worldSeed: z.string().default(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + ''), // CONFIRMED WORKING
         worldType: z.nativeEnum(WorldType),
         superflatLayers: z
-          .object({
-            block: z.string(),
-            height: z.number()
-          })
-          .strict()
-          .array()
-          .optional()
+          .string()
+          .transform((v) => (v ? JSON.parse(v) : []))
+          .pipe(
+            z
+              .object({
+                block: z.string(),
+                height: z.number()
+              })
+              .strict()
+              .array()
+              .default([])
+          )
       })
     ])
   )
   .and(
     z.object({
       maxPlayers: z.coerce.number().default(10),
-      difficulty: z.nativeEnum(Difficulty).default(Difficulty.Normal),
-      gamemode: z.nativeEnum(Gamemode).default(Gamemode.Survival),
+      difficulty: z.nativeEnum(Difficulty).default(Difficulty.Normal), // CONFIRMED WORKING
+      gamemode: z.nativeEnum(Gamemode).default(Gamemode.Survival), // CONFIRMED WORKING
 
-      viewDistance: z.coerce.number().default(16),
-      simulationDistance: z.coerce.number().default(10),
+      viewDistance: z.coerce.number().default(16), // CONFIRMED WORKING
+      simulationDistance: z.coerce.number().default(10), // CONFIRMED WORKING
 
-      allowNether: z.coerce.boolean().default(true),
-      hardcore: z.coerce.boolean().default(false),
-      enableCommandBlock: z.coerce.boolean().default(true),
-      enablePVP: z.coerce.boolean().default(true),
+      allowNether: z.coerce.boolean().default(true), // ASSUMED WORKING
+      hardcore: z.coerce.boolean().default(false), // ASSUMED WORKING
+      enableCommandBlock: z.coerce.boolean().default(true), // UNTESTED
+      enablePVP: z.coerce.boolean().default(true), // ASSUMED WORKING
 
       whitelist: z
         .string()
@@ -125,19 +129,19 @@ export const ServerCreationSchema = z
 function up(str: string) {
   return str.toUpperCase();
 }
-export async function createNewServer(pb: PocketBase, data: z.infer<typeof ServerCreationSchema>) {
-  const usedPorts = (await pb.collection(Collections.Servers).getFullList<ServerResponse>()).map((server) => server.port);
+export async function createNewServer(data: z.infer<typeof ServerCreationSchema>) {
+  const usedPorts = (await serverPB.collection(Collections.Servers).getFullList<ServerResponse>()).map((server) => server.port);
   let port: number = PORT_RANGE[0];
   // Find first unused port
   while (usedPorts.includes(port)) if (port++ > PORT_RANGE[1]) throw new Error('No available ports');
 
-  const record = await pb
+  const record = await serverPB
     .collection(Collections.Servers)
     .create<ServerResponse>({
       port,
       title: data.title,
-      icon: data.icon,
-      // icon: data.icon ? data.icon : new File([fs.readFileSync(DefaultIcon)], 'default-server-icon.png'),
+      // icon: data.icon,
+      icon: data.icon ? data.icon : new File([fs.readFileSync(DefaultIcon)], 'default-server-icon.png'),
       subdomain: data.subdomain,
       serverSoftware: data.serverSoftware,
       gameVersion: data.gameVersion,
@@ -157,8 +161,8 @@ export async function createNewServer(pb: PocketBase, data: z.infer<typeof Serve
   const serverFilesPath = `${serverFolderPath}/server-files`;
   fs.mkdirSync(serverFilesPath, { recursive: true });
 
-  // if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
-  // else fs.copyFileSync(DefaultIcon, `${serverFilesPath}/icon.png`);
+  if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
+  else fs.copyFileSync(DefaultIcon, `${serverFilesPath}/icon.png`);
 
   if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
   if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
@@ -175,9 +179,6 @@ export async function createNewServer(pb: PocketBase, data: z.infer<typeof Serve
   - server.properties if not null
   - extract world if source is url
   */
-
-  // ICON: "/data/icon.png"
-  // OVERRIDE_ICON: "true"
 
   // Docker compose file
   const dockerCompose = `version: "3.9"
@@ -203,6 +204,8 @@ services:
       TYPE: "${up(data.serverSoftware)}"
       VERSION: "${data.gameVersion}"
       MOTD: "${data.motd}"
+      ICON: "/data/icon.png"
+      OVERRIDE_ICON: "true"
       
       DIFFICULTY: "${up(data.difficulty)}"
       MODE: "${data.gamemode}"
@@ -217,15 +220,28 @@ services:
       VIEW_DISTANCE: "${data.viewDistance}"
       SIMULATION_DISTANCE: "${data.simulationDistance}"
 
-      SEED: "${data.worldCreator === WorldCreationMethod.New ? data.worldSeed : ''}"
-      LEVEL_TYPE: "${data.worldCreator === WorldCreationMethod.New ? data.worldType : ''}"
       ${
-        data.worldCreator === WorldCreationMethod.New && data.worldType === WorldType.Flat
-          ? (() => {
-              if (!data.superflatLayers) return '';
-              return `GENERATOR_SETTINGS: "{layers:${data.superflatLayers}}"`;
-            })()
-          : ''
+        (() => {
+          if (data.worldCreator === WorldCreationMethod.Source) {
+            if (data.worldSourceURL) return `WORLD: "${data.worldSourceURL}"`;
+            // if (data.worldSource) return `WORLD: "/data/world"`;
+          }
+        })() ||
+        (() => {
+          if (data.worldCreator === WorldCreationMethod.New) {
+            // seed, leveltype, generator settings
+            const settings = `SEED: "${data.worldCreator === WorldCreationMethod.New ? data.worldSeed : ''}"
+            LEVEL_TYPE: "${data.worldCreator === WorldCreationMethod.New ? data.worldType : ''}"
+            ${(() => {
+              if (data.worldType === WorldType.Flat) {
+                if (!data.superflatLayers) return '';
+                return `GENERATOR_SETTINGS: "{layers:${data.superflatLayers}}"`;
+              }
+            })()}`;
+            return settings;
+          }
+        })() ||
+        ''
       }
 
       EXISTING_WHITELIST_FILE: "SKIP"
@@ -245,6 +261,8 @@ services:
       interval: 5s
       retries: 20
 `;
+  // ^ AUTOPAUSE_TIMEOUT_EST is the time in seconds before the server is paused after the last player leaves
+  // ^ AUTOPAUSE_TIMEOUT_INIT is the time in seconds before the server is paused after it is started (once no one is on the server)
 
   fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, dockerCompose);
 
@@ -255,3 +273,28 @@ services:
 
   return record;
 }
+
+export async function updateServerStates() {
+  const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
+  for (const server of servers) {
+    const running = await getServerRunningStatus(server.id);
+    if (server.shutdown && running) {
+      serverPB.collection(Collections.Servers).update(server.id, {
+        shutdown: false,
+        shutdownDate: null,
+        deletionDate: null,
+        serverFilesZiped: null
+      });
+    } else if (!server.shutdown && !running) {
+      const serverFiles = await zipServerFiles(server.id);
+      serverPB.collection(Collections.Servers).update(server.id, {
+        shutdown: true,
+        shutdownDate: new Date().toISOString(),
+        deletionDate: server.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString() : null, // 7 days
+        serverFilesZiped: serverFiles
+      });
+    }
+  }
+}
+
+setInterval(updateServerStates, 1000 * 60 * 5); // 5 minutes

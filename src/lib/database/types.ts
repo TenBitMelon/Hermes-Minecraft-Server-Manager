@@ -71,12 +71,12 @@ export enum TimeToLive {
 }
 
 export enum ServerSoftware {
-  'Vanilla' = 'vanilla'
+  'Vanilla' = 'vanilla',
   // 'Forge' = 'forge',
-  // 'Fabric' = 'fabric',
+  'Fabric' = 'fabric',
   // 'Quilt' = 'quilt',
   // 'Spigot' = 'spigot',
-  // 'Paper' = 'paper',
+  'Paper' = 'paper'
   // 'Custom' = 'custom'
 }
 
@@ -91,8 +91,7 @@ export const ServerSoftwareOptions: {
 } = {
   [ServerSoftware.Vanilla]: {
     newWorld: true,
-    // fromSource: true,
-    fromSource: false,
+    fromSource: true,
     modsUpload: false,
     pluginsUpload: false,
     versions: [
@@ -110,7 +109,7 @@ export const ServerSoftwareOptions: {
       ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
       ['1.20', '1.20.1']
     ]
-  }
+  },
   // [ServerSoftware.Forge]: {
   //   newWorld: true,
   //   fromSource: false,
@@ -124,19 +123,19 @@ export const ServerSoftwareOptions: {
   //     ['1.20', '1.20.1']
   //   ]
   // },
-  // [ServerSoftware.Fabric]: {
-  //   newWorld: true,
-  //   fromSource: false,
-  //   modsUpload: true,
-  //   pluginsUpload: false,
-  //   versions: [
-  //     ['1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5'],
-  //     ['1.17', '1.17.1'],
-  //     ['1.18', '1.18.1', '1.18.2'],
-  //     ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
-  //     ['1.20', '1.20.1']
-  //   ]
-  // },
+  [ServerSoftware.Fabric]: {
+    newWorld: true,
+    fromSource: false,
+    modsUpload: false,
+    pluginsUpload: false,
+    versions: [
+      ['1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5'],
+      ['1.17', '1.17.1'],
+      ['1.18', '1.18.1', '1.18.2'],
+      ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
+      ['1.20', '1.20.1']
+    ]
+  },
   // [ServerSoftware.Quilt]: {
   //   newWorld: true,
   //   fromSource: false,
@@ -161,19 +160,19 @@ export const ServerSoftwareOptions: {
   //     ['1.20', '1.20.1']
   //   ]
   // },
-  // [ServerSoftware.Paper]: {
-  //   newWorld: true,
-  //   fromSource: false,
-  //   modsUpload: false,
-  //   pluginsUpload: true,
-  //   versions: [
-  //     ['1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5'],
-  //     ['1.17', '1.17.1'],
-  //     ['1.18', '1.18.1', '1.18.2'],
-  //     ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
-  //     ['1.20', '1.20.1']
-  //   ]
-  // }
+  [ServerSoftware.Paper]: {
+    newWorld: true,
+    fromSource: false,
+    modsUpload: false,
+    pluginsUpload: false,
+    versions: [
+      ['1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5'],
+      ['1.17', '1.17.1'],
+      ['1.18', '1.18.1', '1.18.2'],
+      ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
+      ['1.20', '1.20.1']
+    ]
+  }
 };
 
 export enum WorldCreationMethod {
