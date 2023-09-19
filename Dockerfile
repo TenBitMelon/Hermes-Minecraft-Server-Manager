@@ -33,7 +33,7 @@ CMD if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_A
   else \
   echo "PocketBase admin credentials not set. Skipping database startup."; \
   fi & \
-  ORIGIN=https://$PUBLIC_ROOT_DOMAIN node build
+  (sleep 5; ORIGIN=https://$PUBLIC_ROOT_DOMAIN node build)
 
 ### NODE ###
 
