@@ -176,6 +176,9 @@ export async function createNewServer(pb: PocketBase, data: z.infer<typeof Serve
   - extract world if source is url
   */
 
+  // ICON: "/data/icon.png"
+  // OVERRIDE_ICON: "true"
+
   // Docker compose file
   const dockerCompose = `version: "3.9"
 services:
@@ -200,8 +203,6 @@ services:
       TYPE: "${up(data.serverSoftware)}"
       VERSION: "${data.gameVersion}"
       MOTD: "${data.motd}"
-      ICON: "/data/icon.png"
-      OVERRIDE_ICON: "true"
       
       DIFFICULTY: "${up(data.difficulty)}"
       MODE: "${data.gamemode}"
