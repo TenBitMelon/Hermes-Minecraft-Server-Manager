@@ -2,6 +2,8 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
+import { words } from '$assets/words.json';
+
 // import FormData from 'form-data';
 
 export function timeUntil(date: Date | string | number) {
@@ -30,4 +32,8 @@ export function objectFormData(object: Record<string, unknown>) {
     } else formData.append(key, value == null ? '' : value);
   }
   return formData;
+}
+
+export function randomWord() {
+  return words[Math.floor(Math.random() * words.length)];
 }
