@@ -14,6 +14,7 @@ RUN apk --no-cache add unzip
 RUN unzip /tmp/bun-linux-x64.zip -d /tmp; \
   chmod +x /tmp/bun-linux-x64/bun; \
   mv /tmp/bun-linux-x64/bun /usr/local/bin/; \
+  ls /usr/local/bin/; \
   rm -rf /tmp/bun-linux-x64.zip /tmp/bun-linux-x64
 
 ### WEBSITE SETUP
