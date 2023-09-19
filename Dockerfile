@@ -28,12 +28,12 @@ RUN unzip /tmp/pb.zip -d ./database/
 EXPOSE 8090
 
 ### RUN BOTH
-CMD ORIGIN=https://$PUBLIC_ROOT_DOMAIN node build & \
-  if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_ADMIN_PASSWORD" ]; then \
-  ORIGIN=https://$PUBLIC_ROOT_DOMAIN ./database/pocketbase serve --http=0.0.0.0:8090; \
+CMD if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_ADMIN_PASSWORD" ]; then \
+  ./database/pocketbase serve --http=0.0.0.0:8090; \
   else \
   echo "PocketBase admin credentials not set. Skipping database startup."; \
-  fi
+  fi & \
+  ORIGIN=https://$PUBLIC_ROOT_DOMAIN node build
 
 ### NODE ###
 
