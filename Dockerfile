@@ -11,10 +11,10 @@ ADD https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip /t
 
 RUN apk --no-cache add unzip
 
-RUN unzip /tmp/bun-linux-x64.zip -d /tmp
-RUN chmod +x /tmp/bun-linux-x64/bun
-RUN mv /tmp/bun-linux-x64/bun /usr/local/bin/
-RUN rm -rf /tmp/bun-linux-x64.zip /tmp/bun-linux-x64
+RUN unzip /tmp/bun-linux-x64.zip -d /tmp; \
+  chmod +x /tmp/bun-linux-x64/bun; \
+  mv /tmp/bun-linux-x64/bun /usr/local/bin/; \
+  rm -rf /tmp/bun-linux-x64.zip /tmp/bun-linux-x64
 
 ### WEBSITE SETUP
 COPY package.json ./
