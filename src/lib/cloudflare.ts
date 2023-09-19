@@ -13,7 +13,7 @@ export async function addServerRecords(subdomain: string, port: number) {
           Authorization: `Bearer ${env.CLOUDFLARE_TOKEN}`
         },
         body: JSON.stringify({
-          name: `${subdomain}`,
+          name: `${subdomain}.servers`,
           content: `${penv.PUBLIC_ROOT_DOMAIN}`,
           proxied: false,
           type: 'CNAME',

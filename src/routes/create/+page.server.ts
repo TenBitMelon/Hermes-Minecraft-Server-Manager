@@ -4,14 +4,14 @@ import { formDataObject } from '$lib';
 import { ServerCreationSchema, createNewServer } from '$lib/servers';
 
 export const actions: Actions = {
-  default: async ({ request, locals }) => {
+  default: async ({ request }) => {
     const formData = formDataObject(await request.formData());
 
     const data = ServerCreationSchema.safeParse(formData);
     if (!data.success) return fail(400, { errors: data.error.flatten().fieldErrors });
 
     try {
-      createNewServer(locals.pb, data.data);
+      createNewServer(data.data);
     } catch (e: unknown) {
       if (e instanceof Error) return fail(500, { errors: {}, message: e.message });
       console.error(e);
