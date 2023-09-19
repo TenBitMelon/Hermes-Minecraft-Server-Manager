@@ -7,11 +7,11 @@ RUN apk add --no-cache bash
 SHELL [ "/bin/bash", "-c" ]
 
 ### BUN SETUP
-ADD https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip /tmp/bun-install.sh
+ADD https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip /tmp/bun-linux-x64.zip
 
 RUN apk --no-cache add unzip
 
-RUN unzip /tmp/bun-install.sh
+RUN unzip /tmp/bun-linux-x64.zip -d /tmp/bun-linux-x64
 RUN chmod +x /tmp/bun-linux-x64/bun
 RUN mv /tmp/bun-linux-x64/bun /usr/local/bin/bun
 RUN rm -rf /tmp/bun-linux-x64
