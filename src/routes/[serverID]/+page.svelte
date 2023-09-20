@@ -25,31 +25,32 @@
       });
   }
 
-  onMount(() => {
-    setInterval(() => {
-      if (serverStatus == 'Offline') return;
-      fetch(`/api/${data.server.id}/logs`)
-        .then((logs) => logs.json())
-        .then((logs) => {
-          data.logs = logs;
-        });
-    }, 1000);
-  });
+  function updateLogs() {
+    if (serverStatus == 'Offline') return;
+    fetch(`/api/${data.server.id}/logs`)
+      .then((logs) => logs.json())
+      .then((logs) => {
+        data.logs = logs;
+      });
+  }
 </script>
 
 <div class="flex w-full flex-col items-center">
   <div class="flex w-full max-w-xl items-center justify-between">
-    <h1 class="text-lg font-bold">{data.server.title} <span class="text-gray-400 text-sm">({data.server.id})</span></h1>
+    <h1 class="text-lg font-bold">{data.server.title} <span class="text-sm text-gray-400">({data.server.id})</span></h1>
     <div class="flex">
-      <button class="bg-gray-800 m-2 rounded-md p-2" on:click={startServer}>Start</button>
-      <button class="bg-gray-800 m-2 rounded-md p-2" on:click={stopServer}>Stop</button>
+      <button class="m-2 rounded-md bg-gray-800 p-2" on:click={startServer}>Start</button>
+      <button class="m-2 rounded-md bg-gray-800 p-2" on:click={stopServer}>Stop</button>
     </div>
     <h2 class="text-lg">{serverStatus}</h2>
   </div>
   <h2 class="text-lg">{message}</h2>
 
-  <h1>Logs</h1>
-  <code class="bg-gray-800 my-2 w-full overflow-x-scroll whitespace-nowrap rounded-md p-4 text-sm">
+  <div class="flex items-center gap-2">
+    <h1>Logs</h1>
+    <button class="m-2 rounded-md bg-gray-800 p-2" on:click={updateLogs}>Update</button>
+  </div>
+  <code class="my-2 w-full overflow-x-scroll whitespace-nowrap rounded-md bg-gray-800 p-4 text-sm">
     {#each data.logs as log}
       <span class="text-cyan-500">
         {log.split('|')[0]} |

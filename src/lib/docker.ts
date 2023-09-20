@@ -1,14 +1,67 @@
 import { spawn, exec } from 'node:child_process';
 import fs from 'node:fs';
+import { serverPB } from './database';
+import { Collections } from './database/types';
 
-export async function startCompose(serverID: string) {
-  const out = spawn('docker', ['compose', 'up', '-d'], { cwd: `servers/${serverID}` });
-  return new Promise((resolve) => out.on('close', (code) => resolve(code)));
+function trycatch<T>(fn: () => T, catchFn: (e: unknown) => void): T | null {
+  try {
+    return fn();
+  } catch (e: unknown) {
+    catchFn(e);
+    return null;
+  }
 }
 
-export async function stopCompose(serverID: string) {
-  const out = spawn('docker', ['compose', 'down'], { cwd: `servers/${serverID}` });
-  return new Promise((resolve) => out.on('close', (code) => resolve(code)));
+export async function startServer(serverID: string) {
+  return trycatch(
+    async () => {
+      serverPB.collection(Collections.Servers).update(serverID, {
+        shutdown: false,
+        shutdownDate: null,
+        deletionDate: null,
+        serverFilesZiped: null
+      });
+
+      const out = spawn('docker', ['compose', 'up', '-d'], { cwd: `servers/${serverID}` });
+      return new Promise((resolve) => out.on('close', (code) => resolve(code)));
+    },
+    (e) => {
+      console.error(e);
+      serverPB.collection(Collections.Servers).update(serverID, {
+        shutdown: true,
+        shutdownDate: new Date().toISOString(),
+        deletionDate: null,
+        serverFilesZiped: null
+      });
+    }
+  );
+}
+
+export async function stopServer(serverID: string) {
+  return trycatch(
+    async () => {
+      const server = await serverPB.collection(Collections.Servers).getOne(serverID);
+      const serverFiles = await zipServerFiles(serverID);
+      serverPB.collection(Collections.Servers).update(serverID, {
+        shutdown: true,
+        shutdownDate: new Date().toISOString(),
+        deletionDate: server.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString() : null, // 7 days
+        serverFilesZiped: serverFiles
+      });
+
+      const out = spawn('docker', ['compose', 'down'], { cwd: `servers/${serverID}` });
+      return new Promise((resolve) => out.on('close', (code) => resolve(code)));
+    },
+    (e) => {
+      console.error(e);
+      serverPB.collection(Collections.Servers).update(serverID, {
+        shutdown: false,
+        shutdownDate: null,
+        deletionDate: null,
+        serverFilesZiped: null
+      });
+    }
+  );
 }
 
 export function getLogs(serverID: string, lines: number | 'all'): Promise<string[]> {
@@ -33,10 +86,12 @@ type Container = {
   ExitCode: number;
 };
 
-export function getServerData(serverID: string): Promise<Container> {
+export function getServerData(serverID: string): Promise<Container | null> {
   return new Promise((resolve, reject) => {
     exec('docker compose ps --format json', { cwd: `servers/${serverID}` }, (error, stdout) => {
       if (error) reject(error);
+      console.log(stdout);
+      console.log(JSON.parse(stdout));
       const containers: (Container & { [key: string]: string })[] = JSON.parse(stdout);
       if (containers.length === 0) reject('No containers found');
       resolve({
