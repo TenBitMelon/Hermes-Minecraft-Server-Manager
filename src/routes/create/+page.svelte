@@ -158,9 +158,12 @@
     {/if}
     <!-- Resourcepack -->
     <div class="flex flex-col gap-1">
-      <span class="text-sm">Resourcepack</span>
-      <label class={`${errors.resourcepack ? 'error-outline' : ''}`}>
+      <span class="text-sm">Resourcepack URL</span>
+      <!-- <label class={`${errors.resourcepack ? 'error-outline' : ''}`}>
         <input type="file" name="resourcepack" placeholder="Resourcepack" />
+      </label> -->
+      <label class={`${errors.resourcepackURL ? 'error-outline' : ''}`}>
+        <input class="w-80" type="url" name="resourcepackURL" placeholder="Resourcepack URL" />
       </label>
     </div>
   </div>
@@ -213,12 +216,15 @@
       PvP
     </label>
     <label class={`min-h-[16rem] ${errors.whitelist ? 'error-outline' : ''}`}>
+      Whitelist
       <textarea class="h-full w-full" name="whitelist" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000",\n\t\tname: "username"\n\t}\n]`} />
     </label>
     <label class={`min-h-[16rem] ${errors.ops ? 'error-outline' : ''}`}>
+      Ops
       <textarea class="h-full w-full" name="ops" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000"\n\t\tname: "username"\n\t\tlevel: 4,\n\t\tbypassesPlayerLimit: true\n\t}\n]`} />
     </label>
     <label class={`min-h-[16rem] ${errors.bannedPlayers ? 'error-outline' : ''}`}>
+      Banned Players
       <textarea class="h-full w-full whitespace-pre" name="bannedPlayers" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000",\n\t\tname: "username",\n\t\tcreated: "1970-01-01T00:00:00.000Z",\n\t\tsource: "username",\n\t\texpires: "1970-01-01T00:00:00.000Z",\n\t\treason: "Ban Hammer"\n\t}\n]`} />
     </label>
     <div class="col-span-3 flex flex-col">

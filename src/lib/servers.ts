@@ -3,10 +3,10 @@ import { z } from 'zod';
 import { randomWord } from '$lib';
 import { serverPB } from '$lib/database';
 import fs from 'node:fs';
-import DefaultIcon from '$lib/default-server-icon.png';
+import path from 'node:path';
 import { env as penv } from '$env/dynamic/public';
 import { addServerRecords } from './cloudflare';
-import { getServerRunningStatus, startCompose, zipServerFiles } from './docker';
+import { getServerRunningStatus, startServer, stopServer, zipServerFiles } from './docker';
 import { building, dev } from '$app/environment';
 
 const PORT_RANGE = [+penv.PUBLIC_PORT_MIN, +penv.PUBLIC_PORT_MAX];
@@ -29,12 +29,21 @@ export const ServerCreationSchema = z
     gameVersion: z.string(), // CONFIRMED WORKING
 
     timeToLive: z.nativeEnum(TimeToLive),
-    eula: z.literal(true).or(z.literal('true')) // CONFIRMED WORKING
+    eula: z.literal(true).or(z.literal('true')), // CONFIRMED WORKING
+
+    // resourcePack: z.instanceof(File).optional(),
+    resourcepackURL: z.string().url().optional(),
+    mods: z.instanceof(File).array().optional(),
+    plugins: z.instanceof(File).array().optional()
   })
   .refine(
     (data) => {
       const serverSoftware = ServerSoftwareOptions[data.serverSoftware];
       if (!serverSoftware) return false;
+
+      if (data.mods && !serverSoftware.modsUpload) return false;
+      if (data.plugins && !serverSoftware.pluginsUpload) return false;
+
       return serverSoftware.versions.flat().includes(data.gameVersion);
     },
     { message: 'Invalid game version for software' }
@@ -52,6 +61,7 @@ export const ServerCreationSchema = z
         worldType: z.nativeEnum(WorldType),
         superflatLayers: z
           .string()
+          .optional()
           .transform((v) => (v ? JSON.parse(v) : []))
           .pipe(
             z
@@ -136,17 +146,19 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   // Find first unused port
   while (usedPorts.includes(port)) if (port++ > PORT_RANGE[1]) throw new Error('No available ports');
 
+  const defaultIconBuffer = await fetch(penv.PUBLIC_DEFAULT_ICON_URL).then((r) => r.arrayBuffer());
+
   const record = await serverPB
     .collection(Collections.Servers)
     .create<ServerResponse>({
       port,
       title: data.title,
       // icon: data.icon,
-      icon: data.icon ? data.icon : new File([fs.readFileSync(DefaultIcon)], 'default-server-icon.png'),
+      icon: data.icon ? data.icon : new File([defaultIconBuffer], 'default-server-icon.png'),
       subdomain: data.subdomain,
       serverSoftware: data.serverSoftware,
       gameVersion: data.gameVersion,
-      worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : null,
+      worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : '', // TODO: Allow for source
       timeToLive: data.timeToLive,
       deletionDate: undefined,
       shutdownDate: undefined,
@@ -155,6 +167,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
     })
     .catch((e) => {
       console.error(e);
+      console.log(JSON.stringify(e.response.data));
       throw new Error('Failed to create server record');
     });
 
@@ -163,7 +176,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   fs.mkdirSync(serverFilesPath, { recursive: true });
 
   if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
-  else fs.copyFileSync(DefaultIcon, `${serverFilesPath}/icon.png`);
+  else fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(defaultIconBuffer));
 
   if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
   if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
@@ -194,6 +207,7 @@ services:
       USE_AIKAR_FLAGS: "true"
       EULA: "true"
       MEMORY: "2G"
+      MAX_TICK_TIME: -1
 
       ${
         data.serverProperties
@@ -232,17 +246,24 @@ services:
           if (data.worldCreator === WorldCreationMethod.New) {
             // seed, leveltype, generator settings
             const settings = `SEED: "${data.worldCreator === WorldCreationMethod.New ? data.worldSeed : ''}"
-            LEVEL_TYPE: "${data.worldCreator === WorldCreationMethod.New ? data.worldType : ''}"
-            ${(() => {
-              if (data.worldType === WorldType.Flat) {
-                if (!data.superflatLayers) return '';
-                return `GENERATOR_SETTINGS: "{layers:${data.superflatLayers}}"`;
-              }
-            })()}`;
+      LEVEL_TYPE: "${data.worldCreator === WorldCreationMethod.New ? data.worldType : ''}"
+      ${(() => {
+        if (data.worldType === WorldType.Flat) {
+          if (!data.superflatLayers) return '';
+          return `GENERATOR_SETTINGS: "{layers:${data.superflatLayers}}"`;
+        }
+      })()}`;
             return settings;
           }
         })() ||
         ''
+      }
+
+      ${
+        data.resourcepackURL
+          ? `RESOURCE_PACK: "${data.resourcepackURL}"
+      RESOURCE_PACK_ENFORCE: "true"`
+          : ''
       }
 
       EXISTING_WHITELIST_FILE: "SKIP"
@@ -270,32 +291,18 @@ services:
   addServerRecords(data.subdomain, port);
 
   // Start the mc server's docker-compose file
-  startCompose(record.id);
+  startServer(record.id);
 
   return record;
 }
 
-export async function updateServerStates() {
-  const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
-  for (const server of servers) {
-    const running = await getServerRunningStatus(server.id);
-    if (server.shutdown && running) {
-      serverPB.collection(Collections.Servers).update(server.id, {
-        shutdown: false,
-        shutdownDate: null,
-        deletionDate: null,
-        serverFilesZiped: null
-      });
-    } else if (!server.shutdown && !running) {
-      const serverFiles = await zipServerFiles(server.id);
-      serverPB.collection(Collections.Servers).update(server.id, {
-        shutdown: true,
-        shutdownDate: new Date().toISOString(),
-        deletionDate: server.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString() : null, // 7 days
-        serverFilesZiped: serverFiles
-      });
-    }
-  }
-}
+// export async function updateServerStates() {
+//   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
+//   for (const server of servers) {
+//     const running = await getServerRunningStatus(server.id);
+//     if (server.shutdown && running) startServer(server.id);
+//     else if (!server.shutdown && !running) stopServer(server.id);
+//   }
+// }
 
-if (!building) setInterval(updateServerStates, 1000 * 60 * 5); // 5 minutes
+// if (!building) setInterval(updateServerStates, 1000 * 60 * 5); // 5 minutes

@@ -176,7 +176,7 @@ migrate(
           unique: false,
           options: {
             maxSelect: 1,
-            maxSize: 5242880,
+            maxSize: 5000000000,
             mimeTypes: [],
             thumbs: [],
             protected: false
