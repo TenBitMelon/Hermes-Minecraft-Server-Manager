@@ -47,3 +47,33 @@ export async function addServerRecords(subdomain: string, port: number) {
     ])
   ).every((r) => r.status === 'fulfilled');
 }
+
+// TODO: Remove server records
+// export async function removeServerRecords(subdomain: string) {
+//   if (dev) return true;
+//   return (
+//     await Promise.allSettled([
+//       fetch(
+//         `https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records?name=${subdomain}.servers`,
+//         {
+//           method: 'DELETE',
+//           headers: {
+//             'Content-Type': 'application/json',
+//             Authorization: `Bearer ${env.CLOUDFLARE_TOKEN}`
+//           }
+//         }
+//       ).catch((err) => console.error(err)),
+
+//       fetch(
+//         `https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records?type=SRV&name=${subdomain}.${penv.PUBLIC_ROOT_DOMAIN}`,
+//         {
+//           method: 'DELETE',
+//           headers: {
+//             'Content-Type': 'application/json',
+//             Authorization: `Bearer ${env.CLOUDFLARE_TOKEN}`
+//           }
+//         }
+//       ).catch((err) => console.error(err))
+//     ])
+//   ).every((r) => r.status === 'fulfilled');
+// }

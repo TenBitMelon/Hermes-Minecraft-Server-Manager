@@ -13,7 +13,7 @@
 </div>
 
 {#each data.servers as server}
-  <a class="my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800" href={`/${server.id}`}>
+  <a class="my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800" href={`/${server.id}`} data-sveltekit-preload-data="false">
     {#if server.shutdown}
       <div class="flex w-full items-center justify-between bg-red-800 p-1 px-4">
         Will be deleted {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
@@ -28,7 +28,12 @@
           <span class="px-2 text-sm font-thin text-gray-400">{server.id}</span>
         </h2>
         <p class="">{server.gameVersion} {server.serverSoftware} {server.worldType} world</p>
-        <p class="">{server.subdomain}.{env.PUBLIC_ROOT_DOMAIN}</p>
+        <button class="font-bold" on:click={() => navigator.clipboard.writeText(`${server.subdomain}.${env.PUBLIC_ROOT_DOMAIN}`)}>{server.subdomain}.{env.PUBLIC_ROOT_DOMAIN}</button>
+        <div class="mt-2 flex items-center gap-2">
+          <div class={`h-3 w-3 rounded-full ${!server.shutdown ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          <p class="text-sm font-medium">{!server.shutdown ? 'Online' : 'Offline'}</p>
+          <div class="text-sm font-thin text-gray-400">{server.serverHasGoneMissing ? 'um.. the server files are missing' : ''}</div>
+        </div>
       </div>
     </div>
   </a>
