@@ -181,14 +181,24 @@ migrate(
             thumbs: [],
             protected: false
           }
+        },
+        {
+          system: false,
+          id: 'lqrsix0z',
+          name: 'serverHasGoneMissing',
+          type: 'bool',
+          required: false,
+          presentable: false,
+          unique: false,
+          options: {}
         }
       ],
-      indexes: [],
+      indexes: ['CREATE UNIQUE INDEX `idx_ex23id7` ON `servers` (\n  `port`,\n  `subdomain`\n)'],
       listRule: '',
       viewRule: '',
-      createRule: null,
-      updateRule: null,
-      deleteRule: null,
+      createRule: '@request.auth.id != null',
+      updateRule: '@request.auth.id != null',
+      deleteRule: '@request.auth.id != null',
       options: {}
     });
 

@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { env as penv } from '$env/dynamic/public';
 import { addServerRecords } from './cloudflare';
-import { getServerRunningStatus, startServer, stopServer, zipServerFiles } from './docker';
+import { containerDoesntExists, getContainerRunningStatus, removeContainer, startContainer, stopContainer, zipContainerFiles } from './docker';
 import { building, dev } from '$app/environment';
 
 const PORT_RANGE = [+penv.PUBLIC_PORT_MIN, +penv.PUBLIC_PORT_MAX];
@@ -167,7 +167,6 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
     })
     .catch((e) => {
       console.error(e);
-      console.log(JSON.stringify(e.response.data));
       throw new Error('Failed to create server record');
     });
 
@@ -291,18 +290,33 @@ services:
   addServerRecords(data.subdomain, port);
 
   // Start the mc server's docker-compose file
-  startServer(record.id);
+  startContainer(record.id);
 
   return record;
 }
 
-// export async function updateServerStates() {
-//   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
-//   for (const server of servers) {
-//     const running = await getServerRunningStatus(server.id);
-//     if (server.shutdown && running) startServer(server.id);
-//     else if (!server.shutdown && !running) stopServer(server.id);
-//   }
-// }
+export async function updateServerStates() {
+  const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
+  for (const server of servers) {
+    if (!containerDoesntExists(server.id)) {
+      const running = await getContainerRunningStatus(server.id);
+      if (server.shutdown && running) startContainer(server.id);
+      else if (!server.shutdown && !running) stopContainer(server.id);
 
-// if (!building) setInterval(updateServerStates, 1000 * 60 * 5); // 5 minutes
+      if (server.serverHasGoneMissing)
+        serverPB.collection(Collections.Servers).update(server.id, {
+          serverHasGoneMissing: false
+        });
+    } else {
+      if (server.serverHasGoneMissing) removeContainer(server.id, true);
+      else
+        serverPB.collection(Collections.Servers).update(server.id, {
+          serverHasGoneMissing: true
+        });
+    }
+
+    if (server.deletionDate && new Date(server.deletionDate) < new Date()) {
+      removeContainer(server.id);
+    }
+  }
+}

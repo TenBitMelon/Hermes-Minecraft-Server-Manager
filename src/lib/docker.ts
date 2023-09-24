@@ -2,6 +2,7 @@ import { spawn, exec } from 'node:child_process';
 import fs from 'node:fs';
 import { serverPB } from './database';
 import { Collections } from './database/types';
+import { env as penv } from '$env/dynamic/public';
 
 function trycatch<T>(fn: () => T, catchFn: (e: unknown) => void): T | null {
   try {
@@ -12,7 +13,12 @@ function trycatch<T>(fn: () => T, catchFn: (e: unknown) => void): T | null {
   }
 }
 
-export async function startServer(serverID: string) {
+export function containerDoesntExists(serverID: string): boolean {
+  return !fs.existsSync(`servers/${serverID}`);
+}
+
+export async function startContainer(serverID: string) {
+  if (containerDoesntExists(serverID)) return;
   return trycatch(
     async () => {
       serverPB.collection(Collections.Servers).update(serverID, {
@@ -37,15 +43,16 @@ export async function startServer(serverID: string) {
   );
 }
 
-export async function stopServer(serverID: string) {
+export async function stopContainer(serverID: string) {
+  if (containerDoesntExists(serverID)) return;
   return trycatch(
     async () => {
       const server = await serverPB.collection(Collections.Servers).getOne(serverID);
-      const serverFiles = await zipServerFiles(serverID);
+      const serverFiles = await zipContainerFiles(serverID);
       serverPB.collection(Collections.Servers).update(serverID, {
         shutdown: true,
         shutdownDate: new Date().toISOString(),
-        deletionDate: server.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString() : null, // 7 days
+        deletionDate: server.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +penv.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null, // 7 days
         serverFilesZiped: serverFiles
       });
 
@@ -64,10 +71,11 @@ export async function stopServer(serverID: string) {
   );
 }
 
-export function getLogs(serverID: string, lines: number | 'all'): Promise<string[]> {
+export async function getContainerLogs(serverID: string, lines: number | 'all'): Promise<string[]> {
+  if (containerDoesntExists(serverID)) return [];
   return new Promise((resolve) => {
-    exec(`docker compose logs --tail ${lines === 'all' ? lines : Math.min(lines, 150)}`, { cwd: `servers/${serverID}` }, (error, stdout) => {
-      if (error) resolve([]);
+    exec(`docker compose logs --tail ${lines === 'all' ? 150 : Math.min(lines, 150)}`, { cwd: `servers/${serverID}` }, (error, stdout) => {
+      if (error) return resolve([]);
       resolve(
         stdout
           .split('\n')
@@ -86,14 +94,16 @@ type Container = {
   ExitCode: number;
 };
 
-export function getServerData(serverID: string): Promise<Container | null> {
-  return new Promise((resolve, reject) => {
+export async function getContainerData(serverID: string): Promise<Container | null> {
+  if (containerDoesntExists(serverID)) return null;
+  return new Promise((resolve) => {
     exec('docker compose ps --format json', { cwd: `servers/${serverID}` }, (error, stdout) => {
-      if (error) reject(error);
-      console.log(stdout);
-      console.log(JSON.parse(stdout));
+      if (error) return resolve(null);
+
       const containers: (Container & { [key: string]: string })[] = JSON.parse(stdout);
-      if (containers.length === 0) reject('No containers found');
+
+      if (containers.length === 0) return resolve(null);
+
       resolve({
         ID: containers[0].ID,
         Project: containers[0].Project,
@@ -105,14 +115,23 @@ export function getServerData(serverID: string): Promise<Container | null> {
   });
 }
 
-export async function getServerRunningStatus(serverID: string): Promise<boolean> {
-  return await getServerData(serverID).then((data) => data !== null && data.State === 'running');
+const containerStatuses: { [key: string]: boolean } = {
+  starting: true,
+  running: true,
+  stopping: true,
+  paused: true,
+  exited: false,
+  dead: false
+};
+export async function getContainerRunningStatus(serverID: string): Promise<boolean> {
+  if (containerDoesntExists(serverID)) return false;
+  return await getContainerData(serverID).then((data) => data !== null && containerStatuses[data.State]);
 }
 
 export function getAllServerStatuses(validIDs: string[]): Promise<Container[]> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     exec('docker ps --format json', { cwd: 'servers' }, (error, stdout) => {
-      if (error) reject(error);
+      if (error) resolve([]);
       const containers: (Container & { [key: string]: string })[] = JSON.parse(stdout);
       resolve(
         containers
@@ -129,11 +148,41 @@ export function getAllServerStatuses(validIDs: string[]): Promise<Container[]> {
   });
 }
 
-export function zipServerFiles(serverID: string): Promise<File> {
-  return new Promise((resolve, reject) => {
+export async function zipContainerFiles(serverID: string): Promise<File | null> {
+  if (containerDoesntExists(serverID)) return null;
+  return new Promise((resolve) => {
     exec('zip -r serverFiles.zip .', { cwd: `servers/${serverID}` }, (error) => {
-      if (error) reject(error);
+      if (error) resolve(null);
       resolve(new File([fs.readFileSync(`servers/${serverID}/serverFiles.zip`)], 'serverFiles.zip'));
     });
   });
+}
+
+export async function removeContainer(serverID: string, forcibly = false) {
+  if (containerDoesntExists(serverID)) return;
+  if (
+    await new Promise((resolve) => {
+      exec('docker compose down', { cwd: `servers/${serverID}` }, (error) => {
+        if (error && !forcibly) resolve(1);
+        resolve(0);
+      });
+    })
+  )
+    return;
+  if (
+    await new Promise((resolve) => {
+      exec(`rm -rf ${serverID}`, { cwd: `servers` }, (error) => {
+        if (error && !forcibly) resolve(1);
+        resolve(0);
+      });
+    })
+  )
+    return;
+
+  // TODO: Remove cloudflare server
+
+  await serverPB
+    .collection(Collections.Servers)
+    .delete(serverID)
+    .catch(() => null);
 }
