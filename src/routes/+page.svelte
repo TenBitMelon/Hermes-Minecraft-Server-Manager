@@ -1,6 +1,6 @@
 <script lang="ts">
   import { env } from '$env/dynamic/public';
-  import { timeUntil } from '$lib';
+  import { getFileURL, timeUntil } from '$lib';
 
   import type { PageServerData } from './$types';
   export let data: PageServerData;
