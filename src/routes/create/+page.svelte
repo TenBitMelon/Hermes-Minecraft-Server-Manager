@@ -166,6 +166,15 @@
         <input class="w-80" type="url" name="resourcepackURL" placeholder="Resourcepack URL" />
       </label>
     </div>
+    <div class="flex flex-col gap-1">
+      <span class="text-sm">Datapack URL</span>
+      <!-- <label class={`${errors.resourcepack ? 'error-outline' : ''}`}>
+        <input type="file" name="resourcepack" placeholder="Resourcepack" />
+      </label> -->
+      <label class={`${errors.datapackURL ? 'error-outline' : ''}`}>
+        <input class="w-80" type="url" name="datapackURL" placeholder="Datapack URL" />
+      </label>
+    </div>
   </div>
 
   <div class="grid grid-cols-3 gap-4">
