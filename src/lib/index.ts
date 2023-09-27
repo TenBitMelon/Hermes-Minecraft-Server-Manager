@@ -3,6 +3,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
 import { words } from '$assets/words.json';
+import { env as penv } from '$env/dynamic/public';
 
 export function timeUntil(date: Date | string | number | null) {
   if (date == null) return 'never';
@@ -38,5 +39,6 @@ export function randomWord() {
 }
 
 export function getFileURL(collectionID: string, recordID: string, filename: string) {
+  if (!collectionID && !recordID && !filename) return penv.PUBLIC_DEFAULT_ICON_URL;
   return `/api/file?collectionID=${collectionID}&recordID=${recordID}&filename=${filename}`;
 }
