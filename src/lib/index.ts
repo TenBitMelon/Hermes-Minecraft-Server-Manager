@@ -39,6 +39,6 @@ export function randomWord() {
 }
 
 export function getFileURL(collectionID: string, recordID: string, filename: string) {
-  if (!collectionID && !recordID && !filename) return penv.PUBLIC_DEFAULT_ICON_URL;
+  if (!collectionID || !recordID || !filename) return penv.PUBLIC_DEFAULT_ICON_URL;
   return `/api/file?collectionID=${collectionID}&recordID=${recordID}&filename=${filename}`;
 }
