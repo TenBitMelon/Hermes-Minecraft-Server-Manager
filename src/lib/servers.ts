@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { env as penv } from '$env/dynamic/public';
 import { addServerRecords } from './cloudflare';
-import { containerDoesntExists, getContainerRunningStatus, removeContainer, startContainer, stopContainer, zipContainerFiles } from './docker';
+import { ComposeBuilder, containerDoesntExists, getContainerRunningStatus, removeContainer, startContainer, stopContainer, zipContainerFiles } from './docker';
 import { building, dev } from '$app/environment';
 
 const PORT_RANGE = [+penv.PUBLIC_PORT_MIN, +penv.PUBLIC_PORT_MAX];
@@ -28,7 +28,7 @@ export const ServerCreationSchema = z
     serverSoftware: z.nativeEnum(ServerSoftware), // CONFIRMED WORKING
     gameVersion: z.string(), // CONFIRMED WORKING
 
-    timeToLive: z.nativeEnum(TimeToLive),
+    timeToLive: z.nativeEnum(TimeToLive).default(TimeToLive['12 hr Inactivity']),
     eula: z.literal(true).or(z.literal('true')), // CONFIRMED WORKING
 
     // resourcePack: z.instanceof(File).optional(),
@@ -195,100 +195,69 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   */
 
   // Docker compose file
-  const dockerCompose = `version: "3.9"
-services:
-  minecraft:
-    image: itzg/minecraft-server
-    ports:
-      - "${port}:25565"
-    volumes:
-      - ./server-files:/data
-    environment:
-      USE_AIKAR_FLAGS: "true"
-      EULA: "true"
-      MEMORY: "2G"
-      MAX_TICK_TIME: -1
+  const builder = new ComposeBuilder(`${serverFolderPath}/docker-compose.yml`);
+  builder.setPort(port);
 
-      ${
-        data.serverProperties
-          ? `OVERRIDE_SERVER_PROPERTIES: "true"
-      SKIP_SERVER_PROPERTIES: "true"`
-          : ''
-      }
+  builder.addVariable('USE_AIKAR_FLAGS', 'true');
+  builder.addVariable('EULA', 'true');
+  builder.addVariable('MEMORY', '2G');
+  builder.addVariable('MAX_TICK_TIME', '-1');
 
-      TYPE: "${up(data.serverSoftware)}"
-      VERSION: "${data.gameVersion}"
-      MOTD: "${data.motd}"
-      ICON: "/data/icon.png"
-      OVERRIDE_ICON: "true"
-      
-      DIFFICULTY: "${up(data.difficulty)}"
-      MODE: "${data.gamemode}"
-      MAX_PLAYERS: "${data.maxPlayers}"
-      ALLOW_NETHER: "${data.allowNether}"
-      ENABLE_COMMAND_BLOCK: "${data.enableCommandBlock}"
-      HARDCORE: "${data.hardcore}"
-      PVP: "${data.enablePVP}"
-      ALLOW_FLIGHT: "true"
-      
-      SPAWN_PROTECTION: "0"
-      VIEW_DISTANCE: "${data.viewDistance}"
-      SIMULATION_DISTANCE: "${data.simulationDistance}"
+  if (data.serverProperties) {
+    builder.addVariable('OVERRIDE_SERVER_PROPERTIES', 'true');
+    builder.addVariable('SERVER_PROPERTIES', '/data/server-files/server.properties');
+  }
 
-      ${
-        (() => {
-          if (data.worldCreator === WorldCreationMethod.Source) {
-            if (data.worldSourceURL) return `WORLD: "${data.worldSourceURL}"`;
-            // if (data.worldSource) return `WORLD: "/data/world"`;
-          }
-        })() ||
-        (() => {
-          if (data.worldCreator === WorldCreationMethod.New) {
-            // seed, leveltype, generator settings
-            const settings = `SEED: "${data.worldCreator === WorldCreationMethod.New ? data.worldSeed : ''}"
-      LEVEL_TYPE: "${data.worldCreator === WorldCreationMethod.New ? data.worldType : ''}"
-      ${(() => {
-        if (data.worldType === WorldType.Flat) {
-          if (!data.superflatLayers) return '';
-          return `GENERATOR_SETTINGS: "{layers:${data.superflatLayers}}"`;
-        }
-      })()}`;
-            return settings;
-          }
-        })() ||
-        ''
-      }
+  builder.addVariable('TYPE', up(data.serverSoftware));
+  builder.addVariable('VERSION', data.gameVersion);
+  builder.addVariable('MOTD', data.motd);
+  builder.addVariable('ICON', '/data/icon.png');
+  builder.addVariable('OVERRIDE_ICON', 'true');
 
-      ${
-        data.resourcepackURL
-          ? `RESOURCE_PACK: "${data.resourcepackURL}"
-      RESOURCE_PACK_ENFORCE: "true"`
-          : ''
-      }
+  builder.addVariable('DIFFICULTY', up(data.difficulty));
+  builder.addVariable('MODE', data.gamemode);
+  builder.addVariable('MAX_PLAYERS', data.maxPlayers);
+  builder.addVariable('ALLOW_NETHER', data.allowNether);
+  builder.addVariable('ENABLE_COMMAND_BLOCK', data.enableCommandBlock);
+  builder.addVariable('HARDCORE', data.hardcore);
+  builder.addVariable('PVP', data.enablePVP);
+  builder.addVariable('ALLOW_FLIGHT', 'true');
 
-      ${data.datapackURL ? `DATAPACKS: "${data.datapackURL}"` : ''}
+  builder.addVariable('SPAWN_PROTECTION', '0');
+  builder.addVariable('VIEW_DISTANCE', data.viewDistance);
+  builder.addVariable('SIMULATION_DISTANCE', data.simulationDistance);
 
-      EXISTING_WHITELIST_FILE: "SKIP"
-      EXISTING_OPS_FILE: "SKIP"
-      EXISTING_BANNED_PLAYERS_FILE: "SKIP"
+  if (data.worldCreator === WorldCreationMethod.Source) {
+    if (data.worldSourceURL) builder.addVariable('WORLD', data.worldSourceURL);
+  } else if (data.worldCreator === WorldCreationMethod.New) {
+    builder.addVariable('SEED', data.worldSeed);
+    builder.addVariable('LEVEL_TYPE', data.worldType);
+    if (data.worldType === WorldType.Flat) {
+      builder.addVariable('GENERATOR_SETTINGS', `{layers:${data.superflatLayers}}`);
+    }
+  }
 
-      ENABLE_AUTOPAUSE: "true"
-      ${data.timeToLive === TimeToLive['12 hr Inactivity'] ? 'AUTOPAUSE_TIMEOUT_EST: "7200"' : ''}
-      ${data.timeToLive === TimeToLive['24 hr Inactivity'] ? 'AUTOPAUSE_TIMEOUT_EST: "14400"' : ''}
-      ${data.timeToLive === TimeToLive['1 Day'] ? 'AUTOPAUSE_TIMEOUT_INIT: "86400"' : ''}
-      ${data.timeToLive === TimeToLive['7 Days'] ? 'AUTOPAUSE_TIMEOUT_INIT: "259200"' : ''}
+  if (data.resourcepackURL) {
+    builder.addVariable('RESOURCE_PACK_ENFORCE', 'true');
+    builder.addVariable('RESOURCE_PACK', data.resourcepackURL);
+  }
 
-    restart: "no"
-    healthcheck:
-      test: mc-health
-      start_period: 1m
-      interval: 5s
-      retries: 20
-`;
+  if (data.datapackURL) builder.addVariable('DATAPACKS', data.datapackURL);
+
+  builder.addVariable('EXISTING_WHITELIST_FILE', 'SKIP');
+  builder.addVariable('EXISTING_OPS_FILE', 'SKIP');
+  builder.addVariable('EXISTING_BANNED_PLAYERS_FILE', 'SKIP');
+
+  // ${data.timeToLive === TimeToLive['12 hr Inactivity'] ? 'AUTOPAUSE_TIMEOUT_EST: "7200"' : ''}
+  // ${data.timeToLive === TimeToLive['24 hr Inactivity'] ? 'AUTOPAUSE_TIMEOUT_EST: "14400"' : ''}
+  // ${data.timeToLive === TimeToLive['1 Day'] ? 'AUTOPAUSE_TIMEOUT_INIT: "86400"' : ''}
+  // ${data.timeToLive === TimeToLive['7 Days'] ? 'AUTOPAUSE_TIMEOUT_INIT: "259200"' : ''}
+  builder.addVariable('ENABLE_AUTOPAUSE', 'true');
+  builder.addVariable('AUTOPAUSE_TIMEOUT_EST', '7200');
   // ^ AUTOPAUSE_TIMEOUT_EST is the time in seconds before the server is paused after the last player leaves
   // ^ AUTOPAUSE_TIMEOUT_INIT is the time in seconds before the server is paused after it is started (once no one is on the server)
 
-  fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, dockerCompose);
+  fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, builder.build());
 
   addServerRecords(data.subdomain, port);
 

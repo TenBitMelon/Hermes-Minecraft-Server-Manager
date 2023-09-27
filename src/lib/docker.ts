@@ -102,7 +102,8 @@ export async function getContainerData(serverID: string): Promise<Container | nu
 
       const containers: (Container & { [key: string]: string })[] = JSON.parse(stdout);
 
-      if (containers.length === 0) return resolve(null);
+      console.log('containers', containers);
+      if (containers.length === 0 || !containers[0]) return resolve(null);
 
       resolve({
         ID: containers[0].ID,
@@ -185,4 +186,56 @@ export async function removeContainer(serverID: string, forcibly = false) {
     .collection(Collections.Servers)
     .delete(serverID)
     .catch(() => null);
+}
+
+export class ComposeBuilder {
+  private readonly version = '3.9';
+  private readonly image = 'itzg/minecraft-server';
+  private port = 25565;
+  private readonly volumes: string[] = ['./server-files:/data'];
+  private readonly restart = 'no';
+  private readonly healthcheck = {
+    test: 'mc-health',
+    start_period: '1m',
+    interval: '5s',
+    retries: '20'
+  };
+
+  private readonly variables: { key: string; value: string | number | boolean }[] = [];
+  constructor(private readonly cwd: string) {}
+
+  setPort(port: number) {
+    this.port = port;
+    return this;
+  }
+
+  addVariable(key: string, value: string | number | boolean) {
+    this.variables.push({ key, value });
+    return this;
+  }
+
+  build() {
+    let file = '';
+    file += `version: "${this.version}"\n`;
+    file += `services:\n`;
+    file += `  minecraft:\n`;
+    file += `    image: ${this.image}\n`;
+    file += `    ports:\n`;
+    file += `      - "${this.port}:25565"\n`;
+    file += `    volumes:\n`;
+    for (const volume of this.volumes) {
+      file += `      - ${volume}\n`;
+    }
+    file += `    environment:\n`;
+    for (const variable of this.variables) {
+      file += `      ${variable.key}: "${variable.value}"\n`;
+    }
+    file += `    restart: "${this.restart}"\n`;
+    file += `    healthcheck:\n`;
+    file += `      test: ${this.healthcheck.test}\n`;
+    file += `      start_period: ${this.healthcheck.start_period}\n`;
+    file += `      interval: ${this.healthcheck.interval}\n`;
+    file += `      retries: ${this.healthcheck.retries}\n`;
+    return file;
+  }
 }

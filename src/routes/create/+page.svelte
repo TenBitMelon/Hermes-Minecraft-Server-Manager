@@ -245,13 +245,13 @@
     </div>
   </div>
   <div class="grid grid-cols-3 gap-4">
-    <label class={`${errors.timeToLive ? 'error-outline' : ''}`}>
+    <!-- <label class={`${errors.timeToLive ? 'error-outline' : ''}`}>
       <select name="timeToLive">
         {#each Object.values(TimeToLive) as timeToLive}
           <option value={timeToLive}>{timeToLive}</option>
         {/each}
       </select>
-    </label>
+    </label> -->
     <label class={`flex cursor-pointer items-center gap-2 ${errors.eula ? 'error-outline' : ''}`}>
       <input type="checkbox" name="eula" value="true" />
       I agree to the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
