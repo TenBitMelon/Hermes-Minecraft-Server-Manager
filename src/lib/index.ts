@@ -36,3 +36,7 @@ export function objectFormData(object: Record<string, unknown>) {
 export function randomWord() {
   return words[Math.floor(Math.random() * words.length)];
 }
+
+export function getFileURL(collectionID: string, recordID: string, filename: string) {
+  return `/api/file?collectionID=${collectionID}&recordID=${recordID}&filename=${filename}`;
+}
