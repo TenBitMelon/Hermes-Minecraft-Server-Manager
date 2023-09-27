@@ -50,7 +50,10 @@
 <div class="flex w-full flex-col items-center">
   {#if data.server}
     <div class="flex w-full max-w-xl items-center justify-between">
-      <h1 class="text-lg font-bold">{data.server.title} <span class="text-sm text-gray-400">({data.server.id})</span></h1>
+      <div class="flex flex-col">
+        <h1 class="text-lg font-bold">{data.server.title} <span class="text-sm text-gray-400">({data.server.id})</span></h1>
+        <span>{data.server.gameVersion} {data.server.serverSoftware} {data.server.worldType} world</span>
+      </div>
       <div class="flex">
         <button class="m-2 rounded-md bg-gray-800 p-2" on:click={startServer}>Start</button>
         <button class="m-2 rounded-md bg-gray-800 p-2" on:click={stopServer}>Stop</button>
