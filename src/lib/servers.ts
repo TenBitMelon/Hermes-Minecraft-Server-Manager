@@ -33,6 +33,7 @@ export const ServerCreationSchema = z
 
     // resourcePack: z.instanceof(File).optional(),
     resourcepackURL: z.string().url().optional(),
+    datapackURL: z.string().url().optional(),
     mods: z.instanceof(File).array().optional(),
     plugins: z.instanceof(File).array().optional()
   })
@@ -264,6 +265,8 @@ services:
       RESOURCE_PACK_ENFORCE: "true"`
           : ''
       }
+
+      ${data.datapackURL ? `DATAPACKS: "${data.datapackURL}"` : ''}
 
       EXISTING_WHITELIST_FILE: "SKIP"
       EXISTING_OPS_FILE: "SKIP"
