@@ -32,8 +32,8 @@ export const ServerCreationSchema = z
     eula: z.literal(true).or(z.literal('true')), // CONFIRMED WORKING
 
     // resourcePack: z.instanceof(File).optional(),
-    resourcepackURL: z.literal('').optional().or(z.string().url()),
-    datapackURL: z.literal('').optional().or(z.string().url()),
+    resourcepackURL: z.string().optional(),
+    datapackURL: z.string().optional(),
     mods: z.instanceof(File).array().optional(),
     plugins: z.instanceof(File).array().optional()
   })
