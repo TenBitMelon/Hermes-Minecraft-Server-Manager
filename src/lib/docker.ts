@@ -89,7 +89,7 @@ export async function getContainerLogs(serverID: string, lines: number | 'all'):
 export async function sendCommandToContainer(serverID: string, command: string): Promise<string[]> {
   if (containerDoesntExists(serverID)) return [];
   return new Promise((resolve) => {
-    exec(`docker compose exec --no-TTY rcon-cli ${command}`, { cwd: `servers/${serverID}` }, (error, stdout) => {
+    exec(`docker compose exec --no-TTY minecraft rcon-cli ${command}`, { cwd: `servers/${serverID}` }, (error, stdout) => {
       if (error) return resolve([]);
       resolve(
         stdout
