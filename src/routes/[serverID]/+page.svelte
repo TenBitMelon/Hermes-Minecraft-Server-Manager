@@ -40,9 +40,9 @@
   function sendCommand(command: string) {
     if (data.server && command)
       fetch(`/api/${data.server.id}/command?command=` + encodeURIComponent(command))
-        .then((code) => code.json())
-        .then((code) => {
-          message = `Command executed with code ${code} ${code == 0 ? '✅' : '⚠️'}`;
+        .then((result) => result.json())
+        .then((result) => {
+          message = `${result}`;
           updateLogs();
         });
   }
