@@ -37,6 +37,16 @@
         });
   }
 
+  function sendCommand(command: string) {
+    if (data.server && command)
+      fetch(`/api/${data.server.id}/command?command=` + encodeURIComponent(command))
+        .then((result) => result.json())
+        .then((result) => {
+          message = `${result}`;
+          updateLogs();
+        });
+  }
+
   function updateLogs() {
     if (data.server && serverStatus == 'Online')
       fetch(`/api/${data.server.id}/logs`)
@@ -60,6 +70,11 @@
         <button class="m-2 rounded-md bg-gray-800 p-2" on:click={deleteServer}>Delete</button>
       </div>
       <h2 class="text-lg">{serverStatus}</h2>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <input type="text" name="command" id="command" placeholder="Enter MC Command Here" />
+      <button class="m-2 rounded-md bg-gray-800 p-2" on:click={sendCommand(document.getElementById('command').value)}>Send</button>
     </div>
     <h2 class="text-lg">{message}</h2>
 
