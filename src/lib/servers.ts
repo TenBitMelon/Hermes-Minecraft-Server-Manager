@@ -212,7 +212,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   builder.addVariable('VERSION', data.gameVersion);
   builder.addVariable('MOTD', data.motd);
   builder.addVariable('ICON', '/data/icon.png');
-  builder.addVariable('OVERRIDE_ICON', 'true');
+  // builder.addVariable('OVERRIDE_ICON', 'true');
 
   builder.addVariable('DIFFICULTY', up(data.difficulty));
   builder.addVariable('MODE', data.gamemode);
