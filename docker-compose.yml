@@ -8,11 +8,11 @@ services:
       - ./servers:/app/servers
     # Database volume
     # Uncomment if you want to keep your data when updating the container
-    # - ./database:/app/database/pb_data
+      - ./database:/app/database/pb_data
     ports:
-    # Website external port (feel free to change): internal port
+    # Website external port (feel free to change) : internal port (don't change)
       - "3000:3000"
-    # Database external port (feel free to change): internal port
+    # Database external port (feel free to change) : internal port (don't change)
       - "8090:8090"
     environment:
     # Default user account for managing the database

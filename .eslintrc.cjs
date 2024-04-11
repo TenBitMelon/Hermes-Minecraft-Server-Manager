@@ -2,10 +2,15 @@ module.exports = {
   root: true,
   extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'plugin:svelte/recommended', 'prettier'],
   rules: {
-    '@typescript-eslint/triple-slash-reference': 'off'
+    '@typescript-eslint/triple-slash-reference': 'off',
+    'neverthrow/must-use-result': 'error',
+    '@typescript-eslint/no-explicit-any': 'error'
+    // '@typescript-eslint/no-unsafe-call': 'error',
+    // '@typescript-eslint/no-unsafe-argument': 'error',
+    // '@typescript-eslint/no-unsafe-assignment': 'error'
   },
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'neverthrow'],
   parserOptions: {
     sourceType: 'module',
     ecmaVersion: 2020,

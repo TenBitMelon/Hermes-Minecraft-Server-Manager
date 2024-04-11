@@ -33,19 +33,25 @@ export type UsersRecord = {
 
 export type ServerRecord = {
   port: number;
+  icon?: FileNameString;
   title: string;
-  icon: FileNameString;
   subdomain: string;
+
   serverSoftware: ServerSoftware;
   gameVersion: string;
   worldType: WorldType;
+
   timeToLive: TimeToLive;
-  deletionDate: IsoDateString | null;
-  shutdownDate: IsoDateString | null;
-  shutdown: boolean;
+  state: ServersState;
+  shutdownDate?: IsoDateString;
+  deletionDate?: IsoDateString;
   canBeDeleted: boolean;
-  serverFilesZiped: FileNameString | null;
-  serverHasGoneMissing: boolean;
+  shutdown: boolean;
+  serverFilesZipped?: FileNameString;
+  serverFilesMissing: boolean;
+
+  cloudflareCNAMERecordID: string;
+  cloudflareSRVRecordID: string;
 };
 
 // Response types include system fields and match responses from the PocketBase API
@@ -65,8 +71,7 @@ export type CollectionResponses = {
 };
 
 export enum TimeToLive {
-  '12 hr Inactivity' = '12_hr_inactivity',
-  '24 hr Inactivity' = '24_hr_inactivity',
+  '12 hr' = '12_hr',
   '1 Day' = '1_day',
   '7 Days' = '7_days'
 }
@@ -82,7 +87,7 @@ export enum ServerSoftware {
 }
 
 export const ServerSoftwareOptions: {
-  [key in ServerSoftware]?: {
+  [key in ServerSoftware]: {
     newWorld: boolean;
     fromSource: boolean;
     modsUpload: boolean;
@@ -96,6 +101,7 @@ export const ServerSoftwareOptions: {
     modsUpload: false,
     pluginsUpload: false,
     versions: [
+      //
       ['1.8', '1.8.1', '1.8.2', '1.8.3', '1.8.4', '1.8.5', '1.8.6', '1.8.7', '1.8.8', '1.8.9'],
       ['1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4'],
       ['1.10', '1.10.1', '1.10.2'],
@@ -108,7 +114,8 @@ export const ServerSoftwareOptions: {
       ['1.17', '1.17.1'],
       ['1.18', '1.18.1', '1.18.2'],
       ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
-      ['1.20', '1.20.1', '1.20.2']
+      ['1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4'],
+      ['SNAPSHOT']
     ]
   },
   // [ServerSoftware.Forge]: {
@@ -179,6 +186,13 @@ export const ServerSoftwareOptions: {
 export enum WorldCreationMethod {
   'New' = 'new',
   'Source' = 'source'
+}
+
+export enum ServersState {
+  'Creating' = 'creating',
+  'Running' = 'running',
+  'Stopped' = 'stopped',
+  'Paused' = 'paused'
 }
 
 export enum WorldType {
