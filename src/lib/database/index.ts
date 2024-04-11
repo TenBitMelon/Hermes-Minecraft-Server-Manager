@@ -1,6 +1,7 @@
 import { env } from '$env/dynamic/private';
 import { dev, building } from '$app/environment';
-import PocketBase from 'pocketbase';
+import PocketBase, { ClientResponseError } from 'pocketbase';
+import type { ActionFailure, HttpError } from '@sveltejs/kit';
 
 const serverPB = new PocketBase(dev ? 'http://127.0.0.1:8090' : 'http://0.0.0.0:8090');
 if (!building) {
@@ -14,3 +15,25 @@ if (!building) {
   }
 }
 export { serverPB };
+
+// export type HandledPBError = {
+//   failReturn: (errorData: object) => ActionFailure<{ message: string } & unknown>;
+// } & HttpError;
+
+// export function handlePBError(pbError: ClientResponseError, from: string): never {
+//   throw {
+//     ...error(
+//       pbError.status,
+//       `${pbError.response?.message}\n${Object.values(pbError.response.data)
+//         .map((e) => (e as { message: string }).message + '\n')
+//         .toString()}(- ${from})`
+//     ),
+//     failReturn: (errorData: object) =>
+//       fail(pbError.status, {
+//         ...errorData,
+//         message: `${pbError.response?.message}\n${Object.values(pbError.response.data)
+//           .map((e) => (e as { message: string }).message + '\n')
+//           .toString()}(- ${from})`
+//       })
+//   } as HandledPBError;
+// }

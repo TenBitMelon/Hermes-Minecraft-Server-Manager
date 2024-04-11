@@ -11,4 +11,5 @@ vite.config.ts.timestamp-*
 database/*
 !database/pb_migrations
 !database/pb_hooks
-servers
+/servers
+_this_was_a_mistake_compose
