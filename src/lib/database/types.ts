@@ -41,16 +41,18 @@ export type ServerRecord = {
   gameVersion: string;
   worldType: WorldType;
 
+  cloudflareCNAMERecordID: string;
+  cloudflareSRVRecordID: string;
+
   timeToLive: TimeToLive;
+
   state: ServerState;
+  startDate: IsoDateString | null;
   shutdownDate: IsoDateString | null;
   deletionDate: IsoDateString | null;
   canBeDeleted: boolean;
   serverFilesZipped: FileNameString | null;
   serverFilesMissing: boolean;
-
-  cloudflareCNAMERecordID: string;
-  cloudflareSRVRecordID: string;
 };
 
 // Response types include system fields and match responses from the PocketBase API
@@ -75,6 +77,12 @@ export enum TimeToLive {
   '7 Days' = '7_days'
 }
 
+export const TimeToLiveMiliseconds: Record<TimeToLive, number> = {
+  '12_hr': 43_200_000,
+  '1_day': 86_400_000,
+  '7_days': 604_800_000
+};
+
 export enum ServerSoftware {
   'Vanilla' = 'vanilla',
   // 'Forge' = 'forge',
@@ -85,15 +93,16 @@ export enum ServerSoftware {
   // 'Custom' = 'custom'
 }
 
-export const ServerSoftwareOptions: {
-  [key in ServerSoftware]: {
+export const ServerSoftwareOptions: Record<
+  ServerSoftware,
+  {
     newWorld: boolean;
     fromSource: boolean;
     modsUpload: boolean;
     pluginsUpload: boolean;
     versions: string[][];
-  };
-} = {
+  }
+> = {
   [ServerSoftware.Vanilla]: {
     newWorld: true,
     fromSource: true,

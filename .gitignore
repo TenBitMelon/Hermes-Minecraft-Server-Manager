@@ -13,3 +13,4 @@ database/*
 !database/pb_hooks
 /servers
 _this_was_a_mistake_compose
+ccicon.png

@@ -7,15 +7,34 @@
   import { ServerState } from '$lib/database/types';
   import { invalidateAll } from '$app/navigation';
   import { env } from '$env/dynamic/public';
+  import type { ContainerUsageStats } from '$lib/docker';
+  import { onMount } from 'svelte';
 
   export let data: PageData;
   // export let form: ActionData;
 
+  let stats: ContainerUsageStats | null = null;
+  $: data.stats.then((l) => (stats = l));
   let logs: string[] | null = null;
   $: data.logs.then((l) => (logs = l));
 
   $: serverStatus = stateDisplay(data.server.state);
   let commandMessage = '';
+
+  let updateButtonLoading = false;
+  async function updateStatsAndLogs() {
+    updateButtonLoading = true;
+    // TODO: This is probably a bad way to do this
+    await invalidateAll();
+
+    await data.stats;
+    await data.logs;
+    updateButtonLoading = false;
+  }
+  onMount(() => {
+    const interval = setInterval(updateStatsAndLogs, 1000 * 10);
+    return () => clearInterval(interval);
+  });
 </script>
 
 <div class="grid w-full max-w-3xl grid-cols-1 gap-4">
@@ -43,29 +62,38 @@
   </div>
 
   <div class="flex items-center gap-4">
-    {#await data.stats}
+    {#if stats == null}
       <div class="flex h-6 w-full animate-pulse items-center gap-2 rounded-md bg-gray-600" />
       <div class="flex h-6 w-full animate-pulse items-center gap-2 rounded-md bg-gray-600" />
-    {:then stats}
+    {:else}
       <div class="flex w-full items-center gap-2">
         CPU:
         {stats.CPUPerc}
         <!-- <meter class="w-1/2" max="100" value="54"></meter> -->
       </div>
-      <div class="flex w-full items-center gap-2">
+      <!-- <div class="flex w-full items-center gap-2">
         RAM:
         {stats.MemPerc}
+        <!-- <meter class="w-1/2" max="2" value=".54"></meter> --
+      </div> -->
+      <div class="flex w-full items-center gap-2">
+        RAM:
+        {stats.MemUsage.split('/')[0]}
         <!-- <meter class="w-1/2" max="2" value=".54"></meter> -->
       </div>
-    {/await}
+    {/if}
 
     <!-- Logs -->
     <div class="flex items-center justify-between">
-      <button
-        class="rounded-md bg-gray-800 px-4 py-2"
-        on:click={() => {
-          invalidateAll();
-        }}>Update</button>
+      <button class="flex items-center rounded-md bg-gray-800 px-4 py-2 disabled:bg-gray-900" disabled={updateButtonLoading} on:click={updateStatsAndLogs}>
+        {#if updateButtonLoading}
+          <svg class="-ml-1 mr-3 h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        {/if}
+        Update
+      </button>
     </div>
   </div>
 

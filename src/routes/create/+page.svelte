@@ -1,11 +1,17 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { PUBLIC_DEFAULT_ICON_URL } from '$env/static/public';
   import { ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType } from '$lib/database/types';
+  import { string, type SafeParseError, type typeToFlattenedError } from 'zod';
   import type { ActionData } from './$types';
+  import type { ServerCreationSchema } from '$lib/servers/schema';
+
+  type ExtractErrorType<T> = T extends SafeParseError<infer V> ? V : never;
+  type ErrorsObject = typeToFlattenedError<ExtractErrorType<ReturnType<typeof ServerCreationSchema.safeParse>>>['fieldErrors'];
 
   export let form: ActionData;
-  let errors: { [key: string]: string } = {};
-  $: errors = form?.errors && !form?.success ? form.errors : {};
+  let errors: ErrorsObject = {};
+  $: errors = form == null || form.success == true ? {} : form.fields;
   $: console.log(errors);
 
   let selectedSoftware: ServerSoftware = ServerSoftware.Vanilla;
@@ -31,9 +37,10 @@
   }
 </script>
 
-{#if !form?.success}
-  {form?.message}
-  {form?.cause}
+<!-- {JSON.stringify(form)} -->
+
+{#if form?.success == false}
+  {form.message}
 {/if}
 
 <form method="post" class="flex flex-col items-center gap-4" enctype="multipart/form-data" use:enhance>
@@ -46,8 +53,8 @@
         <input type="text" name="subdomain" placeholder="Subdomain" />
       </label>
     </div>
-    <label class={`flex w-full items-center gap-2 ${errors.serverIcon ? 'error-outline' : ''}`}>
-      <img class="h-10 w-10" alt="" bind:this={iconImageElement} />
+    <label class={`flex w-full items-center gap-2 ${errors.icon ? 'error-outline' : ''}`}>
+      <img class="h-10 w-10" alt="" bind:this={iconImageElement} src={PUBLIC_DEFAULT_ICON_URL} />
       Server Icon
       <input type="file" name="icon" placeholder="Server Icon" bind:this={iconFileElement} on:change={handleIconChange} />
     </label>

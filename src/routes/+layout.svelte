@@ -1,6 +1,5 @@
 <script>
   import '../app.css';
-  import { PUBLIC_VERSION } from '$env/static/public';
 </script>
 
 <div class="flex h-full w-full flex-col items-center gap-4 p-8">
@@ -12,5 +11,5 @@
     <a href="/create" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Create</a>
   </div>
   <slot />
-  <p class="text-sm text-gray-400">Version: {PUBLIC_VERSION}</p>
+  <p class="text-sm text-gray-400">Version: 0.5.5</p>
 </div>
