@@ -40,25 +40,29 @@ export const actions = {
     console.log('Starting');
     const result = await startContainer(params.serverID);
     await pause(1000);
-    if (result.isErr()) return fail(400, { error: result.error, action: 'start' });
+    console.log('action', 'start');
+    if (result.isErr()) return fail(400, { error: result.error.json(), action: 'start' });
     // return result.value;
     return { value: result.value, action: 'start' };
   },
   stop: async ({ params }): Result<'stop', void, ContainerError> => {
     const result = await stopContainer(params.serverID);
     await pause(1000);
-    if (result.isErr()) return fail(400, { error: result.error, action: 'stop' });
+    console.log('action', 'stop', result);
+    if (result.isErr()) return fail(400, { error: result.error.json(), action: 'stop' });
     // return result.value;
     return { value: result.value, action: 'stop' };
   },
   command: async ({ params, request }): Result<'command', string[], ContainerError> => {
     const command = (await (await request.formData()).get('command')?.toString()) ?? '';
-    const success = await sendCommandToContainer(params.serverID, command);
-    if (success.isErr()) return fail(400, { error: success.error, action: 'command' });
-    // return success.value;
-    return { value: success.value, action: 'command' };
+    const result = await sendCommandToContainer(params.serverID, command);
+    console.log('action', 'command', result);
+    if (result.isErr()) return fail(400, { error: result.error.json(), action: 'command' });
+    // return result.value;
+    return { value: result.value, action: 'command' };
   },
   logs: async ({ params }): Result<'logs', string[], ContainerError> => {
+    console.log('action', 'logs');
     return { action: 'logs', value: [] };
     // const result = await getContainerLogs(params.serverID, 10);
     // if (result.isErr()) return fail(400, { error: result.error });

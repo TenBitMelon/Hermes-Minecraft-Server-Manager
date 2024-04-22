@@ -4,19 +4,21 @@ import { formDataObject } from '$lib';
 import { createNewServer } from '$lib/servers';
 import { ServerCreationSchema } from '$lib/servers/schema';
 
+type SuccessFalse<T> = T & { success: false };
+
 export const actions: Actions = {
-  default: async ({ request }) => {
+  default: async ({ request, fetch }) => {
     const formData = formDataObject(await request.formData());
 
     const data = ServerCreationSchema.safeParse(formData);
-    if (!data.success) return fail(400, { errors: data.error.flatten().fieldErrors });
+    if (!data.success) return fail(400, { success: false, fields: data.error.flatten().fieldErrors, message: 'Some of the inputs are incorrect' });
 
     const createServerResult = await createNewServer(data.data);
     if (createServerResult.isErr()) {
-      return fail(500, { errors: {}, message: createServerResult.error.message, cause: createServerResult.error.cause });
+      return fail(500, { success: false, fields: {}, message: createServerResult.error.message });
     }
 
     redirect(303, '/');
-    return { errors: {}, success: true };
+    return { success: true } as { success: true };
   }
 };

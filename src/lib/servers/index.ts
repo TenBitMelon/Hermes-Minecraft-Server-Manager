@@ -1,14 +1,15 @@
-import { Collections, WorldType, type ServerResponse, WorldCreationMethod, TimeToLive, type ServerRecord, ServerState } from '$lib/database/types';
+import { Collections, WorldType, type ServerResponse, WorldCreationMethod, TimeToLive, type ServerRecord, ServerState, TimeToLiveMiliseconds } from '$lib/database/types';
 import { serverPB } from '$lib/database';
 import fs from 'node:fs';
 import { env as publicENV } from '$env/dynamic/public';
 import { env as privateENV } from '$env/dynamic/private';
 import { addServerRecords } from '$lib/cloudflare';
-import { ComposeBuilder, ContainerState, containerDoesntExists, getContainerData, startContainer, stopContainer } from '$lib/docker';
+import { ComposeBuilder, ContainerState, containerDoesntExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import type { ServerCreationSchema } from './schema';
 // import DefaultIcon from '$lib/servers/icon.png';
 import { z } from 'zod';
 import { Result, ResultAsync, err } from 'neverthrow';
+import { PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN } from '$env/static/public';
 
 const PORT_RANGE = [+privateENV.PRIVATE_PORT_MIN, +privateENV.PRIVATE_PORT_MAX];
 
@@ -23,7 +24,6 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   const recordIds = await addServerRecords(data.subdomain, port);
   if (recordIds.isErr()) return err(recordIds.error);
 
-  //TODO: Safve ids in db
   const createResponse = await ResultAsync.fromPromise(
     serverPB.collection(Collections.Servers).create<ServerResponse>({
       port,
@@ -33,17 +33,19 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       subdomain: data.subdomain,
       serverSoftware: data.serverSoftware,
       gameVersion: data.gameVersion,
-      worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : '', // TODO: Allow for source
+      worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : WorldType.Normal, // TODO: Allow for source
       timeToLive: data.timeToLive,
-      deletionDate: undefined,
-      shutdownDate: undefined,
-      shutdown: false,
-      canBeDeleted: true,
+
+      startDate: null,
+      deletionDate: null,
+      shutdownDate: null,
+      canBeDeleted: +PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN == -1 ? false : true,
 
       cloudflareCNAMERecordID: recordIds.value.cname,
       cloudflareSRVRecordID: recordIds.value.srv,
+
       serverFilesMissing: false,
-      // serverFilesZipped: undefined,
+      serverFilesZipped: null,
       state: ServerState.Creating
     }),
     () => new Error('Failed to create new server in DB')
@@ -167,62 +169,77 @@ export async function updateAllServerStates() {
   }
 }
 
+//TODO: Error handling
 export async function updateServerState(server: ServerResponse) {
   console.log('Updating', server.id);
-  if (!containerDoesntExists(server.id)) {
-    console.log('Container does exist');
-    const statsResult = await getContainerData(server.id);
-    if (statsResult.isErr()) return console.error(statsResult.error);
-    const stats = statsResult.value;
+  if (containerDoesntExists(server.id) && !server.serverFilesMissing) {
+    await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
+      serverFilesMissing: true
+    });
+    return;
+  }
 
-    console.log('Container current', server.state);
-    console.log('The stats say', stats.State);
+  console.log('Container does exist');
+  const statsResult = await getContainerData(server.id);
+  if (statsResult.isErr()) return console.error(statsResult.error);
+  const stats = statsResult.value;
 
-    if (server.state == ServerState.Stopped && stats.State == ContainerState.Running) console.log('Starting container'), console.dir(await startContainer(server.id));
-    else if (server.state == ServerState.Running && stats.State == ContainerState.Exited) console.log('Stopping container'), console.log(await stopContainer(server.id));
-    else {
-      let newState: ServerState;
-      switch (stats.State) {
-        case ContainerState.Created:
-          newState = ServerState.Creating;
-          break;
-        case ContainerState.Dead:
-          newState = ServerState.Stopped;
-          break;
-        case ContainerState.Exited:
-          newState = ServerState.Stopped;
-          break;
-        case ContainerState.Paused:
-          newState = ServerState.Paused;
-          break;
-        case ContainerState.Removing:
-          newState = ServerState.Stopped;
-          break;
-        case ContainerState.Restarting:
-          newState = ServerState.Stopped;
-          break;
-        case ContainerState.Running:
-          newState = ServerState.Running;
-          break;
-      }
+  console.log('Container current', server.state);
+  console.log('The stats say', stats.State);
 
-      await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
-        state: newState
-      });
+  if (server.state == ServerState.Stopped && stats.State == ContainerState.Running) console.log('Starting container'), console.dir(await startContainer(server.id));
+  else if (server.state == ServerState.Running && stats.State == ContainerState.Exited) console.log('Stopping container'), console.log(await stopContainer(server.id));
+  else {
+    let newState: ServerState;
+    switch (stats.State) {
+      case ContainerState.Created:
+        newState = ServerState.Creating;
+        break;
+      case ContainerState.Dead:
+        newState = ServerState.Stopped;
+        break;
+      case ContainerState.Exited:
+        newState = ServerState.Stopped;
+        break;
+      case ContainerState.Paused:
+        newState = ServerState.Paused;
+        break;
+      case ContainerState.Removing:
+        newState = ServerState.Stopped;
+        break;
+      case ContainerState.Restarting:
+        newState = ServerState.Stopped;
+        break;
+      case ContainerState.Running:
+        newState = ServerState.Running;
+        break;
     }
 
-    if (server.serverFilesMissing)
-      await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
-        serverFilesMissing: false
-      });
-  } else {
-    // if (server.serverFilesMissing) removeContainer(server.id, true);
-    // else
-    if (!server.serverFilesMissing)
-      await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
-        serverFilesMissing: true
-      });
+    await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
+      state: newState,
+      serverFilesMissing: false
+    });
   }
+
+  if (server.state == ServerState.Paused && server.startDate && Date.now() > Date.parse(server.startDate) + TimeToLiveMiliseconds[server.timeToLive]) {
+    // The server is paused and it has been up longer than the time to live
+    // Stop the server
+    await stopContainer(server.id);
+  }
+
+  console.log(server.deletionDate);
+  console.log(Date.parse(server.deletionDate ?? ''));
+  console.log(Date.now());
+  if (server.state == ServerState.Stopped && server.shutdownDate && server.canBeDeleted && server.deletionDate && Date.now() > Date.parse(server.deletionDate)) {
+    console.log('deleting server');
+    // The server can be deleted and it is passed the deletion date.
+    await removeContainer(server.id);
+  }
+
+  // if (server.serverFilesMissing)
+  //   await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
+  //     serverFilesMissing: false
+  //   });
 
   // if (server.deletionDate && new Date(server.deletionDate) < new Date()) {
   //   removeContainer(server.id);

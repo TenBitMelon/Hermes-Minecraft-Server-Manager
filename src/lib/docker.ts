@@ -80,22 +80,25 @@ export async function startContainer(serverID: string): ContainerResult<void> {
   const composeFile = getServerFolder(serverID);
   const containerStart = await ResultAsync.fromPromise(compose.upAll({ cwd: composeFile }), (e) => new ContainerError('Failed to start container', ContainerErrorType.Start, e));
 
-  if (containerStart.isErr()) {
-    const dbResult = await ResultAsync.fromPromise(
-      serverPB.collection(Collections.Servers).update<ServerRecord>(serverID, {
-        state: ServerState.Stopped,
-        shutdownDate: new Date().toISOString(),
-        deletionDate: null
-      }),
-      () => new ContainerError('Failed to update server status on failed container start', ContainerErrorType.UpdateServerDB)
-    );
+  if (containerStart.isErr()) return err(containerStart.error);
+  // if (containerStart.isErr()) {
+  //   const dbResult = await ResultAsync.fromPromise(
+  //     serverPB.collection(Collections.Servers).update<ServerRecord>(serverID, {
+  //       state: ServerState.Stopped,
+  //       startDate: null,
+  //       shutdownDate: new Date().toISOString(),
+  //       deletionDate: null // TODO: Deletion date
+  //     }),
+  //     () => new ContainerError('Failed to update server status on failed container start', ContainerErrorType.UpdateServerDB)
+  //   );
 
-    return err(dbResult.isErr() ? dbResult.error : containerStart.error);
-  }
+  //   return err(dbResult.isErr() ? dbResult.error : containerStart.error);
+  // }
 
   const dbResult = await ResultAsync.fromPromise(
     serverPB.collection(Collections.Servers).update<ServerRecord>(serverID, {
       state: ServerState.Running,
+      startDate: new Date().toISOString(),
       shutdownDate: null,
       deletionDate: null,
       serverFilesZipped: null
@@ -121,7 +124,9 @@ export async function stopContainer(serverID: string): ContainerResult<void> {
   const updateResult = await ResultAsync.fromPromise(
     serverPB.collection(Collections.Servers).update<ServerRecord>(serverID, {
       state: ServerState.Stopped,
+      startDate: null,
       shutdownDate: new Date().toISOString(),
+      // PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN in hours
       deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +penv.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null // 7 days
       // serverFilesZipped: serverFiles.value // TODO: Check if you can do files here or if it needs to be formdata
     }),
@@ -266,7 +271,7 @@ export async function getContainerRunningStatus(serverID: string): ContainerResu
 //     });
 //   });
 // }
-type ContainerUsageStats = {
+export type ContainerUsageStats = {
   BlockIO: string;
   CPUPerc: string;
   Container: string;
@@ -340,8 +345,8 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
 export async function zipContainerFiles(serverID: string): ContainerResult<File> {
   if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
 
-  const backupFile = getBackupFolder() + `${serverID}.zip`;
-  const zipResult = await ResultAsync.fromPromise(zip(getServerFolder(serverID), backupFile), () => new ContainerError('Failed to zip severfiles', ContainerErrorType.ZipContainerFiles));
+  const backupFile = getBackupFolder() + `/${serverID}.zip`;
+  const zipResult = await ResultAsync.fromPromise(zip(getServerFolder(serverID), backupFile), (e) => new ContainerError('Failed to zip severfiles', ContainerErrorType.ZipContainerFiles, e));
   if (zipResult.isErr()) return err(zipResult.error);
 
   return Result.fromThrowable(
@@ -367,9 +372,7 @@ export async function removeContainer(serverID: string, forcibly = false): Conta
   if (removed.isErr()) return err(new ContainerError(removed.error.message, ContainerErrorType.Cloudflare, removed.error));
 
   const dbResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).delete(serverID), () => new ContainerError('Failed to update database after removing server', ContainerErrorType.UpdateServerDB));
-  return dbResult.map(() => {
-    //
-  });
+  return dbResult.map(() => undefined);
 
   // new Promise((resolve) => {
   //   exec(`cd ../; rm -rf ${serverID}`, { cwd: `servers/${serverID}` }, (error) => {
@@ -378,8 +381,6 @@ export async function removeContainer(serverID: string, forcibly = false): Conta
   //     resolve(0);
   //   });
   // });
-
-  // TODO: Remove cloudflare
 }
 
 export class ComposeBuilder {
