@@ -1,19 +1,19 @@
 import { env } from '$env/dynamic/private';
 import { env as penv } from '$env/dynamic/public';
 import { dev } from '$app/environment';
-import { ResultAsync, type Result, err, ok, Err } from 'neverthrow';
+import { ResultAsync, type Result, ok, err } from 'neverthrow';
 
 enum CloudflareErrorType {
   a
 }
-class CloudflareError extends Error {
+export class CloudflareError extends Error {
   constructor(message: string, cause: CloudflareErrorType) {
     super(message, { cause });
   }
 }
 
 export async function addServerRecords(subdomain: string, port: number): Promise<Result<{ cname: string; srv: string }, CloudflareError>> {
-  if (dev) return ok({ cname: '', srv: '' });
+  if (dev) return ok({ cname: '<DEV>', srv: '<DEV>' });
 
   const createCNAMEResult = await ResultAsync.fromPromise<{ result: { id: string }; success: true }, CloudflareError>(
     fetch(`https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records`, {
@@ -69,7 +69,7 @@ export async function addServerRecords(subdomain: string, port: number): Promise
 }
 
 // TODO: Remove server records
-export async function removeServerRecords(cnameID: string, srvID: string): Promise<Result<void, Error>> {
+export async function removeServerRecords(cnameID: string, srvID: string): Promise<Result<void, CloudflareError>> {
   if (dev) return ok(undefined);
 
   const deleteCNAMEResult = await ResultAsync.fromPromise(

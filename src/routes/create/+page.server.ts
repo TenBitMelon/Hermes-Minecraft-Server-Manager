@@ -1,7 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { formDataObject } from '$lib';
-import { ServerCreationSchema, createNewServer } from '$lib/servers';
+import { createNewServer } from '$lib/servers';
+import { ServerCreationSchema } from '$lib/servers/schema';
 
 export const actions: Actions = {
   default: async ({ request }) => {
@@ -10,15 +11,12 @@ export const actions: Actions = {
     const data = ServerCreationSchema.safeParse(formData);
     if (!data.success) return fail(400, { errors: data.error.flatten().fieldErrors });
 
-    try {
-      createNewServer(data.data);
-    } catch (e: unknown) {
-      if (e instanceof Error) return fail(500, { errors: {}, message: e.message });
-      console.error(e);
-      return fail(500, { errors: {}, message: 'Unknown error' });
+    const createServerResult = await createNewServer(data.data);
+    if (createServerResult.isErr()) {
+      return fail(500, { errors: {}, message: createServerResult.error.message, cause: createServerResult.error.cause });
     }
 
-    throw redirect(303, '/');
+    redirect(303, '/');
     return { errors: {}, success: true };
   }
 };

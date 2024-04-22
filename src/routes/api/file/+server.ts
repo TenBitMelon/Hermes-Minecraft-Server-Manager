@@ -10,11 +10,11 @@ export async function GET({ locals, url }) {
   const recordID = queryParameters.get('recordID') || queryParameters.get('id') || queryParameters.get('rid');
   const filename = queryParameters.get('filename') || queryParameters.get('file') || queryParameters.get('name');
 
-  if (!filename || !recordID || !collectionID) throw error(400, (!filename ? 'filename, ' : '') + (!recordID ? 'recordID, ' : '') + (!collectionID ? 'collectionID, ' : '') + 'are required');
+  if (!filename || !recordID || !collectionID) error(400, (!filename ? 'filename, ' : '') + (!recordID ? 'recordID, ' : '') + (!collectionID ? 'collectionID, ' : '') + 'are required');
 
   const fileURL = await locals.pb.files.getUrl({ id: recordID, collectionId: collectionID, collectionName: '' }, filename);
   const imageResponse = await fetch(fileURL);
-  if (!imageResponse.ok) throw error(imageResponse.status, imageResponse.statusText);
+  if (!imageResponse.ok) error(imageResponse.status, imageResponse.statusText);
 
   return new Response(await imageResponse.arrayBuffer(), {
     headers: {

@@ -1,7 +1,6 @@
 import { env } from '$env/dynamic/private';
 import { dev, building } from '$app/environment';
-import PocketBase, { ClientResponseError } from 'pocketbase';
-import type { ActionFailure, HttpError } from '@sveltejs/kit';
+import PocketBase from 'pocketbase';
 
 const serverPB = new PocketBase(dev ? 'http://127.0.0.1:8090' : 'http://0.0.0.0:8090');
 if (!building) {
