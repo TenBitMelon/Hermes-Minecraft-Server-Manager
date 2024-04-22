@@ -31,6 +31,11 @@
   }
 </script>
 
+{#if !form?.success}
+  {form?.message}
+  {form?.cause}
+{/if}
+
 <form method="post" class="flex flex-col items-center gap-4" enctype="multipart/form-data" use:enhance>
   <div class="flex flex-col gap-4">
     <div class="flex gap-4">

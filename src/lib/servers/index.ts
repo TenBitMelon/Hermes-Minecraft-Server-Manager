@@ -1,14 +1,14 @@
-import { Collections, WorldType, type ServerResponse, WorldCreationMethod, TimeToLive, type ServerRecord, ServersState } from '$lib/database/types';
+import { Collections, WorldType, type ServerResponse, WorldCreationMethod, TimeToLive, type ServerRecord, ServerState } from '$lib/database/types';
 import { serverPB } from '$lib/database';
 import fs from 'node:fs';
 import { env as publicENV } from '$env/dynamic/public';
 import { env as privateENV } from '$env/dynamic/private';
 import { addServerRecords } from '$lib/cloudflare';
-import { ComposeBuilder, containerDoesntExists, getContainerRunningStatus, getContainerUsageStats, removeContainer, startContainer, stopContainer } from '$lib/docker';
+import { ComposeBuilder, ContainerState, containerDoesntExists, getContainerData, startContainer, stopContainer } from '$lib/docker';
 import type { ServerCreationSchema } from './schema';
 // import DefaultIcon from '$lib/servers/icon.png';
 import { z } from 'zod';
-import { Err, Result, ResultAsync, err } from 'neverthrow';
+import { Result, ResultAsync, err } from 'neverthrow';
 
 const PORT_RANGE = [+privateENV.PRIVATE_PORT_MIN, +privateENV.PRIVATE_PORT_MAX];
 
@@ -29,7 +29,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       port,
       title: data.title,
       // icon: data.icon,
-      icon: data.icon ? data.icon : new File([defaultIconBuffer], 'icon.png'),
+      icon: data.icon ? data.icon : new File([defaultIconBuffer], 'icon.png'), // TODO: Check if you can do files here or if it needs to be formdata
       subdomain: data.subdomain,
       serverSoftware: data.serverSoftware,
       gameVersion: data.gameVersion,
@@ -43,8 +43,8 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       cloudflareCNAMERecordID: recordIds.value.cname,
       cloudflareSRVRecordID: recordIds.value.srv,
       serverFilesMissing: false,
-      serverFilesZipped: undefined,
-      state: ServersState.Creating
+      // serverFilesZipped: undefined,
+      state: ServerState.Creating
     }),
     () => new Error('Failed to create new server in DB')
   );
@@ -138,8 +138,8 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   builder.addVariable('ENABLE_AUTOPAUSE', 'true');
   builder.addVariable('AUTOPAUSE_TIMEOUT_EST', '3600');
 
-  builder.addVariable('ENABLE_AUTOSTOP', 'true');
-  builder.addVariable('AUTOSTOP_TIMEOUT_EST', '1800');
+  // builder.addVariable('ENABLE_AUTOSTOP', 'true');
+  // builder.addVariable('AUTOSTOP_TIMEOUT_EST', '1800');
   switch (data.timeToLive) {
     case TimeToLive['12 hr']:
       builder.addVariable('AUTOSTOP_TIMEOUT_INIT', '7200');
@@ -159,29 +159,72 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   return containerResult.map(() => record);
 }
 
-export async function updateServerStates() {
+export async function updateAllServerStates() {
+  console.log('Updating Server states');
   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
   for (const server of servers) {
-    if (!containerDoesntExists(server.id)) {
-      console.log('stats', await getContainerUsageStats(server.id));
-      const running = await getContainerRunningStatus(server.id);
-      if (server.shutdown && running) startContainer(server.id);
-      else if (!server.shutdown && !running) stopContainer(server.id);
-
-      if (server.serverFilesMissing)
-        serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
-          serverFilesMissing: false
-        });
-    } else {
-      if (server.serverFilesMissing) removeContainer(server.id, true);
-      else
-        serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
-          serverFilesMissing: true
-        });
-    }
-
-    if (server.deletionDate && new Date(server.deletionDate) < new Date()) {
-      removeContainer(server.id);
-    }
+    updateServerState(server);
   }
+}
+
+export async function updateServerState(server: ServerResponse) {
+  console.log('Updating', server.id);
+  if (!containerDoesntExists(server.id)) {
+    console.log('Container does exist');
+    const statsResult = await getContainerData(server.id);
+    if (statsResult.isErr()) return console.error(statsResult.error);
+    const stats = statsResult.value;
+
+    console.log('Container current', server.state);
+    console.log('The stats say', stats.State);
+
+    if (server.state == ServerState.Stopped && stats.State == ContainerState.Running) console.log('Starting container'), console.dir(await startContainer(server.id));
+    else if (server.state == ServerState.Running && stats.State == ContainerState.Exited) console.log('Stopping container'), console.log(await stopContainer(server.id));
+    else {
+      let newState: ServerState;
+      switch (stats.State) {
+        case ContainerState.Created:
+          newState = ServerState.Creating;
+          break;
+        case ContainerState.Dead:
+          newState = ServerState.Stopped;
+          break;
+        case ContainerState.Exited:
+          newState = ServerState.Stopped;
+          break;
+        case ContainerState.Paused:
+          newState = ServerState.Paused;
+          break;
+        case ContainerState.Removing:
+          newState = ServerState.Stopped;
+          break;
+        case ContainerState.Restarting:
+          newState = ServerState.Stopped;
+          break;
+        case ContainerState.Running:
+          newState = ServerState.Running;
+          break;
+      }
+
+      await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
+        state: newState
+      });
+    }
+
+    if (server.serverFilesMissing)
+      await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
+        serverFilesMissing: false
+      });
+  } else {
+    // if (server.serverFilesMissing) removeContainer(server.id, true);
+    // else
+    if (!server.serverFilesMissing)
+      await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
+        serverFilesMissing: true
+      });
+  }
+
+  // if (server.deletionDate && new Date(server.deletionDate) < new Date()) {
+  //   removeContainer(server.id);
+  // }
 }

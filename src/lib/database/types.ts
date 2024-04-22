@@ -33,7 +33,7 @@ export type UsersRecord = {
 
 export type ServerRecord = {
   port: number;
-  icon?: FileNameString;
+  icon: FileNameString | null;
   title: string;
   subdomain: string;
 
@@ -42,12 +42,11 @@ export type ServerRecord = {
   worldType: WorldType;
 
   timeToLive: TimeToLive;
-  state: ServersState;
-  shutdownDate?: IsoDateString;
-  deletionDate?: IsoDateString;
+  state: ServerState;
+  shutdownDate: IsoDateString | null;
+  deletionDate: IsoDateString | null;
   canBeDeleted: boolean;
-  shutdown: boolean;
-  serverFilesZipped?: FileNameString;
+  serverFilesZipped: FileNameString | null;
   serverFilesMissing: boolean;
 
   cloudflareCNAMERecordID: string;
@@ -102,6 +101,7 @@ export const ServerSoftwareOptions: {
     pluginsUpload: false,
     versions: [
       //
+      ['SNAPSHOT'],
       ['1.8', '1.8.1', '1.8.2', '1.8.3', '1.8.4', '1.8.5', '1.8.6', '1.8.7', '1.8.8', '1.8.9'],
       ['1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4'],
       ['1.10', '1.10.1', '1.10.2'],
@@ -114,8 +114,7 @@ export const ServerSoftwareOptions: {
       ['1.17', '1.17.1'],
       ['1.18', '1.18.1', '1.18.2'],
       ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
-      ['1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4'],
-      ['SNAPSHOT']
+      ['1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4']
     ]
   },
   // [ServerSoftware.Forge]: {
@@ -188,7 +187,7 @@ export enum WorldCreationMethod {
   'Source' = 'source'
 }
 
-export enum ServersState {
+export enum ServerState {
   'Creating' = 'creating',
   'Running' = 'running',
   'Stopped' = 'stopped',
