@@ -9,7 +9,7 @@ export async function load({}: PageServerLoadEvent) {
   return {
     update: latestUpdateResults.map((update) => ({
       server: update.server,
-      result: update.result.then((r) =>
+      result: update.result.map((r) =>
         r.match<{ isErr: false; value: ExtractOkType<typeof r> } | { isErr: true; error: ExtractErrorType<typeof r> }>(
           (s) => {
             return { isErr: false, value: s } as { isErr: false; value: typeof s };

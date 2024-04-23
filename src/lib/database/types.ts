@@ -1,3 +1,5 @@
+import type { File } from 'node:buffer';
+
 export enum Collections {
   Servers = 'servers',
   Users = 'users'

@@ -11,5 +11,5 @@ export async function handle({ event, resolve }) {
 let interval = null;
 if (!building && !interval) {
   updateAllServerStates();
-  interval = setInterval(updateAllServerStates, dev ? 1000 * 30 : 1000 * 60 * 5);
+  interval = setInterval(updateAllServerStates, dev ? 1000 * 30 : 1000 * 60);
 }

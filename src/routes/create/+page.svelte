@@ -24,6 +24,8 @@
   let iconImageElement: HTMLImageElement;
   let iconFileElement: HTMLInputElement;
 
+  let createButtonLoading = false;
+
   function handleIconChange() {
     if (iconFileElement?.files?.length) {
       const file = iconFileElement.files[0];
@@ -42,7 +44,17 @@
   {form.message}
 {/if}
 
-<form method="post" class="flex flex-col items-center gap-4" enctype="multipart/form-data" use:enhance>
+<form
+  method="post"
+  class="flex flex-col items-center gap-4"
+  enctype="multipart/form-data"
+  use:enhance={() => {
+    createButtonLoading = true;
+    return ({ update }) => {
+      createButtonLoading = false;
+      update();
+    };
+  }}>
   <div class="flex flex-col gap-4">
     <div class="flex gap-4">
       <label class={`w-full ${errors.title ? 'error-outline' : ''}`}>
@@ -55,7 +67,7 @@
     <label class={`flex w-full items-center gap-2 ${errors.icon ? 'error-outline' : ''}`}>
       <img class="h-10 w-10" alt="" bind:this={iconImageElement} src={PUBLIC_DEFAULT_ICON_URL} />
       Server Icon
-      <input type="file" name="icon" placeholder="Server Icon" bind:this={iconFileElement} on:change={handleIconChange} />
+      <input type="file" name="icon" placeholder="Server Icon" accept="image/*" bind:this={iconFileElement} on:change={handleIconChange} />
     </label>
     <label class={`${errors.motd ? 'error-outline' : ''}`}>
       <textarea name="motd" class="w-full" placeholder="A Hermes Minecraft Server" />
@@ -267,7 +279,15 @@
       <input type="checkbox" name="eula" value="true" />
       I agree to the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
     </label>
-    <button type="submit" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Create</button>
+    <button type="submit" disabled={createButtonLoading} class="flex items-center justify-center rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:bg-transparent disabled:hover:text-primary">
+      {#if createButtonLoading}
+        <svg class="-ml-1 mr-3 h-5 w-5 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      {/if}
+      Create
+    </button>
   </div>
 </form>
 

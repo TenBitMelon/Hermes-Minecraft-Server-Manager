@@ -1,8 +1,9 @@
 import { Collections, type ServerResponse } from '$lib/database/types';
 import type { Actions, PageServerLoadEvent } from './$types';
 import { error, fail, type ActionFailure } from '@sveltejs/kit';
-import { ContainerError, getContainerData, getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer } from '$lib/docker';
+import { getContainerData, getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer } from '$lib/docker';
 import { resultToPromise } from '$lib';
+import type { CustomError } from '$lib/types';
 
 export async function load({ fetch, params, locals }: PageServerLoadEvent) {
   const server = await locals.pb
@@ -36,28 +37,28 @@ type Result<N, S, E> = Promise<
 >;
 
 export const actions = {
-  start: async ({ params }): Result<'start', void, ContainerError> => {
+  start: async ({ params }): Result<'start', void, CustomError> => {
     const result = await startContainer(params.serverID);
     await pause(1000);
     if (result.isErr()) return fail(400, { error: result.error.json(), action: 'start' });
     // return result.value;
     return { value: result.value, action: 'start' };
   },
-  stop: async ({ params }): Result<'stop', void, ContainerError> => {
+  stop: async ({ params }): Result<'stop', void, CustomError> => {
     const result = await stopContainer(params.serverID);
     await pause(1000);
     if (result.isErr()) return fail(400, { error: result.error.json(), action: 'stop' });
     // return result.value;
     return { value: result.value, action: 'stop' };
   },
-  command: async ({ params, request }): Result<'command', string[], ContainerError> => {
+  command: async ({ params, request }): Result<'command', string[], CustomError> => {
     const command = (await (await request.formData()).get('command')?.toString()) ?? '';
     const result = await sendCommandToContainer(params.serverID, command);
     if (result.isErr()) return fail(400, { error: result.error.json(), action: 'command' });
     // return result.value;
     return { value: result.value, action: 'command' };
   },
-  logs: async ({ params }): Result<'logs', string[], ContainerError> => {
+  logs: async ({ params }): Result<'logs', string[], CustomError> => {
     return { action: 'logs', value: [] };
     // const result = await getContainerLogs(params.serverID, 10);
     // if (result.isErr()) return fail(400, { error: result.error });
