@@ -7,56 +7,11 @@ import path from 'node:path';
 import compose, { execCompose, type IDockerComposeResult } from 'docker-compose/dist/v2';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { zip } from './zip';
-import { removeServerRecords } from './cloudflare';
+import { removeCloudflareRecords } from './cloudflare';
 import { updateAllServerStates, updateServerState } from './servers';
+import { /* CustomError, */ ContainerState, CustomError, type ContainerData } from './types';
 
-export enum ContainerErrorType {
-  DoesntExist,
-  Start,
-  Stop,
-  UpdateServerDB,
-  ReadServerDB,
-  GetLogs,
-  SendCommand,
-  GetPlayerCount,
-  GetContainerData,
-  GetContainerRunningStatus,
-  GetAllServerStatuses,
-  GetContainerUsageStats,
-  ZipContainerFiles,
-  RemoveContainer,
-  Cloudflare
-}
-
-export class ContainerError extends Error {
-  stack: string = '';
-  cause: ContainerErrorType;
-
-  constructor(
-    message: string,
-    cause: ContainerErrorType,
-    readonly error?: unknown
-  ) {
-    super(message, { cause });
-    this.cause = cause;
-  }
-
-  json(): ContainerError {
-    return JSON.parse(JSON.stringify(this, Object.getOwnPropertyNames(this)));
-  }
-}
-
-export enum ContainerState {
-  Created = 'created', // Running
-  Restarting = 'restarting', // Running
-  Running = 'running', // Running
-  Removing = 'removing', // Running
-  Paused = 'paused', // Running
-  Exited = 'exited', // Stopped
-  Dead = 'dead' // Stopped
-}
-
-type ContainerResult<T> = Promise<Result<T, ContainerError>>;
+type ContainerResult<T> = Promise<Result<T, CustomError>>;
 
 function getServerFolder(serverID: string): string {
   const relative = `servers/${serverID}/`;
@@ -77,10 +32,10 @@ function containerHasPauseFile(serverID: string): boolean {
 }
 
 export async function startContainer(serverID: string): ContainerResult<void> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
   const composeFile = getServerFolder(serverID);
-  const containerStart = await ResultAsync.fromPromise(compose.upAll({ cwd: composeFile }), (e) => new ContainerError('Failed to start container', ContainerErrorType.Start, e));
+  const containerStart = await ResultAsync.fromPromise(compose.upAll({ cwd: composeFile }), (e) => new CustomError('Failed to start container', CustomError.from(e)));
 
   if (containerStart.isErr()) return err(containerStart.error);
   // if (containerStart.isErr()) {
@@ -91,7 +46,7 @@ export async function startContainer(serverID: string): ContainerResult<void> {
   //       shutdownDate: new Date().toISOString(),
   //       deletionDate: null // TODO: Deletion date
   //     }),
-  //     () => new ContainerError('Failed to update server status on failed container start', ContainerErrorType.UpdateServerDB)
+  //     () => new CustomError('Failed to update server status on failed container start', )
   //   );
 
   //   return err(dbResult.isErr() ? dbResult.error : containerStart.error);
@@ -105,47 +60,46 @@ export async function startContainer(serverID: string): ContainerResult<void> {
       deletionDate: null,
       serverFilesZipped: null
     }),
-    () => new ContainerError('Failed to update server status on successful container start', ContainerErrorType.UpdateServerDB)
+    () => new CustomError('Failed to update server status on successful container start')
   );
 
   return dbResult.map(() => undefined);
 }
 
 export async function stopContainer(serverID: string): ContainerResult<void> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
-  const containerStop = await ResultAsync.fromPromise(compose.stop({ cwd: getServerFolder(serverID) }), () => new ContainerError('Failed to stop container', ContainerErrorType.Stop));
+  const containerStop = await ResultAsync.fromPromise(compose.stop({ cwd: getServerFolder(serverID) }), () => new CustomError('Failed to stop container'));
 
   if (containerStop.isErr()) return err(containerStop.error);
 
   const serverFiles = await zipContainerFiles(serverID);
   if (serverFiles.isErr()) return err(serverFiles.error);
-  const server = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).getOne(serverID), () => new ContainerError('Failed to get server data from DB', ContainerErrorType.ReadServerDB));
+  const server = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).getOne(serverID), () => new CustomError('Failed to get server data from DB'));
   if (server.isErr()) return err(server.error);
 
   const updateResult = await ResultAsync.fromPromise(
-    serverPB.collection(Collections.Servers).update<ServerRecord>(serverID, {
+    serverPB.collection(Collections.Servers).update<Omit<ServerRecord, 'serverFilesZipped'> & { serverFilesZipped: File }>(serverID, {
       state: ServerState.Stopped,
       startDate: null,
       shutdownDate: new Date().toISOString(),
-      // PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN in hours
-      deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +penv.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null // 7 days
-      // serverFilesZipped: serverFiles.value // TODO: Check if you can do files here or if it needs to be formdata
+      deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +penv.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null, // 7 days
+      serverFilesZipped: serverFiles.value
     }),
-    (e) => new ContainerError('Failed to update server data on stop', ContainerErrorType.UpdateServerDB, e)
+    (e) => new CustomError('Failed to update server data on stop', CustomError.from(e))
   );
   return updateResult.map(() => undefined);
 }
 
 export async function getContainerLogs(serverID: string, lines: number | 'all'): ContainerResult<string[]> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
   const containerLogs = await ResultAsync.fromPromise(
     compose.logs([], {
       commandOptions: ['--tail', lines === 'all' ? '150' : Math.min(lines, 150).toString()],
       cwd: getServerFolder(serverID)
     }),
-    (e) => new ContainerError('Failed to get container logs', ContainerErrorType.GetLogs, e)
+    (e) => new CustomError('Failed to get container logs', CustomError.from(e))
   );
 
   return containerLogs.map((r) =>
@@ -161,24 +115,12 @@ export async function getContainerLogs(serverID: string, lines: number | 'all'):
       })
       .filter((line) => line !== '')
   );
-
-  // return new Promise((resolve) => {
-  //   exec(`docker compose logs --tail ${lines === 'all' ? 150 : Math.min(lines, 150)}`, { cwd: `servers/${serverID}` }, (error, stdout) => {
-  //     if (error) return resolve([]);
-  //     resolve(
-  //       stdout
-  //         .split('\n')
-  //         .map((s) => s.trim())
-  //         .filter((line) => line !== '')
-  //     );
-  //   });
-  // });
 }
 
 export async function sendCommandToContainer(serverID: string, command: string): ContainerResult<string[]> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
-  const execResult = await ResultAsync.fromPromise(compose.exec('minecraft', `rcon-cli ${command}`, { cwd: getServerFolder(serverID) }), () => new ContainerError('Failed to execute command in container', ContainerErrorType.SendCommand));
+  const execResult = await ResultAsync.fromPromise(compose.exec('minecraft', `rcon-cli ${command}`, { cwd: getServerFolder(serverID) }), () => new CustomError('Failed to execute command in container'));
 
   // updateServerState(server);
 
@@ -191,9 +133,9 @@ export async function sendCommandToContainer(serverID: string, command: string):
 }
 
 export async function getContainerPlayerCount(serverID: string, command: string): ContainerResult<{ max: number; online: number }> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
-  const execResult = await ResultAsync.fromPromise(compose.exec('minecraft', `mc-monitor status`, { cwd: getServerFolder(serverID) }), () => new ContainerError('Failed to execute command getting player count', ContainerErrorType.GetPlayerCount));
+  const execResult = await ResultAsync.fromPromise(compose.exec('minecraft', `mc-monitor status`, { cwd: getServerFolder(serverID) }), () => new CustomError('Failed to execute command getting player count'));
 
   // updateServerState(server);
 
@@ -206,27 +148,10 @@ export async function getContainerPlayerCount(serverID: string, command: string)
   });
 }
 
-type ContainerData = {
-  ID: string;
-  Name: string;
-  Command: string;
-  Project: string;
-  Service: string;
-  State: ContainerState;
-  Health: string;
-  ExitCode: number;
-  Publishers?: {
-    URL: string;
-    TargetPort: number;
-    PublishedPort: number;
-    Protocol: string;
-  }[];
-};
-
 export async function getContainerData(serverID: string): ContainerResult<ContainerData> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
-  const psResult = await ResultAsync.fromPromise(execCompose('ps', [], { cwd: getServerFolder(serverID), commandOptions: ['--format', 'json'] }), () => new ContainerError('Failed to read container data', ContainerErrorType.GetContainerData));
+  const psResult = await ResultAsync.fromPromise(execCompose('ps', [], { cwd: getServerFolder(serverID), commandOptions: ['--format', 'json'] }), () => new CustomError('Failed to read container data'));
 
   if (psResult.isErr()) return err(psResult.error);
 
@@ -238,8 +163,8 @@ export async function getContainerData(serverID: string): ContainerResult<Contai
       .join('')
   );
 
-  if (containerJSON.length === 0) return err(new ContainerError('Failed to get any containers from ps command', ContainerErrorType.GetContainerData));
-  if (!containerJSON[0]) return err(new ContainerError('Parsed one undefined container from ps command', ContainerErrorType.GetContainerData));
+  if (containerJSON.length === 0) return err(new CustomError('Failed to get any containers from ps command'));
+  if (!containerJSON[0]) return err(new CustomError('Parsed one undefined container from ps command'));
 
   // Check if container is paused
   const paused = containerHasPauseFile(serverID);
@@ -249,7 +174,7 @@ export async function getContainerData(serverID: string): ContainerResult<Contai
 }
 
 export async function getContainerRunningStatus(serverID: string): ContainerResult<boolean> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
   return (await getContainerData(serverID)).map((d) => d.State == 'running');
   // return (await getContainerData(serverID)).map(d => d.State == ContainerState.Running);
 }
@@ -286,7 +211,7 @@ export type ContainerUsageStats = {
 };
 
 export async function getContainerUsageStats(serverID: string): ContainerResult<ContainerUsageStats> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
   const containerData = await getContainerData(serverID);
   if (containerData.isErr()) return err(containerData.error);
@@ -307,7 +232,7 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
         }, 500);
       });
     }),
-    () => new ContainerError('Failed to the server usage stats', ContainerErrorType.GetContainerUsageStats)
+    () => new CustomError('Failed to the server usage stats')
   );
 
   return containerStats.map((v) =>
@@ -345,35 +270,48 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
 }
 
 export async function zipContainerFiles(serverID: string): ContainerResult<File> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
+  // const oldBackupFile = getBackupFolder() + `/${serverID}-new.zip`;
   const backupFile = getBackupFolder() + `/${serverID}.zip`;
-  const zipResult = await ResultAsync.fromPromise(zip(getServerFolder(serverID), backupFile), (e) => new ContainerError('Failed to zip severfiles', ContainerErrorType.ZipContainerFiles, e));
+  const zipResult = await ResultAsync.fromPromise(zip(getServerFolder(serverID), backupFile, ['**/libraries/**', '**/.*/**', '**/.**']), (e) => new CustomError('Failed to zip severfiles', CustomError.from(e)));
   if (zipResult.isErr()) return err(zipResult.error);
+
+  // // Remove the existing backup
+  // const zipFileMoveResult = Result.fromThrowable(
+  //   () => fs.existsSync(oldBackupFile) && fs.rmSync(oldBackupFile),
+  //   (e) => new CustomError('Failed to remove old backup file', CustomError.from(e))
+  // )().andThen(
+  //   Result.fromThrowable(
+  //     () => fs.renameSync(backupFile, oldBackupFile),
+  //     (e) => new CustomError('Failed to rename the backup file', CustomError.from(e))
+  //   )
+  // );
+  // if (zipFileMoveResult.isErr()) return err(zipFileMoveResult.error);
 
   return Result.fromThrowable(
     () => new File([fs.readFileSync(backupFile)], `${serverID}.zip`),
-    () => new ContainerError('Failed to read zip', ContainerErrorType.ZipContainerFiles)
+    () => new CustomError('Failed to read zip')
   )();
 }
 
 export async function removeContainer(serverID: string, forcibly = false): ContainerResult<void> {
-  if (containerDoesntExists(serverID)) return err(new ContainerError('Server not found', ContainerErrorType.DoesntExist));
+  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
   const stopped = await stopContainer(serverID);
   if (stopped.isErr()) return err(stopped.error);
 
   const remove = Result.fromThrowable(
     () => fs.rmSync(getServerFolder(serverID), { recursive: true, force: forcibly }),
-    () => new ContainerError('Failed to remove server files', ContainerErrorType.RemoveContainer)
+    () => new CustomError('Failed to remove server files')
   )();
   if (remove.isErr()) err(remove.error);
 
   const serverRecord = await serverPB.collection(Collections.Servers).getOne<ServerResponse>(serverID);
-  const removed = await removeServerRecords(serverRecord.cloudflareCNAMERecordID, serverRecord.cloudflareSRVRecordID);
-  if (removed.isErr()) return err(new ContainerError(removed.error.message, ContainerErrorType.Cloudflare, removed.error));
+  const removed = await removeCloudflareRecords(serverRecord.cloudflareCNAMERecordID, serverRecord.cloudflareSRVRecordID);
+  if (removed.isErr()) return err(new CustomError(removed.error.message, removed.error));
 
-  const dbResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).delete(serverID), () => new ContainerError('Failed to update database after removing server', ContainerErrorType.UpdateServerDB));
+  const dbResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).delete(serverID), () => new CustomError('Failed to update database after removing server'));
   return dbResult.map(() => undefined);
 
   // new Promise((resolve) => {

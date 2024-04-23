@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType, WorldCreationMethod } from '$lib/database/types';
 import { randomWord } from '$lib';
+import { PUBLIC_REQUIRE_WHITELIST } from '$env/static/public';
 
 export const ServerCreationSchema = z
   .object({
@@ -86,13 +87,16 @@ export const ServerCreationSchema = z
         .string()
         .transform((v) => (v.trim() ? JSON.parse(v) : []))
         .pipe(
-          z
-            .object({
-              uuid: z.string(),
-              name: z.string()
-            })
-            .array()
-            .default([])
+          (() => {
+            const pipeType = z
+              .object({
+                uuid: z.string(),
+                name: z.string()
+              })
+              .array();
+            if (PUBLIC_REQUIRE_WHITELIST) return pipeType;
+            else return pipeType.default([]);
+          })()
         ),
       ops: z
         .string()

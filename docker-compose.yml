@@ -31,11 +31,15 @@ services:
       # This should be the domain that the server is accessible at from the internet
       - PUBLIC_ROOT_DOMAIN=example.com
 
-      # The port range that the server will use for the public servers.
+      # The port range (inclusive) that the server will use for the public servers.
       # This should be changed based on how many servers you want to allow
       # and how many ports you have open on your server.
-      - PUBLIC_PORT_MIN=25565
-      - PUBLIC_PORT_MAX=25565
+      - PUBLIC_PORT_MIN=25563
+      - PUBLIC_PORT_MAX=25564
+      # Wether to avoid the default Minecraft port 25565.
+      # This can help with preventing the servers from getting scrapped and
+      # being targeted for griefing.
+      - PRIVATE_AVOID_DEFAULT_PORT=true
 
       # This is the default icon for the servers and can be changed to any URL.
       # A default icon is included with the container, feel free the change it.
@@ -45,6 +49,10 @@ services:
       # before they are deleted. This is in hours and the default is 168 hours (1 week).
       # If you don't want to delete servers, set this to -1.
       - PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN=168 # In hours
+
+      # This option allows you to require all created servers to start with a whitelist enabled.
+      # This will make people enter atleast one username when creating the server.
+      - PUBLIC_REQUIRE_WHITELIST=true
 
       # These are the Cloudflare API keys that are used for managing the DNS records
       # This is used for creating the subdomains for the servers.

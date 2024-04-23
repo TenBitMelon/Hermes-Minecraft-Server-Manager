@@ -5,6 +5,7 @@ interface CommandResult {
   exitCode: number;
   err: string;
   out: string;
+  command: string;
 }
 
 function command(childProc: ChildProcessWithoutNullStreams): Promise<CommandResult> {
@@ -16,7 +17,8 @@ function command(childProc: ChildProcessWithoutNullStreams): Promise<CommandResu
     const result: CommandResult = {
       exitCode: -1,
       err: '',
-      out: ''
+      out: '',
+      command: childProc.spawnargs.join(' ')
     };
 
     childProc.stdout.on('data', (chunk): void => {
@@ -30,7 +32,8 @@ function command(childProc: ChildProcessWithoutNullStreams): Promise<CommandResu
     childProc.on('exit', (exitCode): void => {
       result.exitCode = exitCode ?? -1;
       setTimeout(() => {
-        if (exitCode === 0) {
+        // Exit code 12 from ZIP means "Nothing to do" also okay!
+        if (exitCode === 0 || exitCode == 12) {
           resolve(result);
         } else {
           reject(result);
@@ -40,10 +43,11 @@ function command(childProc: ChildProcessWithoutNullStreams): Promise<CommandResu
   });
 }
 
-export function zip(inPath: string, outPath: string) {
+export function zip(inPath: string, outPath: string, ignoreFiles: string[] = ['**/.**']) {
   return command(
-    childProcess.spawn('zip', ['-r', '-y', outPath, '.'], {
-      cwd: path.dirname(inPath)
+    childProcess.spawn('zip', ['--recurse-paths', '--update', outPath, inPath, '--exclude', ...ignoreFiles], {
+      cwd: path.dirname(inPath),
+      timeout: 1000 * 30 // 30 seconds tops
     })
   );
 }
@@ -51,7 +55,8 @@ export function zip(inPath: string, outPath: string) {
 export function unzip(inPath: string, outPath: string) {
   return command(
     childProcess.spawn('unzip', ['-o', inPath, '-d', outPath], {
-      cwd: path.dirname(inPath)
+      cwd: path.dirname(inPath),
+      timeout: 1000 * 30 // 30 seconds tops
     })
   );
 }

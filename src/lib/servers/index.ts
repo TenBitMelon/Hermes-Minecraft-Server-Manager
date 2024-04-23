@@ -2,31 +2,30 @@ import { Collections, WorldType, type ServerResponse, WorldCreationMethod, TimeT
 import { serverPB } from '$lib/database';
 import fs from 'node:fs';
 import { env as publicENV } from '$env/dynamic/public';
-import { env as privateENV } from '$env/dynamic/private';
-import { addServerRecords } from '$lib/cloudflare';
-import { ComposeBuilder, ContainerError, ContainerErrorType, ContainerState, containerDoesntExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
+
+import { addCloudflareRecords } from '$lib/cloudflare';
+import { ComposeBuilder, containerDoesntExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import type { ServerCreationSchema } from './schema';
 // import DefaultIcon from '$lib/servers/icon.png';
 import { z } from 'zod';
 import { Result, ResultAsync, err, ok } from 'neverthrow';
 import { PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN } from '$env/static/public';
 import { writable, type Writable } from 'svelte/store';
-
-const PORT_RANGE = [+privateENV.PRIVATE_PORT_MIN, +privateENV.PRIVATE_PORT_MAX];
+import { PORT_MAX, PORT_MIN, getUnusedPort } from './ports';
+import { ContainerState, CustomError, /* ServerUpdateError, */ ServerUpdateType } from '$lib/types';
 
 export async function createNewServer(data: z.infer<typeof ServerCreationSchema>): Promise<Result<ServerResponse, Error>> {
-  const usedPorts = (await serverPB.collection(Collections.Servers).getFullList<ServerResponse>()).map((server) => server.port);
-  let port: number = PORT_RANGE[0];
-  // Find first unused port
-  while (usedPorts.includes(port)) if (port++ > PORT_RANGE[1]) return err(new Error('No Ports Available'));
+  let portR = await getUnusedPort();
+  if (portR.isErr()) return err(portR.error);
+  const port = portR.value;
 
   const defaultIconBuffer = await fetch(publicENV.PUBLIC_DEFAULT_ICON_URL).then((r) => r.arrayBuffer());
 
-  const recordIds = await addServerRecords(data.subdomain, port);
+  const recordIds = await addCloudflareRecords(data.subdomain, port);
   if (recordIds.isErr()) return err(recordIds.error);
 
   const createResponse = await ResultAsync.fromPromise(
-    serverPB.collection(Collections.Servers).create<ServerResponse>({
+    serverPB.collection(Collections.Servers).create<Omit<ServerRecord, 'icon'> & { icon: File }, ServerResponse>({
       port,
       title: data.title,
       // icon: data.icon,
@@ -57,6 +56,9 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   const serverFolderPath = `servers/${record.id}`;
   const serverFilesPath = `${serverFolderPath}/server-files`;
   fs.mkdirSync(serverFilesPath, { recursive: true });
+
+  // Make the backups folder if it doesn't exist
+  fs.mkdirSync(`servers/backups`, { recursive: true });
 
   if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
   else fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(defaultIconBuffer));
@@ -143,17 +145,17 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
 
   // builder.addVariable('ENABLE_AUTOSTOP', 'true');
   // builder.addVariable('AUTOSTOP_TIMEOUT_EST', '1800');
-  switch (data.timeToLive) {
-    case TimeToLive['12 hr']:
-      builder.addVariable('AUTOSTOP_TIMEOUT_INIT', '7200');
-      break;
-    case TimeToLive['1 Day']:
-      builder.addVariable('AUTOSTOP_TIMEOUT_INIT', '14400');
-      break;
-    case TimeToLive['7 Days']:
-      builder.addVariable('AUTOSTOP_TIMEOUT_INIT', '259200');
-      break;
-  }
+  // switch (data.timeToLive) {
+  //   case TimeToLive['12 hr']:
+  //     builder.addVariable('AUTOSTOP_TIMEOUT_INIT', '7200');
+  //     break;
+  //   case TimeToLive['1 Day']:
+  //     builder.addVariable('AUTOSTOP_TIMEOUT_INIT', '14400');
+  //     break;
+  //   case TimeToLive['7 Days']:
+  //     builder.addVariable('AUTOSTOP_TIMEOUT_INIT', '259200');
+  //     break;
+  // }
 
   fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, builder.build());
 
@@ -164,45 +166,29 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
 
 export let latestUpdateResults: {
   server: ServerResponse;
-  result: Promise<Result<ServerUpdateType[], ServerUpdateError>>;
+  result: Result<ServerUpdateType[], CustomError>[];
 }[] = [];
 
 export async function updateAllServerStates() {
   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
-  const updateResults = servers.map((server) => ({ server, result: updateServerState(server) }));
 
-  latestUpdateResults = updateResults;
-}
-
-export enum ServerUpdateType {
-  ContainerDoesntExist,
-  StartedServer,
-  StoppedServer,
-  KeepState,
-  ChangeState,
-  ServerTimeToLiveExpired,
-  RemoveServer
-}
-
-class ServerUpdateError extends Error {
-  stack: string = '';
-  cause: ServerUpdateType | ContainerErrorType;
-
-  constructor(
-    message: string,
-    cause: ServerUpdateType | ContainerErrorType,
-    readonly error?: unknown
-  ) {
-    super(message, { cause });
-    this.cause = cause;
-  }
-
-  json(): ServerUpdateError {
-    return JSON.parse(JSON.stringify(this, Object.getOwnPropertyNames(this)));
+  for (const server of servers) {
+    updateServerState(server).then((r) => {
+      const existing = latestUpdateResults.find((l) => l.server.id == server.id);
+      if (existing) {
+        if (existing.result.length >= 5) existing.result.shift();
+        existing.result.push(r);
+      } else {
+        latestUpdateResults.push({
+          server,
+          result: [r]
+        });
+      }
+    });
   }
 }
 
-export async function updateServerState(server: ServerResponse): Promise<Result<ServerUpdateType[], ServerUpdateError>> {
+export async function updateServerState(server: ServerResponse): Promise<Result<ServerUpdateType[], CustomError>> {
   const changeToServer: ServerUpdateType[] = [];
 
   if (containerDoesntExists(server.id)) {
@@ -210,22 +196,22 @@ export async function updateServerState(server: ServerResponse): Promise<Result<
       await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
         serverFilesMissing: true
       });
-    return err(new ServerUpdateError("The server doesn't exist", ServerUpdateType.ContainerDoesntExist));
+    return err(new CustomError("The server doesn't exist"));
   }
 
   const statsResult = await getContainerData(server.id);
-  if (statsResult.isErr()) return err(new ServerUpdateError(statsResult.error.message, statsResult.error.cause));
+  if (statsResult.isErr()) return err(statsResult.error);
   const stats = statsResult.value;
 
   if (server.state == ServerState.Stopped && stats.State == ContainerState.Running) {
     // Server unexpectedly was running!
     const startResult = await startContainer(server.id);
-    if (startResult.isErr()) return err(new ServerUpdateError(startResult.error.message, startResult.error.cause, startResult.error));
+    if (startResult.isErr()) return err(startResult.error);
     changeToServer.push(ServerUpdateType.StartedServer);
   } else if (server.state == ServerState.Running && stats.State == ContainerState.Exited) {
     // Server unexpectedly stopped!
     const stopResult = await stopContainer(server.id);
-    if (stopResult.isErr()) return err(new ServerUpdateError(stopResult.error.message, stopResult.error.cause, stopResult.error));
+    if (stopResult.isErr()) return err(stopResult.error);
     changeToServer.push(ServerUpdateType.StoppedServer);
   } else {
     let newState: ServerState;
@@ -266,7 +252,7 @@ export async function updateServerState(server: ServerResponse): Promise<Result<
     // The server is paused and it has been up longer than the time to live
     // Stop the server
     const stopResult = await stopContainer(server.id);
-    if (stopResult.isErr()) return err(new ServerUpdateError(stopResult.error.message, stopResult.error.cause, stopResult.error));
+    if (stopResult.isErr()) return err(stopResult.error);
     changeToServer.push(ServerUpdateType.ServerTimeToLiveExpired);
     changeToServer.push(ServerUpdateType.StoppedServer);
   }
@@ -274,7 +260,7 @@ export async function updateServerState(server: ServerResponse): Promise<Result<
   if (server.state == ServerState.Stopped && server.shutdownDate && server.canBeDeleted && server.deletionDate && Date.now() > Date.parse(server.deletionDate)) {
     // The server can be deleted and it is passed the deletion date.
     const removeResult = await removeContainer(server.id);
-    if (removeResult.isErr()) return err(new ServerUpdateError(removeResult.error.message, removeResult.error.cause, removeResult.error));
+    if (removeResult.isErr()) return err(removeResult.error);
     changeToServer.push(ServerUpdateType.RemoveServer);
   }
 

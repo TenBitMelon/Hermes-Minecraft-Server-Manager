@@ -13,6 +13,7 @@ todo:
 - [ ] backup downloads
 - [ ] better whitelist
 - [ ] better server properties
+- [ ] Database error handling across the whole project
 
 # Hermes Minecraft Server Manager
 
