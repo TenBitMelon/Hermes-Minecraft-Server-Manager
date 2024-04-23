@@ -1,9 +1,10 @@
 <script lang="ts">
   import { env } from '$env/dynamic/public';
-  import { stateDisplay, timeUntil } from '$lib';
+  import { getFileURL, stateDisplay, timeUntil } from '$lib';
   import { ServerState } from '$lib/database/types';
 
   import type { PageServerData } from './$types';
+  import FormLoadingButton from './[serverID]/FormLoadingButton.svelte';
   export let data: PageServerData;
 </script>
 
@@ -17,13 +18,15 @@
   {@const display = stateDisplay(server.state)}
   <a class="my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800" href={`/${server.id}`} data-sveltekit-preload-data="false">
     {#if server.state == ServerState.Stopped}
-      <div class="flex w-full items-center justify-between bg-red-800 p-1 px-4">
+      <FormLoadingButton action={`/${server.id}/?/start`} text="Revive" class="flex w-full items-center justify-between bg-red-800 p-1 px-4" buttonClass="bg-green-600 disabled:bg-green-800 py-1">
         Will be deleted {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
-        <button class="rounded-sm bg-green-600 p-1 px-3">Revive</button>
-      </div>
+      </FormLoadingButton>
+      <!-- <form action={`/${server.id}/?/start`} method="POST" class="flex w-full items-center justify-between bg-red-800 p-1 px-4">
+        <button class="rounded-sm bg-green-600 p-1 px-3" on:click|stopPropagation>Revive</button>
+      </form> -->
     {/if}
     <div class="flex gap-4 p-4">
-      <img class="pixelated aspect-square h-24 rounded-sm" src={server.icon} alt="Server Icon" />
+      <img class="pixelated aspect-square h-24 rounded-sm" src={getFileURL(server.collectionId, server.id, server.icon)} alt="Server Icon" />
       <div>
         <h2 class="text-xl font-bold">
           {server.title}

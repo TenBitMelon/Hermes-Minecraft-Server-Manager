@@ -33,7 +33,7 @@ export type UsersRecord = {
 
 export type ServerRecord = {
   port: number;
-  icon: FileNameString | null;
+  icon: FileNameString;
   title: string;
   subdomain: string;
 

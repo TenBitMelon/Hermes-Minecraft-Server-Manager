@@ -37,10 +37,8 @@ type Result<N, S, E> = Promise<
 
 export const actions = {
   start: async ({ params }): Result<'start', void, ContainerError> => {
-    console.log('Starting');
     const result = await startContainer(params.serverID);
     await pause(1000);
-    console.log('action', 'start');
     if (result.isErr()) return fail(400, { error: result.error.json(), action: 'start' });
     // return result.value;
     return { value: result.value, action: 'start' };
@@ -48,7 +46,6 @@ export const actions = {
   stop: async ({ params }): Result<'stop', void, ContainerError> => {
     const result = await stopContainer(params.serverID);
     await pause(1000);
-    console.log('action', 'stop', result);
     if (result.isErr()) return fail(400, { error: result.error.json(), action: 'stop' });
     // return result.value;
     return { value: result.value, action: 'stop' };
@@ -56,13 +53,11 @@ export const actions = {
   command: async ({ params, request }): Result<'command', string[], ContainerError> => {
     const command = (await (await request.formData()).get('command')?.toString()) ?? '';
     const result = await sendCommandToContainer(params.serverID, command);
-    console.log('action', 'command', result);
     if (result.isErr()) return fail(400, { error: result.error.json(), action: 'command' });
     // return result.value;
     return { value: result.value, action: 'command' };
   },
   logs: async ({ params }): Result<'logs', string[], ContainerError> => {
-    console.log('action', 'logs');
     return { action: 'logs', value: [] };
     // const result = await getContainerLogs(params.serverID, 10);
     // if (result.isErr()) return fail(400, { error: result.error });

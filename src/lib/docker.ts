@@ -30,6 +30,7 @@ export enum ContainerErrorType {
 
 export class ContainerError extends Error {
   stack: string = '';
+  cause: ContainerErrorType;
 
   constructor(
     message: string,
@@ -37,6 +38,7 @@ export class ContainerError extends Error {
     readonly error?: unknown
   ) {
     super(message, { cause });
+    this.cause = cause;
   }
 
   json(): ContainerError {

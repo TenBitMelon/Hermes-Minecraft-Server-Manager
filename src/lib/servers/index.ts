@@ -4,12 +4,13 @@ import fs from 'node:fs';
 import { env as publicENV } from '$env/dynamic/public';
 import { env as privateENV } from '$env/dynamic/private';
 import { addServerRecords } from '$lib/cloudflare';
-import { ComposeBuilder, ContainerState, containerDoesntExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
+import { ComposeBuilder, ContainerError, ContainerErrorType, ContainerState, containerDoesntExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import type { ServerCreationSchema } from './schema';
 // import DefaultIcon from '$lib/servers/icon.png';
 import { z } from 'zod';
-import { Result, ResultAsync, err } from 'neverthrow';
+import { Result, ResultAsync, err, ok } from 'neverthrow';
 import { PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN } from '$env/static/public';
+import { writable, type Writable } from 'svelte/store';
 
 const PORT_RANGE = [+privateENV.PRIVATE_PORT_MIN, +privateENV.PRIVATE_PORT_MAX];
 
@@ -161,35 +162,72 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   return containerResult.map(() => record);
 }
 
+export let latestUpdateResults: {
+  server: ServerResponse;
+  result: Promise<Result<ServerUpdateType[], ServerUpdateError>>;
+}[] = [];
+
 export async function updateAllServerStates() {
-  console.log('Updating Server states');
   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
-  for (const server of servers) {
-    updateServerState(server);
+  const updateResults = servers.map((server) => ({ server, result: updateServerState(server) }));
+
+  latestUpdateResults = updateResults;
+}
+
+export enum ServerUpdateType {
+  ContainerDoesntExist,
+  StartedServer,
+  StoppedServer,
+  KeepState,
+  ChangeState,
+  ServerTimeToLiveExpired,
+  RemoveServer
+}
+
+class ServerUpdateError extends Error {
+  stack: string = '';
+  cause: ServerUpdateType | ContainerErrorType;
+
+  constructor(
+    message: string,
+    cause: ServerUpdateType | ContainerErrorType,
+    readonly error?: unknown
+  ) {
+    super(message, { cause });
+    this.cause = cause;
+  }
+
+  json(): ServerUpdateError {
+    return JSON.parse(JSON.stringify(this, Object.getOwnPropertyNames(this)));
   }
 }
 
-//TODO: Error handling
-export async function updateServerState(server: ServerResponse) {
-  console.log('Updating', server.id);
-  if (containerDoesntExists(server.id) && !server.serverFilesMissing) {
-    await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
-      serverFilesMissing: true
-    });
-    return;
+export async function updateServerState(server: ServerResponse): Promise<Result<ServerUpdateType[], ServerUpdateError>> {
+  const changeToServer: ServerUpdateType[] = [];
+
+  if (containerDoesntExists(server.id)) {
+    if (!server.serverFilesMissing)
+      await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
+        serverFilesMissing: true
+      });
+    return err(new ServerUpdateError("The server doesn't exist", ServerUpdateType.ContainerDoesntExist));
   }
 
-  console.log('Container does exist');
   const statsResult = await getContainerData(server.id);
-  if (statsResult.isErr()) return console.error(statsResult.error);
+  if (statsResult.isErr()) return err(new ServerUpdateError(statsResult.error.message, statsResult.error.cause));
   const stats = statsResult.value;
 
-  console.log('Container current', server.state);
-  console.log('The stats say', stats.State);
-
-  if (server.state == ServerState.Stopped && stats.State == ContainerState.Running) console.log('Starting container'), console.dir(await startContainer(server.id));
-  else if (server.state == ServerState.Running && stats.State == ContainerState.Exited) console.log('Stopping container'), console.log(await stopContainer(server.id));
-  else {
+  if (server.state == ServerState.Stopped && stats.State == ContainerState.Running) {
+    // Server unexpectedly was running!
+    const startResult = await startContainer(server.id);
+    if (startResult.isErr()) return err(new ServerUpdateError(startResult.error.message, startResult.error.cause, startResult.error));
+    changeToServer.push(ServerUpdateType.StartedServer);
+  } else if (server.state == ServerState.Running && stats.State == ContainerState.Exited) {
+    // Server unexpectedly stopped!
+    const stopResult = await stopContainer(server.id);
+    if (stopResult.isErr()) return err(new ServerUpdateError(stopResult.error.message, stopResult.error.cause, stopResult.error));
+    changeToServer.push(ServerUpdateType.StoppedServer);
+  } else {
     let newState: ServerState;
     switch (stats.State) {
       case ContainerState.Created:
@@ -219,29 +257,26 @@ export async function updateServerState(server: ServerResponse) {
       state: newState,
       serverFilesMissing: false
     });
+
+    if (server.state != newState) changeToServer.push(ServerUpdateType.ChangeState);
+    else changeToServer.push(ServerUpdateType.KeepState);
   }
 
   if (server.state == ServerState.Paused && server.startDate && Date.now() > Date.parse(server.startDate) + TimeToLiveMiliseconds[server.timeToLive]) {
     // The server is paused and it has been up longer than the time to live
     // Stop the server
-    await stopContainer(server.id);
+    const stopResult = await stopContainer(server.id);
+    if (stopResult.isErr()) return err(new ServerUpdateError(stopResult.error.message, stopResult.error.cause, stopResult.error));
+    changeToServer.push(ServerUpdateType.ServerTimeToLiveExpired);
+    changeToServer.push(ServerUpdateType.StoppedServer);
   }
 
-  console.log(server.deletionDate);
-  console.log(Date.parse(server.deletionDate ?? ''));
-  console.log(Date.now());
   if (server.state == ServerState.Stopped && server.shutdownDate && server.canBeDeleted && server.deletionDate && Date.now() > Date.parse(server.deletionDate)) {
-    console.log('deleting server');
     // The server can be deleted and it is passed the deletion date.
-    await removeContainer(server.id);
+    const removeResult = await removeContainer(server.id);
+    if (removeResult.isErr()) return err(new ServerUpdateError(removeResult.error.message, removeResult.error.cause, removeResult.error));
+    changeToServer.push(ServerUpdateType.RemoveServer);
   }
 
-  // if (server.serverFilesMissing)
-  //   await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
-  //     serverFilesMissing: false
-  //   });
-
-  // if (server.deletionDate && new Date(server.deletionDate) < new Date()) {
-  //   removeContainer(server.id);
-  // }
+  return ok(changeToServer);
 }
