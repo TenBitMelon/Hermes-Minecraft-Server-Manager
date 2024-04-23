@@ -28,6 +28,7 @@
   }) => void = () => {};
   let clazz: string = '';
   export { clazz as class };
+  export let buttonClass = '';
 </script>
 
 <form
@@ -45,7 +46,7 @@
     };
   }}>
   <slot />
-  <button class="flex items-center rounded-md bg-gray-800 px-4 py-2 disabled:bg-gray-900" disabled={disabled || loading}>
+  <button class={`flex items-center rounded-md bg-gray-800 px-4 py-2 disabled:bg-gray-900 ${buttonClass}`} disabled={disabled || loading} on:click|stopPropagation>
     {#if loading}
       <svg class="-ml-1 mr-3 h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

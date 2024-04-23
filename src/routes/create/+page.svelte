@@ -12,7 +12,6 @@
   export let form: ActionData;
   let errors: ErrorsObject = {};
   $: errors = form == null || form.success == true ? {} : form.fields;
-  $: console.log(errors);
 
   let selectedSoftware: ServerSoftware = ServerSoftware.Vanilla;
   let selectedGameVersion: string;

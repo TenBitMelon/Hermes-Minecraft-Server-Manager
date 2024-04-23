@@ -4,8 +4,6 @@ import { formDataObject } from '$lib';
 import { createNewServer } from '$lib/servers';
 import { ServerCreationSchema } from '$lib/servers/schema';
 
-type SuccessFalse<T> = T & { success: false };
-
 export const actions: Actions = {
   default: async ({ request, fetch }) => {
     const formData = formDataObject(await request.formData());

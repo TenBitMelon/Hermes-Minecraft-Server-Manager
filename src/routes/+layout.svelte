@@ -11,5 +11,5 @@
     <a href="/create" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Create</a>
   </div>
   <slot />
-  <p class="text-sm text-gray-400">Version: 0.5.5</p>
+  <a class="text-sm text-gray-400" href="/update-results">Version: 0.5.5</a>
 </div>
