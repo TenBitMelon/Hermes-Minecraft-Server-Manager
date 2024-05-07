@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Minecraftia";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/Minecraftia-Regular.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Minecraftia";
+  font-style: normal;
+  font-weight: 600;
+  src: url("/fonts/Minecraftia-Bold.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Virgil";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/Virgil.woff2") format("woff2");
+}
+
+
 body,
 html {
   color: white;
@@ -42,6 +64,29 @@ html {
     var(--c0);
 }
 
-.pixelated {
-  image-rendering: pixelated;
+@layer components {
+  .pixelated {
+    image-rendering: pixelated;
+  }
+
+  .error-outline {
+    position: relative;
+  }
+
+  .error-outline::before {
+    content: '';
+    display: block;
+    position: absolute;
+    border: 0.2rem solid red;
+    inset: -0.3rem;
+    border-radius: 1rem;
+    filter: url(#combined-hover);
+    user-select: none;
+    pointer-events: none
+  }
+
+  .scroll-transparent {
+    /* Makes the scroll bar transparent */
+    scrollbar-color: rgba(255, 255, 255, 0.5) rgba(255, 255, 255, 0.2);
+  }
 }

@@ -44,6 +44,7 @@ function command(childProc: ChildProcessWithoutNullStreams): Promise<CommandResu
 }
 
 export function zip(inPath: string, outPath: string, ignoreFiles: string[] = ['**/.**']) {
+  // console.log('Running zip', 'zip', ['--recurse-paths', '--update', outPath, inPath, '--exclude', ...ignoreFiles]);
   return command(
     childProcess.spawn('zip', ['--recurse-paths', '--update', outPath, inPath, '--exclude', ...ignoreFiles], {
       cwd: path.dirname(inPath),
