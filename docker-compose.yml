@@ -45,6 +45,11 @@ services:
       # A default icon is included with the container, feel free the change it.
       - PUBLIC_DEFAULT_ICON_URL=https://example.com/icon.png
 
+      # This allows you to set the default MOTD when creating a server
+      # This will be used if a custom one isn't entered
+      # Do no put color codes here, they won't work
+      - PUBLIC_DEFAULT_MOTD=A Hermes Minecraft Server
+
       # This variable allows you to control how long you want to keep stopped servers
       # before they are deleted. This is in hours and the default is 168 hours (1 week).
       # If you don't want to delete servers, set this to -1.

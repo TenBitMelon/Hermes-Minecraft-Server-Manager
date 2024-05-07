@@ -7,18 +7,12 @@ type ExtractOkType<T> = T extends Ok<infer V, infer E> ? V : never;
 
 export async function load({}: PageServerLoadEvent) {
   return {
-    update: latestUpdateResults.map((update) => ({
-      server: update.server,
-      result: update.result.map((r) =>
-        r.match<{ isErr: false; value: ExtractOkType<typeof r> } | { isErr: true; error: ExtractErrorType<typeof r> }>(
-          (s) => {
-            return { isErr: false, value: s } as { isErr: false; value: typeof s };
-          },
-          (e) => {
-            return { isErr: true, error: e.json() } as { isErr: true; error: typeof e };
-          }
-        )
-      )
+    update: latestUpdateResults.map((serverUpdate) => ({
+      server: serverUpdate.server,
+      updates: serverUpdate.updates.map((r) => {
+        if (r.hasError) r.error = r.error.json();
+        return r;
+      })
     }))
   };
 }

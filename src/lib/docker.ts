@@ -168,7 +168,7 @@ export async function getContainerData(serverID: string): ContainerResult<Contai
 
   // Check if container is paused
   const paused = containerHasPauseFile(serverID);
-  if (paused) containerJSON[0].State = ContainerState.Paused;
+  if (paused && containerJSON[0].State == ContainerState.Running) containerJSON[0].State = ContainerState.Paused;
 
   return ok(containerJSON[0]);
 }
@@ -345,8 +345,12 @@ export class ComposeBuilder {
   }
 
   addVariable(key: string, value: string | number | boolean) {
-    this.variables.push({ key, value });
+    this.variables.push({ key, value: `'${value}'` });
     return this;
+  }
+
+  addListVariable(key: string, value: (string | number | boolean)[]) {
+    this.variables.push({ key, value: `|\n        ${value.join('        \n')}` });
   }
 
   build() {
@@ -363,7 +367,7 @@ export class ComposeBuilder {
     }
     file += `    environment:\n`;
     for (const variable of this.variables) {
-      file += `      ${variable.key}: "${variable.value}"\n`;
+      file += `      ${variable.key}: ${variable.value}\n`;
     }
     file += `    restart: "${this.restart}"\n`;
     file += `    healthcheck:\n`;

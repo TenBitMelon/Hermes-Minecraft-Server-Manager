@@ -5,23 +5,24 @@ import { PUBLIC_REQUIRE_WHITELIST } from '$env/static/public';
 
 export const ServerCreationSchema = z
   .object({
-    title: z.string().min(3).max(63), // CONFIRMED WORKING
-    subdomain: z // CONFIRMED WORKING
+    title: z.string().min(3).max(63),
+    subdomain: z
       .string()
       .min(3)
       .max(63)
+      .refine((v) => /^[a-z0-9-]+$/.test(v), { message: 'Invalid characters, All lowercase or dashes with no spaces' })
       .or(z.literal(''))
       .transform((v) => (v ? v.toLowerCase() : randomWord())),
     icon: z.instanceof(File).optional(),
-    motd: z // CONFIRMED WORKING
+    motd: z
       .string()
       .transform((s) => (s ? s : 'A Hermes Minecraft Server'))
       .default('A Hermes Minecraft Server'),
-    serverSoftware: z.nativeEnum(ServerSoftware), // CONFIRMED WORKING
-    gameVersion: z.string(), // CONFIRMED WORKING
+    serverSoftware: z.nativeEnum(ServerSoftware),
+    gameVersion: z.string(),
 
     timeToLive: z.nativeEnum(TimeToLive).default(TimeToLive['12 hr']),
-    eula: z.literal(true).or(z.literal('true')), // CONFIRMED WORKING
+    eula: z.literal(true).or(z.literal('true')),
 
     // resourcePack: z.instanceof(File).optional(),
     resourcepackURL: z.string().optional(),
@@ -50,7 +51,7 @@ export const ServerCreationSchema = z
       }),
       z.object({
         worldCreator: z.literal(WorldCreationMethod.New),
-        worldSeed: z.string().default(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + ''), // CONFIRMED WORKING
+        worldSeed: z.string().default(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + ''),
         worldType: z.nativeEnum(WorldType),
         superflatLayers: z
           .string()
@@ -62,7 +63,7 @@ export const ServerCreationSchema = z
                 block: z.string(),
                 height: z.number()
               })
-              .strict()
+              .strip()
               .array()
               .default([])
           )
@@ -71,12 +72,12 @@ export const ServerCreationSchema = z
   )
   .and(
     z.object({
-      maxPlayers: z.coerce.number().default(10),
-      difficulty: z.nativeEnum(Difficulty).default(Difficulty.Normal), // CONFIRMED WORKING
-      gamemode: z.nativeEnum(Gamemode).default(Gamemode.Survival), // CONFIRMED WORKING
+      maxPlayers: z.coerce.number().min(1).max(50).default(10),
+      difficulty: z.nativeEnum(Difficulty).default(Difficulty.Normal),
+      gamemode: z.nativeEnum(Gamemode).default(Gamemode.Survival),
 
-      viewDistance: z.coerce.number().default(16), // CONFIRMED WORKING
-      simulationDistance: z.coerce.number().default(10), // CONFIRMED WORKING
+      viewDistance: z.coerce.number().min(1).max(20).default(16),
+      simulationDistance: z.coerce.number().min(1).max(20).default(10),
 
       allowNether: z.coerce.boolean().default(true), // ASSUMED WORKING
       hardcore: z.coerce.boolean().default(false), // ASSUMED WORKING
@@ -90,28 +91,32 @@ export const ServerCreationSchema = z
           (() => {
             const pipeType = z
               .object({
-                uuid: z.string(),
                 name: z.string()
               })
+              .strip()
               .array();
             if (PUBLIC_REQUIRE_WHITELIST) return pipeType;
             else return pipeType.default([]);
           })()
-        ),
+        )
+        .transform((v) => v.map((e) => e.name)),
       ops: z
         .string()
         .transform((v) => (v.trim() ? JSON.parse(v) : []))
         .pipe(
           z
             .object({
-              uuid: z.string(),
-              name: z.string(),
-              level: z.number().default(4),
-              bypassesPlayerLimit: z.coerce.boolean().default(true)
+              // uuid: z.string(),
+              name: z.string()
+              // level: z.number().default(4),
+              // bypassesPlayerLimit: z.coerce.boolean().default(true)
             })
+            .strip()
             .array()
             .default([])
-        ),
+        )
+        .transform((v) => v.map((e) => e.name)),
+      // TODO: UNUSED
       bannedPlayers: z
         .string()
         .transform((v) => (v.trim() ? JSON.parse(v) : []))
@@ -127,7 +132,8 @@ export const ServerCreationSchema = z
             })
             .array()
             .default([])
-        ),
+        )
+        .optional(),
 
       serverProperties: z.instanceof(File).optional()
     })

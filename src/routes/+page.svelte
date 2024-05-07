@@ -5,6 +5,7 @@
 
   import type { PageServerData } from './$types';
   import FormLoadingButton from './[serverID]/FormLoadingButton.svelte';
+  import MinecraftRawEditor from './create/MinecraftRawEditor.svelte';
   export let data: PageServerData;
 </script>
 

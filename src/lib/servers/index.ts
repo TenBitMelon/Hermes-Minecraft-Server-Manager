@@ -29,11 +29,11 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       port,
       title: data.title,
       // icon: data.icon,
-      icon: data.icon ? data.icon : new File([defaultIconBuffer], 'icon.png'), // TODO: Check if you can do files here or if it needs to be formdata
+      icon: data.icon ? data.icon : new File([defaultIconBuffer], 'icon.png'),
       subdomain: data.subdomain,
       serverSoftware: data.serverSoftware,
       gameVersion: data.gameVersion,
-      worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : WorldType.Normal, // TODO: Allow for source
+      worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : 'source',
       timeToLive: data.timeToLive,
 
       startDate: null,
@@ -63,9 +63,9 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
   else fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(defaultIconBuffer));
 
-  if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
-  if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
-  if (data.bannedPlayers.length > 0) fs.writeFileSync(`${serverFilesPath}/banned-players.json`, JSON.stringify(data.bannedPlayers));
+  // if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
+  // if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
+  // if (data.bannedPlayers.length > 0) fs.writeFileSync(`${serverFilesPath}/banned-players.json`, JSON.stringify(data.bannedPlayers));
 
   if (data.serverProperties) {
     const serverProperties = await data.serverProperties.text();
@@ -118,7 +118,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
     builder.addVariable('SEED', data.worldSeed);
     builder.addVariable('LEVEL_TYPE', data.worldType);
     if (data.worldType === WorldType.Flat) {
-      builder.addVariable('GENERATOR_SETTINGS', `{layers:${data.superflatLayers}}`);
+      builder.addVariable('GENERATOR_SETTINGS', `{"layers":${JSON.stringify(data.superflatLayers)}}`);
     }
   }
 
@@ -129,9 +129,11 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
 
   if (data.datapackURL) builder.addVariable('DATAPACKS', data.datapackURL);
 
-  builder.addVariable('EXISTING_WHITELIST_FILE', 'SKIP');
-  builder.addVariable('EXISTING_OPS_FILE', 'SKIP');
-  builder.addVariable('EXISTING_BANNED_PLAYERS_FILE', 'SKIP');
+  if (data.whitelist.length > 0) builder.addListVariable('WHITELIST', data.whitelist);
+  if (data.ops.length > 0) builder.addListVariable('OPS', data.ops);
+  // builder.addVariable('EXISTING_WHITELIST_FILE', 'SKIP'); // already defaults
+  // builder.addVariable('EXISTING_OPS_FILE', 'SKIP'); // already defaults
+  // builder.addVariable('EXISTING_BANNED_PLAYERS_FILE', 'SKIP'); // already defaults
 
   // ^ AUTOPAUSE_TIMEOUT_EST is the time in seconds before the server is paused after the last player leaves
   // ^ AUTOPAUSE_TIMEOUT_INIT is the time in seconds before the server is paused after it is started (once no one is on the server)
@@ -164,9 +166,21 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   return containerResult.map(() => record);
 }
 
+type UpdateResult =
+  | {
+      value: string;
+      variables: Record<string, any> & { time: string };
+      hasError: false;
+    }
+  | {
+      error: CustomError;
+      variables: Record<string, any> & { time: string };
+      hasError: true;
+    };
+
 export let latestUpdateResults: {
   server: ServerResponse;
-  result: Result<ServerUpdateType[], CustomError>[];
+  updates: UpdateResult[];
 }[] = [];
 
 export async function updateAllServerStates() {
@@ -176,43 +190,56 @@ export async function updateAllServerStates() {
     updateServerState(server).then((r) => {
       const existing = latestUpdateResults.find((l) => l.server.id == server.id);
       if (existing) {
-        if (existing.result.length >= 5) existing.result.shift();
-        existing.result.push(r);
+        if (existing.updates.length >= 25) existing.updates.shift();
+        existing.updates.push(...r);
       } else {
         latestUpdateResults.push({
           server,
-          result: [r]
+          updates: r
         });
       }
     });
   }
 }
 
-export async function updateServerState(server: ServerResponse): Promise<Result<ServerUpdateType[], CustomError>> {
-  const changeToServer: ServerUpdateType[] = [];
+export async function updateServerState(server: ServerResponse): Promise<UpdateResult[]> {
+  const changeToServer: UpdateResult[] = [];
+
+  function addValue(value: string, variables: Record<string, any>) {
+    changeToServer.push({ value, hasError: false, variables: { ...variables, time: new Date().toISOString() } });
+  }
+  function addError(error: CustomError, variables: Record<string, any>) {
+    changeToServer.push({ error, hasError: true, variables: { ...variables, time: new Date().toISOString() } });
+    return changeToServer;
+  }
 
   if (containerDoesntExists(server.id)) {
     if (!server.serverFilesMissing)
       await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
         serverFilesMissing: true
       });
-    return err(new CustomError("The server doesn't exist"));
+    // return err(new CustomError("The server doesn't exist"));
+    return addError(new CustomError("The server doesn't exist"), {});
   }
 
   const statsResult = await getContainerData(server.id);
-  if (statsResult.isErr()) return err(statsResult.error);
+  if (statsResult.isErr()) return addError(statsResult.error, {});
   const stats = statsResult.value;
 
   if (server.state == ServerState.Stopped && stats.State == ContainerState.Running) {
     // Server unexpectedly was running!
     const startResult = await startContainer(server.id);
-    if (startResult.isErr()) return err(startResult.error);
-    changeToServer.push(ServerUpdateType.StartedServer);
+    if (startResult.isErr()) return addError(startResult.error, {});
+    // changeToServer.push('Started server because it was unexpectedly running');
+    // variables.push({ time: new Date().toISOString(), databaseState: server.state, containerState: stats.State });
+    addValue('Started server because it was unexpectedly running', { databaseState: server.state, containerState: stats.State });
   } else if (server.state == ServerState.Running && stats.State == ContainerState.Exited) {
     // Server unexpectedly stopped!
     const stopResult = await stopContainer(server.id);
-    if (stopResult.isErr()) return err(stopResult.error);
-    changeToServer.push(ServerUpdateType.StoppedServer);
+    if (stopResult.isErr()) return addError(stopResult.error, {});
+    // changeToServer.push('Stopped server because it was unexpectedly stopped');
+    // variables.push({ time: new Date().toISOString(), databaseState: server.state, containerState: stats.State });
+    addValue('Stopped server because it was unexpectedly stopped', { databaseState: server.state, containerState: stats.State });
   } else {
     let newState: ServerState;
     switch (stats.State) {
@@ -244,25 +271,37 @@ export async function updateServerState(server: ServerResponse): Promise<Result<
       serverFilesMissing: false
     });
 
-    if (server.state != newState) changeToServer.push(ServerUpdateType.ChangeState);
-    else changeToServer.push(ServerUpdateType.KeepState);
+    if (server.state != newState) {
+      // changeToServer.push('Changed server state from ' + server.state + ' to ' + newState);
+      // variables.push({ time: new Date().toISOString(), oldState: server.state, newState });
+      addValue('Changed server state', { oldState: server.state, newState });
+    } else {
+      // changeToServer.push('Server state is the same');
+      // variables.push({ time: new Date().toISOString(), currentState: server.state });
+      addValue('Server state is the same', { currentState: server.state });
+    }
   }
 
   if (server.state == ServerState.Paused && server.startDate && Date.now() > Date.parse(server.startDate) + TimeToLiveMiliseconds[server.timeToLive]) {
     // The server is paused and it has been up longer than the time to live
     // Stop the server
     const stopResult = await stopContainer(server.id);
-    if (stopResult.isErr()) return err(stopResult.error);
-    changeToServer.push(ServerUpdateType.ServerTimeToLiveExpired);
-    changeToServer.push(ServerUpdateType.StoppedServer);
+    if (stopResult.isErr()) return addError(stopResult.error, {});
+    // changeToServer.push(ServerUpdateType.ServerTimeToLiveExpired);
+    // changeToServer.push(ServerUpdateType.StoppedServer);
+    // changeToServer.push('Stopped server because it was paused and the time to live expired');
+    // variables.push({ time: new Date().toISOString(), timeToLive: server.timeToLive, databaseState: server.state, startDate: server.startDate });
+    addValue('Stopped server because it was paused and the time to live expired', { timeToLive: server.timeToLive, databaseState: server.state, startDate: server.startDate });
   }
 
   if (server.state == ServerState.Stopped && server.shutdownDate && server.canBeDeleted && server.deletionDate && Date.now() > Date.parse(server.deletionDate)) {
     // The server can be deleted and it is passed the deletion date.
     const removeResult = await removeContainer(server.id);
-    if (removeResult.isErr()) return err(removeResult.error);
-    changeToServer.push(ServerUpdateType.RemoveServer);
+    if (removeResult.isErr()) return addError(removeResult.error, {});
+    // changeToServer.push("Removed server because it's past the deletion date");
+    // variables.push({ time: new Date().toISOString(), deletionDate: server.deletionDate, databaseState: server.state, canBeDeleted: server.canBeDeleted, shutdownDate: server.shutdownDate });
+    addValue("Removed server because it's past the deletion date", { deletionDate: server.deletionDate, databaseState: server.state, canBeDeleted: server.canBeDeleted, shutdownDate: server.shutdownDate });
   }
 
-  return ok(changeToServer);
+  return changeToServer;
 }
