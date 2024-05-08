@@ -10,16 +10,12 @@ import { zip } from './zip';
 import { removeCloudflareRecords } from './cloudflare';
 import { updateAllServerStates, updateServerState } from './servers';
 import { /* CustomError, */ ContainerState, CustomError, type ContainerData } from './types';
+import { createBackup } from './servers/backups';
 
 type ContainerResult<T> = Promise<Result<T, CustomError>>;
 
 function getServerFolder(serverID: string): string {
   const relative = `servers/${serverID}/`;
-  return path.resolve(relative);
-}
-
-function getBackupFolder(): string {
-  const relative = `servers/backups/`;
   return path.resolve(relative);
 }
 
@@ -35,7 +31,7 @@ export async function startContainer(serverID: string): ContainerResult<void> {
   if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
   const composeFile = getServerFolder(serverID);
-  const containerStart = await ResultAsync.fromPromise(compose.upAll({ cwd: composeFile }), (e) => new CustomError('Failed to start container', CustomError.from(e)));
+  const containerStart = await ResultAsync.fromPromise(compose.upAll({ cwd: composeFile }), (e) => CustomError.from(e, 'Failed to start container'));
 
   if (containerStart.isErr()) return err(containerStart.error);
   // if (containerStart.isErr()) {
@@ -57,8 +53,7 @@ export async function startContainer(serverID: string): ContainerResult<void> {
       state: ServerState.Running,
       startDate: new Date().toISOString(),
       shutdownDate: null,
-      deletionDate: null,
-      serverFilesZipped: null
+      deletionDate: null
     }),
     () => new CustomError('Failed to update server status on successful container start')
   );
@@ -73,20 +68,20 @@ export async function stopContainer(serverID: string): ContainerResult<void> {
 
   if (containerStop.isErr()) return err(containerStop.error);
 
-  const serverFiles = await zipContainerFiles(serverID);
-  if (serverFiles.isErr()) return err(serverFiles.error);
+  const backupResult = await createBackup(serverID);
+  if (backupResult.isErr()) return err(backupResult.error);
+
   const server = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).getOne(serverID), () => new CustomError('Failed to get server data from DB'));
   if (server.isErr()) return err(server.error);
 
   const updateResult = await ResultAsync.fromPromise(
-    serverPB.collection(Collections.Servers).update<Omit<ServerRecord, 'serverFilesZipped'> & { serverFilesZipped: File }>(serverID, {
+    serverPB.collection(Collections.Servers).update(serverID, {
       state: ServerState.Stopped,
       startDate: null,
       shutdownDate: new Date().toISOString(),
-      deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +penv.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null, // 7 days
-      serverFilesZipped: serverFiles.value
+      deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +penv.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null // 7 days
     }),
-    (e) => new CustomError('Failed to update server data on stop', CustomError.from(e))
+    (e) => CustomError.from(e, 'Failed to update server data on stop')
   );
   return updateResult.map(() => undefined);
 }
@@ -99,7 +94,7 @@ export async function getContainerLogs(serverID: string, lines: number | 'all'):
       commandOptions: ['--tail', lines === 'all' ? '150' : Math.min(lines, 150).toString()],
       cwd: getServerFolder(serverID)
     }),
-    (e) => new CustomError('Failed to get container logs', CustomError.from(e))
+    (e) => CustomError.from(e, 'Failed to get container logs')
   );
 
   return containerLogs.map((r) =>
@@ -267,32 +262,6 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
   //     });
   //   });
   // });
-}
-
-export async function zipContainerFiles(serverID: string): ContainerResult<File> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
-
-  // const oldBackupFile = getBackupFolder() + `/${serverID}-new.zip`;
-  const backupFile = getBackupFolder() + `/${serverID}.zip`;
-  const zipResult = await ResultAsync.fromPromise(zip(getServerFolder(serverID), backupFile, ['**/libraries/**', '**/.*/**', '**/.**']), (e) => new CustomError('Failed to zip severfiles', CustomError.from(e)));
-  if (zipResult.isErr()) return err(zipResult.error);
-
-  // // Remove the existing backup
-  // const zipFileMoveResult = Result.fromThrowable(
-  //   () => fs.existsSync(oldBackupFile) && fs.rmSync(oldBackupFile),
-  //   (e) => new CustomError('Failed to remove old backup file', CustomError.from(e))
-  // )().andThen(
-  //   Result.fromThrowable(
-  //     () => fs.renameSync(backupFile, oldBackupFile),
-  //     (e) => new CustomError('Failed to rename the backup file', CustomError.from(e))
-  //   )
-  // );
-  // if (zipFileMoveResult.isErr()) return err(zipFileMoveResult.error);
-
-  return Result.fromThrowable(
-    () => new File([fs.readFileSync(backupFile)], `${serverID}.zip`),
-    () => new CustomError('Failed to read zip')
-  )();
 }
 
 export async function removeContainer(serverID: string, forcibly = false): ContainerResult<void> {

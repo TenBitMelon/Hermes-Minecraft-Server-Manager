@@ -1,5 +1,7 @@
 import childProcess, { type ChildProcessWithoutNullStreams } from 'node:child_process';
 import path from 'node:path';
+import { CustomError } from './types';
+import { ResultAsync, type Result } from 'neverthrow';
 
 interface CommandResult {
   exitCode: number;
@@ -45,11 +47,14 @@ function command(childProc: ChildProcessWithoutNullStreams): Promise<CommandResu
 
 export function zip(inPath: string, outPath: string, ignoreFiles: string[] = ['**/.**']) {
   // console.log('Running zip', 'zip', ['--recurse-paths', '--update', outPath, inPath, '--exclude', ...ignoreFiles]);
-  return command(
-    childProcess.spawn('zip', ['--recurse-paths', '--update', outPath, inPath, '--exclude', ...ignoreFiles], {
-      cwd: path.dirname(inPath),
-      timeout: 1000 * 30 // 30 seconds tops
-    })
+  return ResultAsync.fromPromise(
+    command(
+      childProcess.spawn('zip', ['--recurse-paths', '--update', outPath, inPath, '--exclude', ...ignoreFiles], {
+        cwd: path.dirname(inPath),
+        timeout: 1000 * 30 // 30 seconds tops
+      })
+    ),
+    (e) => CustomError.from(e, 'Failed to zip files')
   );
 }
 

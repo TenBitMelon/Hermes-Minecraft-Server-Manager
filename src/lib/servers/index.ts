@@ -45,7 +45,6 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       cloudflareSRVRecordID: recordIds.value.srv,
 
       serverFilesMissing: false,
-      serverFilesZipped: null,
       state: ServerState.Creating
     }),
     () => new Error('Failed to create new server in DB')

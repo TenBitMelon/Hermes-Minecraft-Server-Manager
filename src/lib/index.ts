@@ -42,9 +42,19 @@ export function randomWord() {
   return words[Math.floor(Math.random() * words.length)];
 }
 
-export function getFileURL(collectionID: string, recordID: string, filename: string) {
+export function getFileURL(collectionID: string, recordID: string, filename: string, download: boolean = false) {
   if (!collectionID || !recordID || !filename) return penv.PUBLIC_DEFAULT_ICON_URL;
-  return `/api/file?collectionID=${collectionID}&recordID=${recordID}&filename=${filename}`;
+  return `/api/file?collectionID=${collectionID}&recordID=${recordID}&filename=${filename}${download ? '&download=true' : ''}`;
+}
+
+export function formatFileSize(size: number) {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  return `${size.toFixed(2)} ${units[unitIndex]}`;
 }
 
 export function stateDisplay(state: ServerState): { indicatorColor: string; message: string } {

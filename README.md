@@ -11,9 +11,10 @@ todo:
 - [x] server panel w/ stats
 - [ ] authentication
 - [ ] backup downloads
-- [ ] better whitelist
+- [ ] more than one backup
+- [x] better whitelist
 - [ ] better server properties
-- [ ] Database error handling across the whole project
+- [x] Database error handling across the whole project
 
 # Hermes Minecraft Server Manager
 

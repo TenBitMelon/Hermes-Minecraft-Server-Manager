@@ -1,9 +1,10 @@
 import { getFileURL } from '$lib';
+import { serverPB } from '$lib/database';
 import { Collections, ServerState, type ServerResponse } from '$lib/database/types';
 import type { PageServerLoadEvent } from './$types';
 
 export async function load({ locals }: PageServerLoadEvent) {
-  const servers: ServerResponse[] = await locals.pb.collection(Collections.Servers).getFullList<ServerResponse>();
+  const servers: ServerResponse[] = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
   // servers.forEach((server) => {
   //   if (server.icon) server.icon = getFileURL(server.collectionId, server.id, server.icon);
   // });

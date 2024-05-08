@@ -4,9 +4,10 @@ import { error, fail, type ActionFailure } from '@sveltejs/kit';
 import { getContainerData, getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer } from '$lib/docker';
 import { resultToPromise } from '$lib';
 import type { CustomError } from '$lib/types';
+import { serverPB } from '$lib/database';
 
 export async function load({ fetch, params, locals }: PageServerLoadEvent) {
-  const server = await locals.pb
+  const server = await serverPB
     .collection(Collections.Servers)
     .getOne<ServerResponse>(params.serverID)
     .catch(() => null);
