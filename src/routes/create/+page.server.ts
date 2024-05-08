@@ -7,7 +7,6 @@ import { ServerCreationSchema } from '$lib/servers/schema';
 export const actions: Actions = {
   default: async ({ request, fetch }) => {
     const formData = formDataObject(await request.formData());
-    console.log(formData);
 
     const data = ServerCreationSchema.safeParse(formData);
     if (!data.success) return fail(400, { success: false, fields: data.error.flatten().fieldErrors, message: 'Some of the inputs are incorrect' });
