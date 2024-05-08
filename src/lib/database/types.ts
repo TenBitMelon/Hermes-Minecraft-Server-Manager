@@ -1,6 +1,8 @@
-import type { File } from 'node:buffer';
+import type PocketBase from 'pocketbase';
+import type { RecordService } from 'pocketbase';
 
 export enum Collections {
+  Backups = 'backups',
   Servers = 'servers',
   Users = 'users'
 }
@@ -28,9 +30,16 @@ export type AuthSystemFields<T = never> = {
   verified: boolean;
 } & BaseSystemFields<T>;
 
-export type UsersRecord = {
+export type UserRecord = {
   name?: string;
   avatar?: string;
+};
+
+export type BackupRecord = {
+  file: FileNameString;
+  name: string;
+  serverID: string;
+  fileSize: number;
 };
 
 export type ServerRecord = {
@@ -53,24 +62,32 @@ export type ServerRecord = {
   shutdownDate: IsoDateString | null;
   deletionDate: IsoDateString | null;
   canBeDeleted: boolean;
-  serverFilesZipped: FileNameString | null;
   serverFilesMissing: boolean;
 };
 
 // Response types include system fields and match responses from the PocketBase API
+export type BackupResponse<Texpand = unknown> = Required<BackupRecord> & BaseSystemFields<Texpand>;
 export type ServerResponse<Texpand = unknown> = Required<ServerRecord> & BaseSystemFields<Texpand>;
-export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>;
+export type UserResponse<Texpand = unknown> = Required<UserRecord> & AuthSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
 
 export type CollectionRecords = {
+  backups: BackupRecord;
   servers: ServerRecord;
-  users: UsersRecord;
+  users: UserRecord;
 };
 
 export type CollectionResponses = {
+  backups: BackupResponse;
   servers: ServerResponse;
-  users: UsersResponse;
+  users: UserResponse;
+};
+
+export type TypedPocketBase = PocketBase & {
+  collection(idOrName: 'backups'): RecordService<BackupResponse>;
+  collection(idOrName: 'servers'): RecordService<ServerResponse>;
+  collection(idOrName: 'users'): RecordService<UserResponse>;
 };
 
 export enum TimeToLive {

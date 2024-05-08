@@ -8,7 +8,10 @@
       <img src="/wing.png" alt="Logo" class="h-10 w-10" />
       <div class="text-3xl font-black">Hermes</div>
     </a>
-    <a href="/create" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Create</a>
+    <div>
+      <a href="/create" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Create</a>
+      <a href="/backups" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Backups</a>
+    </div>
   </div>
   <slot />
   <a class="text-sm text-gray-400" href="/update-results">Version: 0.6.0</a>

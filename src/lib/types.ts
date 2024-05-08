@@ -2,6 +2,8 @@
  * SERVER UPDATE TYPES
  */
 
+import type { IsoDateString } from './database/types';
+
 export enum ServerUpdateType {
   ContainerDoesntExist,
   StartedServer,
@@ -29,10 +31,12 @@ export class CustomError extends Error {
     return { ...JSON.parse(JSON.stringify(this, Object.getOwnPropertyNames(this))), error: this.error?.json() };
   }
 
-  static from(error: Error | unknown) {
+  static from(error: Error | unknown, message?: string) {
     if (error instanceof Error) {
       const newError = new CustomError(error.message, undefined, error.stack);
       newError.cause = error.cause;
+
+      if (message != undefined) return new CustomError(message, newError);
       return newError;
     }
 
@@ -149,4 +153,12 @@ export type ContainerData = {
     PublishedPort: number;
     Protocol: string;
   }[];
+};
+
+export type ServerBackup = {
+  serverId: string;
+  serverTitle: string;
+  backupDate: IsoDateString;
+  backupSize: number;
+  backupFileName: string;
 };

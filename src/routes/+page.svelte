@@ -5,7 +5,7 @@
 
   import type { PageServerData } from './$types';
   import FormLoadingButton from './[serverID]/FormLoadingButton.svelte';
-  import MinecraftRawEditor from './create/MinecraftRawEditor.svelte';
+
   export let data: PageServerData;
   let indexOfFirstStartedOrPaused = data.servers.findIndex((s) => s.state == ServerState.Running || s.state == ServerState.Paused);
   let indexOfFirstStopped = data.servers.findIndex((s) => s.state == ServerState.Stopped);
