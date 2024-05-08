@@ -325,7 +325,7 @@ export async function removeContainer(serverID: string, forcibly = false): Conta
 
 export class ComposeBuilder {
   private readonly version = '3.9';
-  private readonly image = 'itzg/minecraft-server';
+  private readonly image = 'itzg/minecraft-server:latest';
   private port = 25565;
   private readonly volumes: string[] = ['./server-files:/data'];
   private readonly restart = 'no';

@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark light;
+}
+
 @font-face {
   font-family: "Minecraftia";
   font-style: normal;
@@ -62,6 +66,8 @@ html {
     conic-gradient(from -60deg at 50% 13.5%, var(--c1) 0 120deg, #fff0 0 360deg) var(--ts),
     conic-gradient(from -60deg at 50% 41%, var(--c2) 0 60deg, var(--c3) 0 120deg, #fff0 0 360deg) var(--ts),
     var(--c0);
+
+  @apply scroll-transparent;
 }
 
 @layer components {
@@ -86,7 +92,6 @@ html {
   }
 
   .scroll-transparent {
-    /* Makes the scroll bar transparent */
     scrollbar-color: rgba(255, 255, 255, 0.5) rgba(255, 255, 255, 0.2);
   }
 }
