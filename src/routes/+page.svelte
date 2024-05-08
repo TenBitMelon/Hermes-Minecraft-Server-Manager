@@ -1,30 +1,37 @@
 <script lang="ts">
   import { env } from '$env/dynamic/public';
   import { getFileURL, stateDisplay, timeUntil } from '$lib';
-  import { ServerState } from '$lib/database/types';
+  import { ServerState, TimeToLiveMiliseconds } from '$lib/database/types';
 
   import type { PageServerData } from './$types';
   import FormLoadingButton from './[serverID]/FormLoadingButton.svelte';
   import MinecraftRawEditor from './create/MinecraftRawEditor.svelte';
   export let data: PageServerData;
+  let indexOfFirstStartedOrPaused = data.servers.findIndex((s) => s.state == ServerState.Running || s.state == ServerState.Paused);
+  let indexOfFirstStopped = data.servers.findIndex((s) => s.state == ServerState.Stopped);
 </script>
 
-<div class="flex w-full items-center">
-  <div class="h-px w-full bg-gray-800" />
-  <div class="mx-4 whitespace-nowrap text-sm font-thin">Servers</div>
-  <div class="h-px w-full bg-gray-800" />
-</div>
-
-{#each data.servers as server}
+{#each data.servers as server, i}
+  {#if indexOfFirstStartedOrPaused == i || indexOfFirstStopped == i}
+    <div class="flex w-full items-center">
+      <div class="h-px w-full bg-gray-800" />
+      <div class="mx-4 whitespace-nowrap text-sm font-thin">{indexOfFirstStopped == i ? 'Past Servers' : 'Servers'}</div>
+      <div class="h-px w-full bg-gray-800" />
+    </div>
+  {/if}
   {@const display = stateDisplay(server.state)}
   <a class="my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800" href={`/${server.id}`} data-sveltekit-preload-data="false">
     {#if server.state == ServerState.Stopped}
       <FormLoadingButton action={`/${server.id}/?/start`} text="Revive" class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4" buttonClass="bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed">
-        Will be deleted {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
+        Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
       </FormLoadingButton>
+    {:else if server.state == ServerState.Paused}
+      <div class="flex w-full items-center justify-between rounded-t-sm bg-green-700 p-1 px-4">
+        Stopping {server.startDate && server.timeToLive ? timeUntil(Date.parse(server.startDate) + TimeToLiveMiliseconds[server.timeToLive]) : '...'}
+      </div>
     {/if}
     <div class="flex gap-4 p-4">
-      <img class="pixelated aspect-square h-24 rounded-sm" src={getFileURL(server.collectionId, server.id, server.icon)} alt="Server Icon" />
+      <img class="pixelated aspect-square h-24 rounded-sm max-sm:h-16" src={getFileURL(server.collectionId, server.id, server.icon)} alt="Server Icon" />
       <div>
         <h2 class="text-xl font-bold">
           {server.title}

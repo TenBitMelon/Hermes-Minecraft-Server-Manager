@@ -170,16 +170,15 @@
 
 <div class="flex flex-col gap-2 rounded-md bg-gray-800 p-4">
   {#if editor}
-    <div class="flex gap-2">
-      <button class={`rounded-md bg-gray-700 p-1 px-3 ${editor.isActive('bold') ? 'ring-2 ring-primary' : ''}`} type="button" on:click={() => editor.chain().focus().toggleBold().run()} disabled={!editor.can().chain().focus().toggleBold().run()}> Bold </button>
-      <button class={`rounded-md bg-gray-700 p-1 px-3 ${editor.isActive('italic') ? 'ring-2 ring-primary' : ''}`} type="button" on:click={() => editor.chain().focus().toggleItalic().run()} disabled={!editor.can().chain().focus().toggleItalic().run()}> Italic </button>
-      <button class={`rounded-md bg-gray-700 p-1 px-3 ${editor.isActive('strike') ? 'ring-2 ring-primary' : ''}`} type="button" on:click={() => editor.chain().focus().toggleStrike().run()} disabled={!editor.can().chain().focus().toggleStrike().run()}> Strikethrough </button>
-      <button class={`rounded-md bg-gray-700 p-1 px-3 ${editor.isActive('underline') ? 'ring-2 ring-primary' : ''}`} type="button" on:click={() => editor.chain().focus().setUnderline().run()} disabled={!editor.can().chain().focus().setUnderline().run()}> Underline </button>
-      <button class={`rounded-md bg-gray-700 p-1 px-3`} type="button" on:click={() => editor.chain().focus().undo().run()} disabled={!editor.can().chain().focus().undo().run()}> Undo </button>
-      <button class={`rounded-md bg-gray-700 p-1 px-3`} type="button" on:click={() => editor.chain().focus().redo().run()} disabled={!editor.can().chain().focus().redo().run()}> Redo </button>
-      <a class="float-right w-full text-right text-sm text-gray-400 underline" href="https://minecraft.tools/motd.php" target="_blank" rel="noopener noreferrer">Formatting Codes</a>
+    <div class="flex flex-wrap gap-2 *:rounded-md *:bg-gray-700 *:p-1 *:px-3 *:max-sm:p-2 *:max-sm:px-5">
+      <button class={`${editor.isActive('bold') ? 'ring-2 ring-primary' : ''}`} type="button" on:click={() => editor.chain().focus().toggleBold().run()} disabled={!editor.can().chain().focus().toggleBold().run()}> Bold </button>
+      <button class={`${editor.isActive('italic') ? 'ring-2 ring-primary' : ''}`} type="button" on:click={() => editor.chain().focus().toggleItalic().run()} disabled={!editor.can().chain().focus().toggleItalic().run()}> Italic </button>
+      <button class={`${editor.isActive('strike') ? 'ring-2 ring-primary' : ''}`} type="button" on:click={() => editor.chain().focus().toggleStrike().run()} disabled={!editor.can().chain().focus().toggleStrike().run()}> Strikethrough </button>
+      <button class={`${editor.isActive('underline') ? 'ring-2 ring-primary' : ''}`} type="button" on:click={() => editor.chain().focus().setUnderline().run()} disabled={!editor.can().chain().focus().setUnderline().run()}> Underline </button>
+      <button type="button" on:click={() => editor.chain().focus().undo().run()} disabled={!editor.can().chain().focus().undo().run()}> Undo </button>
+      <button type="button" on:click={() => editor.chain().focus().redo().run()} disabled={!editor.can().chain().focus().redo().run()}> Redo </button>
     </div>
-    <div class="flex gap-1 *:h-6 *:w-6 *:rounded-sm">
+    <div class="flex flex-wrap gap-1 *:aspect-square *:w-6 *:rounded-sm *:max-sm:w-10">
       {#each minecraftColors as color}
         <button type="button" on:click={() => editor.chain().focus().setColor(color.hex).run()} class={editor.isActive('textStyle', { color: color.hex }) ? 'ring-2 ring-primary' : ''} style={`background-color: ${color.hex}`} title={color.name}></button>
       {/each}

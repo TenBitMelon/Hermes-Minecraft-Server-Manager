@@ -37,9 +37,9 @@
   });
 </script>
 
-<div class="grid w-full max-w-3xl grid-cols-1 gap-4">
+<div class="flex w-full max-w-3xl flex-col gap-4">
   <!-- Server Information -->
-  <div class="grid grid-cols-[1fr_auto] items-center gap-4">
+  <div class="grid grid-cols-[1fr_auto] items-center gap-4 max-sm:grid-cols-1">
     <div>
       <h1 class="text-2xl font-bold">
         {data.server.title}
@@ -51,7 +51,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 fill-white group-hover:inline" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z" /></svg>
       </button>
     </div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 max-sm:justify-end">
       <div class="flex items-center gap-2">
         <div class={`h-3 w-3 rounded-full ${serverStatus.indicatorColor}`}></div>
         <h2 class="text-lg">{serverStatus.message}</h2>
@@ -111,38 +111,20 @@
   </FormLoadingButton>
   {commandMessage}
 </div>
-<div class="h-full max-h-[60vh] w-full max-w-6xl gap-4">
-  <pre class="relative flex h-full flex-col-reverse overflow-x-scroll whitespace-nowrap rounded-md bg-gray-800 p-4 text-sm [overflow-anchor:auto]">
-    <!-- {#await data.logs}
-      <div class="h-full w-full animate-pulse rounded-md bg-gray-600" />
-    {:then logs}
-      {#each logs.reverse() as log, i (i)}
-        <div>
-        <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-cyan-500">{log.split('|')[0]} |</span>
+<div class="scroll-transparent flex h-[65vh] w-full max-w-6xl resize-y flex-col-reverse overflow-x-scroll whitespace-nowrap rounded-md bg-gray-800 p-4 font-mono text-sm [overflow-anchor:auto] max-sm:text-[.70rem]">
+  {#if logs == null}
+    <div class="h-full w-full animate-pulse rounded-md bg-gray-600" />
+  {:else if logs.length > 0}
+    {#each logs.reverse() as log, i (i)}
+      <div>
+        <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-cyan-500 max-sm:hidden">{log.split('|')[0]} |</span>
         <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-gray-400">{log.split('|')[1]}</span>
       </div>
-      {/each}
-        {#if logs.length == 0}
-        <p class="w-full text-center">No logs available</p>
-      {/if}
-    {:catch}
-      <p class="w-full text-center">No logs available</p>
-    {/await} -->
-    {#if logs == null}
-      <div class="h-full w-full animate-pulse rounded-md bg-gray-600" />
-    {:else if logs.length > 0}
-      {#each logs.reverse() as log, i (i)}
-        <div>
-        <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-cyan-500">{log.split('|')[0]} |</span>
-        <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-gray-400">{log.split('|')[1]}</span>
-      </div>
-      {/each}
-        {#if logs.length == 0}
-        <p class="w-full text-center">No logs available</p>
-      {/if}
-    {:else}
+    {/each}
+    {#if logs.length == 0}
       <p class="w-full text-center">No logs available</p>
     {/if}
-      
-  </pre>
+  {:else}
+    <p class="w-full text-center">No logs available</p>
+  {/if}
 </div>
