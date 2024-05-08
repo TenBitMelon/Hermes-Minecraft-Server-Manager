@@ -25,6 +25,7 @@
 
   let exportMotd: string | undefined = undefined;
 
+  let selectedTimeToLive: TimeToLive = TimeToLive['12 hr'];
   let selectedSoftware: ServerSoftware = ServerSoftware.Vanilla;
   let selectedGameVersion: string;
   $: if (!ServerSoftwareOptions[selectedSoftware]?.versions.flat().includes(selectedGameVersion)) selectedGameVersion = ServerSoftwareOptions[selectedSoftware]?.versions.at(-1)?.at(-1) ?? '';
@@ -69,7 +70,7 @@
 
 <form
   method="post"
-  class="flex w-full max-w-4xl flex-col gap-4 p-8"
+  class="flex w-full max-w-4xl flex-col gap-4 p-8 max-sm:p-0"
   enctype="multipart/form-data"
   use:enhance={({ formData, formElement }) => {
     createButtonLoading = true;
@@ -78,10 +79,16 @@
       update();
     };
   }}>
+  <div class="flex w-full items-center pb-8">
+    <div class="h-px w-full bg-gray-800" />
+    <div class="mx-4 whitespace-nowrap text-sm font-thin">Display Information</div>
+    <div class="h-px w-full bg-gray-800" />
+  </div>
+
   <!-- SERVER DISPLAY INFO -->
 
   <!-- Title & Subdomain -->
-  <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
     <label class={`block`}>
       <span class="font-semibold text-gray-400">Server Title</span>
       <div class={`${errors.title ? 'error-outline' : ''}`}>
@@ -97,8 +104,8 @@
   </div>
 
   <!-- Icon -->
-  <label class={`flex items-center gap-2  rounded-md bg-gray-800 p-4 ${errors.icon ? 'error-outline' : ''}`}>
-    <img class="h-10 w-10 rounded-sm" alt="" bind:this={iconImageElement} src={PUBLIC_DEFAULT_ICON_URL} />
+  <label class={`flex items-center gap-2 rounded-md  bg-gray-800 p-4 max-sm:flex-col ${errors.icon ? 'error-outline' : ''}`}>
+    <img class="aspect-square w-10 rounded-sm max-sm:w-36" alt="" bind:this={iconImageElement} src={PUBLIC_DEFAULT_ICON_URL} />
     <input
       type="file"
       name="icon"
@@ -126,9 +133,24 @@
     <MinecraftRawEditor bind:exportMotd />
   </div>
 
-  <hr />
+  <div class="flex w-full items-center py-8">
+    <div class="h-px w-full bg-gray-800" />
+    <div class="mx-4 whitespace-nowrap text-sm font-thin">Servers Options</div>
+    <div class="h-px w-full bg-gray-800" />
+  </div>
 
   <!-- SERVER CONFIG -->
+
+  <!-- Time to Live -->
+  <div class="font-semibold text-gray-400">Time to Live</div>
+  <div class={`grid grid-cols-2 gap-4 md:grid-cols-4 ${errors.timeToLive ? 'error-outline' : ''}`}>
+    {#each Object.entries(TimeToLive) as [timeName, time]}
+      <label class={`flex cursor-pointer items-center gap-2 rounded-md bg-gray-800 px-4 py-2 capitalize has-[:checked]:ring-2 has-[:checked]:ring-primary`}>
+        <input type="radio" name="timeToLive" value={time} bind:group={selectedTimeToLive} class=" hidden" />
+        {timeName}
+      </label>
+    {/each}
+  </div>
 
   <!-- Server Software -->
 
@@ -156,7 +178,7 @@
             <div class="h-4 w-4"></div>
           {/if}
         </div>
-        <div class="absolute top-0 h-fit rounded-md shadow-lg group-hover:bg-gray-800">
+        <div class="absolute top-0 h-fit rounded-md shadow-lg hover:z-10 group-hover:bg-gray-800">
           {#each version as versionNumber}
             <label
               class={`
@@ -179,7 +201,11 @@
     {/each}
   </div>
 
-  <hr />
+  <div class="flex w-full items-center py-8">
+    <div class="h-px w-full bg-gray-800" />
+    <div class="mx-4 whitespace-nowrap text-sm font-thin">World Options</div>
+    <div class="h-px w-full bg-gray-800" />
+  </div>
 
   <!-- WORLD OPTIONS -->
 
@@ -224,7 +250,7 @@
         <!-- Make flat -->
         <input type="text" name="superflatLayers" value={JSON.stringify(superflatLayers)} hidden />
         <!-- Superflat creator -->
-        <div class={`m-auto w-3/4 ${errors.superflatLayers ? 'error-outline' : ''}`}>
+        <div class={`m-auto w-3/4 max-sm:w-full ${errors.superflatLayers ? 'error-outline' : ''}`}>
           <DraggableList bind:list={superflatLayers}></DraggableList>
         </div>
       {/if}
@@ -255,13 +281,15 @@
     {/if}
   {/if}
 
-  <hr />
+  <div class="flex w-full items-center py-8">
+    <div class="h-px w-full bg-gray-800" />
+    <div class="mx-4 whitespace-nowrap text-sm font-thin">Additional Configuration</div>
+    <div class="h-px w-full bg-gray-800" />
+  </div>
 
-  <div class="font-semibold text-gray-400">Additional Configuration</div>
-
-  <div class="grid grid-cols-2 gap-4 *:flex *:items-center *:justify-between *:rounded-md *:bg-gray-800 *:p-2 *:px-4">
+  <div class="grid grid-cols-2 gap-4 *:flex *:items-center *:justify-between *:rounded-md *:bg-gray-800 *:p-2 *:px-4 max-sm:flex max-sm:flex-col">
     <!-- Difficulty Selector -->
-    <label class={`${errors.difficulty ? 'error-outline' : ''}`}>
+    <label class={`max-sm:order-1 ${errors.difficulty ? 'error-outline' : ''}`}>
       Difficulty
       <select name="difficulty" class="w-1/2 rounded-md bg-gray-700 p-1 px-4">
         <option value="peaceful">Peaceful</option>
@@ -272,7 +300,7 @@
     </label>
 
     <!-- Gamemode Selector -->
-    <label class={`${errors.gamemode ? 'error-outline' : ''}`}>
+    <label class={`max-sm:order-2 ${errors.gamemode ? 'error-outline' : ''}`}>
       Gamemode
       <select name="gamemode" class="w-1/2 rounded-md bg-gray-700 p-1 px-4">
         <option value="survival" selected>Survival</option>
@@ -283,45 +311,46 @@
     </label>
 
     <!-- Max Players -->
-    <label class={`${errors.maxPlayers ? 'error-outline' : ''}`}>
+    <label class={`max-sm:order-3 ${errors.maxPlayers ? 'error-outline' : ''}`}>
       Max Players
       <input type="number" class="w-1/2 rounded-md bg-gray-700 p-1 px-4 text-center" name="maxPlayers" placeholder="Max Players" value="10" />
     </label>
 
-    <label class={`${errors.enablePVP ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
+    <label class={`max-sm:order-6 ${errors.enablePVP ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
       PvP
       <input type="checkbox" class="w-8 scale-150 rounded-md bg-gray-700 text-center checked:accent-primary" value="true" checked name="enablePVP" />
     </label>
-    <label class={`${errors.viewDistance ? 'error-outline' : ''}`}>
+
+    <label class={`max-sm:order-4 ${errors.viewDistance ? 'error-outline' : ''}`}>
       View Distance
       <input type="number" class="w-1/2 rounded-md bg-gray-700 p-1 px-4 text-center" value="16" name="viewDistance" placeholder="View Distance" />
     </label>
 
-    <label class={`${errors.hardcore ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
+    <label class={`max-sm:order-7 ${errors.hardcore ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
       Hardcore
       <input type="checkbox" class="w-8 scale-150 rounded-md bg-gray-700 text-center checked:accent-primary" value="true" name="hardcore" />
     </label>
 
-    <label class={`${errors.simulationDistance ? 'error-outline' : ''}`}>
+    <label class={`max-sm:order-5 ${errors.simulationDistance ? 'error-outline' : ''}`}>
       Simulation Distance
       <input type="number" class="w-1/2 rounded-md bg-gray-700 p-1 px-4 text-center" value="10" name="simulationDistance" placeholder="Simulation Distance" />
     </label>
 
-    <label class={`${errors.enableCommandBlock ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
+    <label class={`max-sm:order-8 ${errors.enableCommandBlock ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
       Enable Command Blocks
       <input type="checkbox" class="w-8 scale-150 rounded-md bg-gray-700 text-center checked:accent-primary" value="true" checked name="enableCommandBlock" />
     </label>
   </div>
 
-  <div class="grid grid-cols-2 gap-x-8 px-8">
-    <div class="font-semibold text-gray-400">Whitelist</div>
-    <div class="font-semibold text-gray-400">Operators</div>
+  <div class="grid grid-cols-2 gap-x-8 px-8 max-sm:flex max-sm:flex-col">
     <label class={`${errors.whitelist ? 'error-outline' : ''}`}>
+      <div class="font-semibold text-gray-400">Whitelist</div>
       <!-- <textarea class="h-full w-full" name="whitelist" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000",\n\t\tname: "username"\n\t}\n]`} /> -->
       <input name="whitelist" class="hidden" value={JSON.stringify(whitelistPlayers)} />
       <PlayerList bind:list={whitelistPlayers} />
     </label>
     <label class={`${errors.ops ? 'error-outline' : ''}`}>
+      <div class="font-semibold text-gray-400">Operators</div>
       <!-- <textarea class="h-full w-full" name="ops" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000"\n\t\tname: "username"\n\t\tlevel: 4,\n\t\tbypassesPlayerLimit: true\n\t}\n]`} /> -->
       <input name="ops" class="hidden" value={JSON.stringify(operatorPlayers)} />
       <PlayerList bind:list={operatorPlayers} />
@@ -354,10 +383,14 @@
       placeholder="Server Properties" />
   </label> -->
 
-  <hr />
+  <div class="flex w-full items-center py-8">
+    <div class="h-px w-full bg-gray-800" />
+    <div class="mx-4 whitespace-nowrap text-sm font-thin">Start the Server</div>
+    <div class="h-px w-full bg-gray-800" />
+  </div>
 
-  <div class="grid grid-cols-3 gap-4">
-    <label class={`flex cursor-pointer items-center justify-center gap-2 rounded-md bg-gray-800 ${errors.eula ? 'error-outline' : ''}`}>
+  <div class="grid grid-cols-3 gap-4 max-sm:flex max-sm:flex-col">
+    <label class={`flex cursor-pointer items-center justify-center gap-2 rounded-md bg-gray-800 p-2 ${errors.eula ? 'error-outline' : ''}`}>
       <input type="checkbox" name="eula" value="true" class="accent-primary" />
       I agree to the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
     </label>
@@ -370,13 +403,13 @@
       {/if}
       Create
     </button>
-    <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 ${errors.timeToLive ? 'error-outline' : ''}`}>
+    <!-- <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 ${errors.timeToLive ? 'error-outline' : ''}`}>
       Time to Live
       <select name="timeToLive" class="w-1/2 rounded-md bg-gray-700 p-1 px-4">
         {#each Object.values(TimeToLive) as timeToLive}
           <option value={timeToLive}>{timeToLive.replace('_', ' ')}</option>
         {/each}
       </select>
-    </label>
+    </label> -->
   </div>
 </form>
