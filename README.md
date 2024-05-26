@@ -1,21 +1,4 @@
-[![Docker Image CI](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml/badge.svg)](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml)
-
-todo:
-
-- [x] sibling container for database
-- [x] stopping & zip file
-- [x] deletion
-- [x] more server types
-- [ ] file uploads
-- [ ] world sources & downloading
-- [x] server panel w/ stats
-- [ ] authentication
-- [x] backup downloads
-- [x] more than one backup
-- [x] better whitelist
-- [ ] better server properties
-- [x] Database error handling across the whole project
-- [ ] Packwiz
+[![Docker Image](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml/badge.svg)](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml)
 
 # Hermes Minecraft Server Manager
 
@@ -56,7 +39,7 @@ pnpm dev
 
 ## Configuration
 
-The `docker-compose.yml` file is used to configure the server. The following is an example configuration:
+The [`docker-compose.yml`](./docker-compose.yml) file is used to configure the server. The following is an example configuration, which can also be found in the repository.
 
 ```yml
 version: '3'
@@ -92,20 +75,33 @@ services:
       # This should be the domain that the server is accessible at from the internet
       - PUBLIC_ROOT_DOMAIN=example.com
 
-      # The port range that the server will use for the public servers.
+      # The port range (inclusive) that the server will use for the public servers.
       # This should be changed based on how many servers you want to allow
       # and how many ports you have open on your server.
-      - PUBLIC_PORT_MIN=25565
-      - PUBLIC_PORT_MAX=25565
+      - PUBLIC_PORT_MIN=25563
+      - PUBLIC_PORT_MAX=25564
+      # Wether to avoid the default Minecraft port 25565.
+      # This can help with preventing the servers from getting scrapped and
+      # being targeted for griefing.
+      - PRIVATE_AVOID_DEFAULT_PORT=true
 
       # This is the default icon for the servers and can be changed to any URL.
       # A default icon is included with the container, feel free the change it.
       - PUBLIC_DEFAULT_ICON_URL=https://example.com/icon.png
 
+      # This allows you to set the default MOTD when creating a server
+      # This will be used if a custom one isn't entered
+      # Do no put color codes here, they won't work
+      - PUBLIC_DEFAULT_MOTD=A Hermes Minecraft Server
+
       # This variable allows you to control how long you want to keep stopped servers
       # before they are deleted. This is in hours and the default is 168 hours (1 week).
       # If you don't want to delete servers, set this to -1.
       - PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN=168 # In hours
+
+      # This option allows you to require all created servers to start with a whitelist enabled.
+      # This will make people enter atleast one username when creating the server.
+      - PUBLIC_REQUIRE_WHITELIST=true
 
       # These are the Cloudflare API keys that are used for managing the DNS records
       # This is used for creating the subdomains for the servers.
@@ -118,6 +114,13 @@ services:
       # Feel free to change the email and password, it will create the account if it doesn't exist
       - POCKETBASE_INTERNAL_ADMIN_EMAIL=internal@example.com
       - POCKETBASE_INTERNAL_ADMIN_PASSWORD=password
+
+      # This is the maximum upload size to the website, the uploaded features are server icon,
+      # mod jars, resourcepacks, worlds, and datapacks. This will limit the size of the file uploaded
+      # You can change it to be infinity to remove the resitriction.
+      - BODY_SIZE_LIMIT=1073741824 # 1 gb
+      -  # BODY_SIZE_LIMIT=524288 # 512 kb
+      -  # BODY_SIZE_LIMIT=Infinity
 
     restart: unless-stopped
 ```
