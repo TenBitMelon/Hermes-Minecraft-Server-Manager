@@ -8,14 +8,10 @@
   import { fade } from 'svelte/transition';
   import type { PageData } from './$types';
   import FormLoadingButton from './FormLoadingButton.svelte';
+  import type { ContainerResult } from '$lib/types';
 
   export let data: PageData;
   // export let form: ActionData;
-
-  let stats: ContainerUsageStats | null = null;
-  $: data.stats.then((l) => (stats = l ?? null));
-  let logs: string[] | null = null;
-  $: data.logs.then((l) => (logs = l ?? null));
 
   $: serverStatus = stateDisplay(data.server.state);
   let commandMessage = '';
@@ -61,26 +57,32 @@
   </div>
 
   <div class="flex items-center gap-4">
-    {#if stats == null}
+    {#await data.stats}
       <div class="flex h-6 w-full animate-pulse items-center gap-2 rounded-md bg-gray-600" />
       <div class="flex h-6 w-full animate-pulse items-center gap-2 rounded-md bg-gray-600" />
-    {:else}
-      <div class="flex w-full items-center gap-2">
-        CPU:
-        {stats.CPUPerc}
-        <!-- <meter class="w-1/2" max="100" value="54"></meter> -->
-      </div>
-      <!-- <div class="flex w-full items-center gap-2">
+    {:then stats}
+      {#if stats.error}
+        <div class="flex w-full items-center gap-2">
+          <p class="text-red-500">Error: {stats.error.message}</p>
+        </div>
+      {:else}
+        <div class="flex w-full items-center gap-2">
+          CPU:
+          {stats.value.CPUPerc}
+          <!-- <meter class="w-1/2" max="100" value="54"></meter> -->
+        </div>
+        <!-- <div class="flex w-full items-center gap-2">
         RAM:
         {stats.MemPerc}
         <!-- <meter class="w-1/2" max="2" value=".54"></meter> --
-      </div> -->
-      <div class="flex w-full items-center gap-2">
-        RAM:
-        {stats.MemUsage.split('/')[0]}
-        <!-- <meter class="w-1/2" max="2" value=".54"></meter> -->
-      </div>
-    {/if}
+        </div> -->
+        <div class="flex w-full items-center gap-2">
+          RAM:
+          {stats.value.MemUsage.split('/')[0]}
+          <!-- <meter class="w-1/2" max="2" value=".54"></meter> -->
+        </div>
+      {/if}
+    {/await}
 
     <!-- Logs -->
     <div class="flex items-center justify-between">
@@ -111,19 +113,25 @@
   {commandMessage}
 </div>
 <div class="scroll-transparent flex h-[65vh] w-full max-w-6xl resize-y flex-col-reverse overflow-x-scroll whitespace-nowrap rounded-md bg-gray-800 p-4 font-mono text-sm [overflow-anchor:auto] max-sm:text-[.70rem]">
-  {#if logs == null}
+  {#await data.logs}
     <div class="h-full w-full animate-pulse rounded-md bg-gray-600" />
-  {:else if logs.length > 0}
-    {#each logs.reverse() as log, i (i)}
-      <div>
-        <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-cyan-500 max-sm:hidden">{log.split('|')[0]} |</span>
-        <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-gray-400">{log.split('|')[1]}</span>
+  {:then logs}
+    {#if logs.error}
+      <div class="flex w-full items-center gap-2">
+        <pre class="text-red-500">Error: {logs.error.message}</pre>
       </div>
-    {/each}
-    {#if logs.length == 0}
+    {:else if logs.value.length > 0}
+      {#each logs.value.reverse() as log, i (i)}
+        <div>
+          <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-cyan-500 max-sm:hidden">{log.split('|')[0]} |</span>
+          <span in:fade|global={{ delay: i * 15, duration: 100 }} class="text-gray-400">{log.split('|')[1]}</span>
+        </div>
+      {/each}
+      {#if logs.value.length == 0}
+        <p class="w-full text-center">No logs available</p>
+      {/if}
+    {:else}
       <p class="w-full text-center">No logs available</p>
     {/if}
-  {:else}
-    <p class="w-full text-center">No logs available</p>
-  {/if}
+  {/await}
 </div>

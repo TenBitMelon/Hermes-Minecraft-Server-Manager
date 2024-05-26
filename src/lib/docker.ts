@@ -8,9 +8,7 @@ import { removeCloudflareRecords } from './cloudflare';
 import { serverPB } from './database';
 import { Collections, ServerState, type ServerRecord, type ServerResponse } from './database/types';
 import { createBackup } from './servers/backups';
-import { /* CustomError, */ ContainerState, CustomError, type ContainerData } from './types';
-
-type ContainerResult<T> = Promise<Result<T, CustomError>>;
+import { /* CustomError, */ ContainerState, CustomError, type ContainerData, type ContainerResult } from './types';
 
 function getServerFolder(serverID: string): string {
   const relative = `servers/${serverID}/`;
@@ -145,7 +143,6 @@ export async function getContainerData(serverID: string): ContainerResult<Contai
   if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
   const psResult = await ResultAsync.fromPromise(execCompose('ps', [], { cwd: getServerFolder(serverID), commandOptions: ['--format', 'json'] }), () => new CustomError('Failed to read container data'));
-
   if (psResult.isErr()) return err(psResult.error);
 
   const containerJSON: ContainerData[] = JSON.parse(
@@ -208,6 +205,7 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
 
   const containerData = await getContainerData(serverID);
   if (containerData.isErr()) return err(containerData.error);
+
   const containerStats = await ResultAsync.fromPromise(
     new Promise<IDockerComposeResult>((resolve, reject): void => {
       const childProc = childProcess.spawn('docker', ['stats', containerData.value.ID, '--no-stream', '--no-trunc', '--format', '{{ json . }}']);

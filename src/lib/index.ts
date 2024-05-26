@@ -6,6 +6,7 @@ import { words } from '$assets/words.json';
 import { env as penv } from '$env/dynamic/public';
 import { Result } from 'neverthrow';
 import { ServerState } from './database/types';
+import type { CustomError } from './types';
 
 export type NotNull<T> = T extends null ? never : T;
 
@@ -82,10 +83,10 @@ export function stateDisplay(state: ServerState): { indicatorColor: string; mess
   }
 }
 
-interface PromiseReject<T, E> extends Promise<T | void> {
-  new <T, E = any>(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: E) => void) => void): PromiseReject<T, E>;
-}
+// interface PromiseReject<T, E> extends Promise<T | void> {
+//   new <T, E = any>(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: E) => void) => void): PromiseReject<T, E>;
+// }
 
-export function resultToPromise<T, E>(r: Result<T, E>): PromiseReject<T, E> {
-  return (r.isOk() ? Promise.resolve(r.value) : Promise.reject(r.error)) as PromiseReject<T, E>;
+export function resultToPromise<T, E extends CustomError>(r: Result<T, E>) {
+  return r.mapErr((e) => e.json());
 }

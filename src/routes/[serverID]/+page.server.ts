@@ -1,10 +1,11 @@
 import { resultToPromise } from '$lib';
 import { serverPB } from '$lib/database';
 import { Collections, type ServerResponse } from '$lib/database/types';
-import { getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer } from '$lib/docker';
+import { getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer, type ContainerUsageStats } from '$lib/docker';
 import type { CustomError } from '$lib/types';
 import { error, fail, type ActionFailure } from '@sveltejs/kit';
 import type { Actions, PageServerLoadEvent } from './$types';
+import { ResultAsync } from 'neverthrow';
 
 export async function load({ fetch, params, locals }: PageServerLoadEvent) {
   const server = await serverPB
@@ -13,9 +14,37 @@ export async function load({ fetch, params, locals }: PageServerLoadEvent) {
     .catch(() => null);
   if (!server) error(404, "This server doesn't exist");
 
-  const logs = getContainerLogs(params.serverID, 'all').then(resultToPromise);
+  // const logs = new Promise(async (resolve, reject) => {
+  //   const result = await getContainerLogs(params.serverID, 'all');
+  //   if (result.isErr()) return reject(result.error);
+  //   return resolve(result.value);
+  // });
+  // const logs = getContainerLogs(params.serverID, 'all').then(resultToPromise); /* .then(resultToPromise) */
   // const data = getContainerData(params.serverID).then(resultToPromise);
-  const stats = getContainerUsageStats(params.serverID).then(resultToPromise);
+  // const stats = new Promise(async (resolve, reject) => {
+  //   const result = await getContainerUsageStats(params.serverID);
+  //   if (result.isErr()) return reject(result.error);
+  //   return resolve(result.value);
+  // });
+  const stats = getContainerUsageStats(params.serverID).then((r) => {
+    if (r.isErr()) return { value: null, error: r.error.json() };
+    return { value: r.value, error: null };
+  });
+  const logs = getContainerLogs(params.serverID, 'all').then((r) => {
+    if (r.isErr()) return { value: null, error: r.error.json() };
+    return { value: r.value, error: null };
+  });
+  // .then((r) => structuredClone(r))
+  // .then((r) => (console.log(r), r));
+  // .then(console.log);
+  // new Promise(async (resolve, reject) => {
+  //   const result = await getContainerUsageStats(params.serverID);
+  //   resolve(result.mapErr((e) => e.json()));
+  //   return result.mapErr((e) => e.json());
+  //   // console.log(result);
+  //   // if (result.isErr()) return { value: null, error: result.error };
+  //   // return { value: result.value, error: null };
+  // }); /* .then(resultToPromise) */
 
   return {
     server,

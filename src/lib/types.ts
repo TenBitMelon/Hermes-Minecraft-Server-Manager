@@ -2,6 +2,7 @@
  * SERVER UPDATE TYPES
  */
 
+import type { Result } from 'neverthrow';
 import type { IsoDateString } from './database/types';
 
 export enum ServerUpdateType {
@@ -14,6 +15,8 @@ export enum ServerUpdateType {
   RemoveServer,
   ContainerStats
 }
+
+export type ContainerResult<T> = Promise<Result<T, CustomError>>;
 
 export class CustomError extends Error {
   stack: string | undefined;
@@ -40,7 +43,7 @@ export class CustomError extends Error {
       return newError;
     }
 
-    return new CustomError(JSON.stringify(error));
+    return new CustomError(JSON.stringify(error, null, 2));
   }
 }
 
