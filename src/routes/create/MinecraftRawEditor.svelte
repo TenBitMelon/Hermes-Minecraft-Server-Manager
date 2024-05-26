@@ -2,21 +2,21 @@
   import { Color } from '@tiptap/extension-color';
   import TextStyle from '@tiptap/extension-text-style';
 
-  import Document from '@tiptap/extension-document';
-  import Text from '@tiptap/extension-text';
-  import Paragraph from '@tiptap/extension-paragraph';
-  import History from '@tiptap/extension-history';
   import Bold from '@tiptap/extension-bold';
+  import Document from '@tiptap/extension-document';
+  import History from '@tiptap/extension-history';
   import Italic from '@tiptap/extension-italic';
+  import Paragraph from '@tiptap/extension-paragraph';
   import Strike from '@tiptap/extension-strike';
+  import Text from '@tiptap/extension-text';
   import Underline from '@tiptap/extension-underline';
   import { generateJSON } from '@tiptap/html';
 
+  import { PUBLIC_DEFAULT_MOTD } from '$env/static/public';
   import { Editor, Extension } from '@tiptap/core';
+  import HardBreak from '@tiptap/extension-hard-break';
   import { Plugin, PluginKey } from 'prosemirror-state';
   import { onMount } from 'svelte';
-  import HardBreak from '@tiptap/extension-hard-break';
-  import { PUBLIC_DEFAULT_MOTD } from '$env/static/public';
 
   let element: HTMLDivElement;
   let editor: Editor;
@@ -185,5 +185,5 @@
     </div>
   {/if}
 
-  <div class="font-minecraftia rounded-md bg-gray-700" bind:this={element} />
+  <div class="rounded-md bg-gray-700 font-minecraftia" bind:this={element} />
 </div>

@@ -4,8 +4,8 @@ dayjs.extend(relativeTime);
 
 import { words } from '$assets/words.json';
 import { env as penv } from '$env/dynamic/public';
+import { Result } from 'neverthrow';
 import { ServerState } from './database/types';
-import { Err, Result } from 'neverthrow';
 
 export type NotNull<T> = T extends null ? never : T;
 

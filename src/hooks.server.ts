@@ -1,5 +1,4 @@
 import { building, dev } from '$app/environment';
-import { serverPB } from '$lib/database';
 import { updateAllServerStates } from '$lib/servers';
 
 /** @type {import('@sveltejs/kit').Handle} */

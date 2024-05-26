@@ -1,10 +1,10 @@
-import { Collections, type ServerResponse } from '$lib/database/types';
-import type { Actions, PageServerLoadEvent } from './$types';
-import { error, fail, type ActionFailure } from '@sveltejs/kit';
-import { getContainerData, getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer } from '$lib/docker';
 import { resultToPromise } from '$lib';
-import type { CustomError } from '$lib/types';
 import { serverPB } from '$lib/database';
+import { Collections, type ServerResponse } from '$lib/database/types';
+import { getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer } from '$lib/docker';
+import type { CustomError } from '$lib/types';
+import { error, fail, type ActionFailure } from '@sveltejs/kit';
+import type { Actions, PageServerLoadEvent } from './$types';
 
 export async function load({ fetch, params, locals }: PageServerLoadEvent) {
   const server = await serverPB

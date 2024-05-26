@@ -1,9 +1,9 @@
 import { serverPB } from '$lib/database';
 import { Collections, type BackupRecord, type BackupResponse } from '$lib/database/types';
-import { CustomError, type ServerBackup } from '$lib/types';
+import { CustomError } from '$lib/types';
 import { zip } from '$lib/zip';
 import fs from 'fs';
-import { Result, ResultAsync, err, ok } from 'neverthrow';
+import { Result, ResultAsync, err } from 'neverthrow';
 import path from 'path';
 
 export async function createBackup(serverID: string, backupName: string = ''): Promise<Result<void, CustomError>> {
