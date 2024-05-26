@@ -1,8 +1,8 @@
 <script lang="ts">
   import { applyAction, enhance } from '$app/forms';
+  import type { NotNull } from '$lib';
   import type { ActionResult } from '@sveltejs/kit';
   import type { ActionData } from './$types';
-  import type { NotNull } from '$lib';
 
   type Success<T> = T extends { error?: undefined; value: infer V; action: infer A } ? { value: V; action: A } : never;
   type Failure<T> = T extends { value?: undefined; error: infer E; action: infer A } ? { error: E; action: A } : never;

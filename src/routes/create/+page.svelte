@@ -2,12 +2,12 @@
   import { enhance } from '$app/forms';
   import { PUBLIC_DEFAULT_ICON_URL } from '$env/static/public';
   import { ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType } from '$lib/database/types';
-  import { string, type SafeParseError, type typeToFlattenedError } from 'zod';
-  import type { ActionData } from './$types';
   import type { ServerCreationSchema } from '$lib/servers/schema';
-  import DraggableList from './SuperflatLayersList.svelte';
-  import PlayerList from './PlayerList.svelte';
+  import { type SafeParseError, type typeToFlattenedError } from 'zod';
+  import type { ActionData } from './$types';
   import MinecraftRawEditor from './MinecraftRawEditor.svelte';
+  import PlayerList from './PlayerList.svelte';
+  import DraggableList from './SuperflatLayersList.svelte';
 
   type ExtractErrorType<T> = T extends SafeParseError<infer V> ? V : never;
   type ErrorsObject = typeToFlattenedError<ExtractErrorType<ReturnType<typeof ServerCreationSchema.safeParse>>>['fieldErrors'];
@@ -93,14 +93,14 @@
       <span class="font-semibold text-gray-400">Server Title<sup class="text-red-400">*</sup></span>
       <div class={`${errors.title ? 'error-outline' : ''}`}>
         <input type="text" name="title" id="title" placeholder="Server Title" class="w-full rounded-md bg-gray-800 p-2 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" />
-        <span class={`font-handwriting block w-full text-center ${errors.title ? '' : 'hidden'}`}>{errors.title}</span>
+        <span class={`block w-full text-center font-handwriting ${errors.title ? '' : 'hidden'}`}>{errors.title}</span>
       </div>
     </label>
     <label class={`block`}>
       <span class="font-semibold text-gray-400">Subdomain</span>
       <div class={`${errors.subdomain ? 'error-outline' : ''}`}>
         <input type="text" name="subdomain" placeholder="Subdomain" class="w-full rounded-md bg-gray-800 p-2 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" />
-        <span class={`font-handwriting block w-full text-center ${errors.subdomain ? '' : 'hidden'}`}>{errors.subdomain}</span>
+        <span class={`block w-full text-center font-handwriting ${errors.subdomain ? '' : 'hidden'}`}>{errors.subdomain}</span>
       </div>
     </label>
   </div>
@@ -127,7 +127,7 @@
       hover:file:bg-secondary hover:file:text-black" />
       <span class="whitespace-nowrap text-sm text-gray-400">*Image will be resized</span>
     </div>
-    <span class={`font-handwriting block w-full text-center ${errors.icon ? '' : 'hidden'}`}>{errors.icon}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.icon ? '' : 'hidden'}`}>{errors.icon}</span>
   </label>
 
   <!-- MOTD -->
@@ -136,7 +136,7 @@
     <!-- <textarea name="motd" class="w-full" placeholder="A Hermes Minecraft Server" /> -->
     <input type="text" name="motd" value={exportMotd} class=" hidden" />
     <MinecraftRawEditor bind:exportMotd />
-    <span class={`font-handwriting block w-full text-center ${errors.motd ? '' : 'hidden'}`}>{errors.motd}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.motd ? '' : 'hidden'}`}>{errors.motd}</span>
   </div>
 
   <div class="flex w-full items-center py-8">
@@ -157,7 +157,7 @@
       </label>
     {/each}
   </div>
-  <span class={`font-handwriting block w-full text-center ${errors.timeToLive ? '' : 'hidden'}`}>{errors.timeToLive}</span>
+  <span class={`block w-full text-center font-handwriting ${errors.timeToLive ? '' : 'hidden'}`}>{errors.timeToLive}</span>
 
   <!-- Server Software -->
 
@@ -170,7 +170,7 @@
       </label>
     {/each}
   </div>
-  <span class={`font-handwriting block w-full text-center ${errors.serverSoftware ? '' : 'hidden'}`}>{errors.serverSoftware}</span>
+  <span class={`block w-full text-center font-handwriting ${errors.serverSoftware ? '' : 'hidden'}`}>{errors.serverSoftware}</span>
 
   <!-- Game Version -->
 
@@ -208,7 +208,7 @@
       </div>
     {/each}
   </div>
-  <span class={`font-handwriting block w-full text-center ${errors.gameVersion ? '' : 'hidden'}`}>{errors.gameVersion}</span>
+  <span class={`block w-full text-center font-handwriting ${errors.gameVersion ? '' : 'hidden'}`}>{errors.gameVersion}</span>
 
   <div class="flex w-full items-center py-8">
     <div class="h-px w-full bg-gray-800" />
@@ -234,7 +234,7 @@
         </label>
       {/if}
     </div>
-    <span class={`font-handwriting block w-full text-center ${errors.worldCreator ? '' : 'hidden'}`}>{errors.worldCreator}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.worldCreator ? '' : 'hidden'}`}>{errors.worldCreator}</span>
 
     <!-- New World Option -->
 
@@ -243,7 +243,7 @@
       <div class="font-semibold text-gray-400">World Seed</div>
       <label class={`block ${errors.worldSeed ? 'error-outline' : ''}`}>
         <input type="text" class="w-full rounded-md bg-gray-800 p-2 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" name="worldSeed" placeholder="World Seed" />
-        <span class={`font-handwriting block w-full text-center ${errors.worldSeed ? '' : 'hidden'}`}>{errors.worldSeed}</span>
+        <span class={`block w-full text-center font-handwriting ${errors.worldSeed ? '' : 'hidden'}`}>{errors.worldSeed}</span>
       </label>
 
       <!-- World Type -->
@@ -256,7 +256,7 @@
           </label>
         {/each}
       </div>
-      <span class={`font-handwriting block w-full text-center ${errors.worldType ? '' : 'hidden'}`}>{errors.worldType}</span>
+      <span class={`block w-full text-center font-handwriting ${errors.worldType ? '' : 'hidden'}`}>{errors.worldType}</span>
 
       {#if worldType == WorldType.Flat}
         <!-- Make flat -->
@@ -270,7 +270,7 @@
       <div class="font-semibold text-gray-400">World Source</div>
       <label class={`block ${errors.worldSourceURL ? 'error-outline' : ''}`}>
         <input type="url" class="w-full rounded-md bg-gray-800 p-2 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" name="worldSourceURL" placeholder="www.downloadlink.com" />
-        <span class={`font-handwriting block w-full text-center ${errors.worldSourceURL ? '' : 'hidden'}`}>{errors.worldSourceURL}</span>
+        <span class={`block w-full text-center font-handwriting ${errors.worldSourceURL ? '' : 'hidden'}`}>{errors.worldSourceURL}</span>
       </label>
 
       <div class="font-semibold text-gray-400">World File</div>
@@ -290,7 +290,7 @@
           name="worldSource"
           accept="application/zip"
           placeholder="World File" />
-        <span class={`font-handwriting block w-full text-center ${errors.worldSource ? '' : 'hidden'}`}>{errors.worldSource}</span>
+        <span class={`block w-full text-center font-handwriting ${errors.worldSource ? '' : 'hidden'}`}>{errors.worldSource}</span>
       </label>
     {/if}
   {/if}
@@ -312,7 +312,7 @@
         <option value="hard">Hard</option>
       </select>
     </label>
-    <span class={`font-handwriting block w-full text-center ${errors.difficulty ? '' : 'hidden'}`}>{errors.difficulty}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.difficulty ? '' : 'hidden'}`}>{errors.difficulty}</span>
 
     <!-- Gamemode Selector -->
     <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 max-sm:order-2 ${errors.gamemode ? 'error-outline' : ''}`}>
@@ -324,44 +324,44 @@
         <option value="spectator">Spectator</option>
       </select>
     </label>
-    <span class={`font-handwriting block w-full text-center ${errors.gamemode ? '' : 'hidden'}`}>{errors.gamemode}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.gamemode ? '' : 'hidden'}`}>{errors.gamemode}</span>
 
     <!-- Max Players -->
     <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 max-sm:order-3 ${errors.maxPlayers ? 'error-outline' : ''}`}>
       Max Players
       <input type="number" class="w-1/2 rounded-md bg-gray-700 p-1 px-4 text-center" name="maxPlayers" placeholder="Max Players" value="10" />
     </label>
-    <span class={`font-handwriting block w-full text-center ${errors.maxPlayers ? '' : 'hidden'}`}>{errors.maxPlayers}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.maxPlayers ? '' : 'hidden'}`}>{errors.maxPlayers}</span>
 
     <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 max-sm:order-6 ${errors.enablePVP ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
       PvP
       <input type="checkbox" class="w-8 scale-150 rounded-md bg-gray-700 text-center checked:accent-primary" value="true" checked name="enablePVP" />
     </label>
-    <span class={`font-handwriting block w-full text-center ${errors.enablePVP ? '' : 'hidden'}`}>{errors.enablePVP}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.enablePVP ? '' : 'hidden'}`}>{errors.enablePVP}</span>
 
     <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 max-sm:order-4 ${errors.viewDistance ? 'error-outline' : ''}`}>
       View Distance
       <input type="number" class="w-1/2 rounded-md bg-gray-700 p-1 px-4 text-center" value="16" name="viewDistance" placeholder="View Distance" />
     </label>
-    <span class={`font-handwriting block w-full text-center ${errors.viewDistance ? '' : 'hidden'}`}>{errors.viewDistance}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.viewDistance ? '' : 'hidden'}`}>{errors.viewDistance}</span>
 
     <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 max-sm:order-7 ${errors.hardcore ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
       Hardcore
       <input type="checkbox" class="w-8 scale-150 rounded-md bg-gray-700 text-center checked:accent-primary" value="true" name="hardcore" />
     </label>
-    <span class={`font-handwriting block w-full text-center ${errors.hardcore ? '' : 'hidden'}`}>{errors.hardcore}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.hardcore ? '' : 'hidden'}`}>{errors.hardcore}</span>
 
     <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 max-sm:order-5 ${errors.simulationDistance ? 'error-outline' : ''}`}>
       Simulation Distance
       <input type="number" class="w-1/2 rounded-md bg-gray-700 p-1 px-4 text-center" value="10" name="simulationDistance" placeholder="Simulation Distance" />
     </label>
-    <span class={`font-handwriting block w-full text-center ${errors.simulationDistance ? '' : 'hidden'}`}>{errors.simulationDistance}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.simulationDistance ? '' : 'hidden'}`}>{errors.simulationDistance}</span>
 
     <label class={`flex items-center justify-between rounded-md bg-gray-800 p-2 px-4 max-sm:order-8 ${errors.enableCommandBlock ? 'error-outline' : ''} flex cursor-pointer items-center gap-2 `}>
       Enable Command Blocks
       <input type="checkbox" class="w-8 scale-150 rounded-md bg-gray-700 text-center checked:accent-primary" value="true" checked name="enableCommandBlock" />
     </label>
-    <span class={`font-handwriting block w-full text-center ${errors.enableCommandBlock ? '' : 'hidden'}`}>{errors.enableCommandBlock}</span>
+    <span class={`block w-full text-center font-handwriting ${errors.enableCommandBlock ? '' : 'hidden'}`}>{errors.enableCommandBlock}</span>
   </div>
 
   <div class="grid grid-cols-2 gap-x-8 px-8 max-sm:flex max-sm:flex-col">
@@ -370,14 +370,14 @@
       <!-- <textarea class="h-full w-full" name="whitelist" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000",\n\t\tname: "username"\n\t}\n]`} /> -->
       <input name="whitelist" class="hidden" value={JSON.stringify(whitelistPlayers)} />
       <PlayerList bind:list={whitelistPlayers} />
-      <span class={`font-handwriting block w-full text-center ${errors.motd ? '' : 'hidden'}`}>{errors.motd}</span>
+      <span class={`block w-full text-center font-handwriting ${errors.motd ? '' : 'hidden'}`}>{errors.motd}</span>
     </label>
     <label class={`${errors.ops ? 'error-outline' : ''}`}>
       <div class="font-semibold text-gray-400">Operators</div>
       <!-- <textarea class="h-full w-full" name="ops" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000"\n\t\tname: "username"\n\t\tlevel: 4,\n\t\tbypassesPlayerLimit: true\n\t}\n]`} /> -->
       <input name="ops" class="hidden" value={JSON.stringify(operatorPlayers)} />
       <PlayerList bind:list={operatorPlayers} />
-      <span class={`font-handwriting block w-full text-center ${errors.motd ? '' : 'hidden'}`}>{errors.motd}</span>
+      <span class={`block w-full text-center font-handwriting ${errors.motd ? '' : 'hidden'}`}>{errors.motd}</span>
     </label>
     <!-- <label class={`min-h-[16rem] ${errors.bannedPlayers ? 'error-outline' : ''}`}>
       Banned Players

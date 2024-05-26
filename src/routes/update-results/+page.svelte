@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { Result } from 'neverthrow';
-  import type { PageData, PageServerData } from './$types';
   import { getFileURL, stateDisplay, timeUntil } from '$lib';
-  import { ServerUpdateType } from '$lib/types';
+  import type { PageServerData } from './$types';
 
   export let data: PageServerData;
   $: updates = data.update;

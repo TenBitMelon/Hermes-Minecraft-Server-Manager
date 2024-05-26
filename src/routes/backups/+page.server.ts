@@ -1,10 +1,7 @@
-import { resultToPromise } from '$lib';
-import { ResultAsync } from 'neverthrow';
-import type { PageServerLoad } from './$types';
 import { serverPB } from '$lib/database';
 import { Collections } from '$lib/database/types';
-import { CustomError } from '$lib/types';
 import { error } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
 export const load = (async () => {
   // TODO: Return a promise instead of awaiting pageload

@@ -1,8 +1,8 @@
-import { fail, redirect } from '@sveltejs/kit';
-import type { Actions } from './$types';
 import { formDataObject } from '$lib';
 import { createNewServer } from '$lib/servers';
 import { ServerCreationSchema } from '$lib/servers/schema';
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions } from './$types';
 
 export const actions: Actions = {
   default: async ({ request, fetch }) => {

@@ -1,8 +1,8 @@
+import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { env as penv } from '$env/dynamic/public';
-import { dev } from '$app/environment';
-import { ResultAsync, type Result, ok, err } from 'neverthrow';
-import { /* CloudflareError, */ CloudflareErrorType, CustomError } from './types';
+import { ResultAsync, err, ok, type Result } from 'neverthrow';
+import { CustomError } from './types';
 
 export async function addCloudflareRecords(subdomain: string, port: number): Promise<Result<{ cname: string; srv: string }, CustomError>> {
   if (dev) return ok({ cname: '<DEV>', srv: '<DEV>' });

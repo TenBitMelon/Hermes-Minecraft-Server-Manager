@@ -1,18 +1,17 @@
-import { Collections, WorldType, type ServerResponse, WorldCreationMethod, TimeToLive, type ServerRecord, ServerState, TimeToLiveMiliseconds } from '$lib/database/types';
-import { serverPB } from '$lib/database';
-import fs from 'node:fs';
 import { env as publicENV } from '$env/dynamic/public';
+import { serverPB } from '$lib/database';
+import { Collections, ServerState, TimeToLiveMiliseconds, WorldCreationMethod, WorldType, type ServerRecord, type ServerResponse } from '$lib/database/types';
+import fs from 'node:fs';
 
 import { addCloudflareRecords } from '$lib/cloudflare';
 import { ComposeBuilder, containerDoesntExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import type { ServerCreationSchema } from './schema';
 // import DefaultIcon from '$lib/servers/icon.png';
-import { z } from 'zod';
-import { Result, ResultAsync, err, ok } from 'neverthrow';
 import { PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN } from '$env/static/public';
-import { writable, type Writable } from 'svelte/store';
-import { PORT_MAX, PORT_MIN, getUnusedPort } from './ports';
-import { ContainerState, CustomError, /* ServerUpdateError, */ ServerUpdateType } from '$lib/types';
+import { ContainerState, CustomError } from '$lib/types';
+import { Result, ResultAsync, err } from 'neverthrow';
+import { z } from 'zod';
+import { getUnusedPort } from './ports';
 
 // TODO: Clean up this function
 export async function createNewServer(data: z.infer<typeof ServerCreationSchema>): Promise<Result<ServerResponse, Error>> {

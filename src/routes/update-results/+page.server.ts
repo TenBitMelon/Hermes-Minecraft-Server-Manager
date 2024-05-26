@@ -1,6 +1,6 @@
 import { latestUpdateResults } from '$lib/servers';
-import { Err, Ok, Result, ResultAsync } from 'neverthrow';
-import type { PageServerLoad, PageServerLoadEvent } from './$types';
+import { Err, Ok } from 'neverthrow';
+import type { PageServerLoadEvent } from './$types';
 
 type ExtractErrorType<T> = T extends Err<infer V, infer E> ? E : never;
 type ExtractOkType<T> = T extends Ok<infer V, infer E> ? V : never;

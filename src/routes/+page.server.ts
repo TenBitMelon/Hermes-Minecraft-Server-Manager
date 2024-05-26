@@ -1,4 +1,3 @@
-import { getFileURL } from '$lib';
 import { serverPB } from '$lib/database';
 import { Collections, ServerState, type ServerResponse } from '$lib/database/types';
 import type { PageServerLoadEvent } from './$types';

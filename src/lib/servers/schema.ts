@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType, WorldCreationMethod } from '$lib/database/types';
-import { randomWord } from '$lib';
 import { PUBLIC_REQUIRE_WHITELIST } from '$env/static/public';
+import { randomWord } from '$lib';
+import { Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldCreationMethod, WorldType } from '$lib/database/types';
+import { z } from 'zod';
 
 export const ServerCreationSchema = z
   .object({

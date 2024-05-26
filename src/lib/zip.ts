@@ -1,7 +1,7 @@
+import { ResultAsync } from 'neverthrow';
 import childProcess, { type ChildProcessWithoutNullStreams } from 'node:child_process';
 import path from 'node:path';
 import { CustomError } from './types';
-import { ResultAsync, type Result } from 'neverthrow';
 
 interface CommandResult {
   exitCode: number;
