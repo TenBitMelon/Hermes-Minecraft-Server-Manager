@@ -9,7 +9,7 @@
       <div class="text-3xl font-black">Hermes</div>
     </a>
     <div>
-      <a href="/create" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Create</a>
+      <a data-sveltekit-preload-data="off" href="/create" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Create</a>
       <a href="/backups" class="rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black">Backups</a>
     </div>
   </div>
