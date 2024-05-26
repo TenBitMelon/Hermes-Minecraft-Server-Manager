@@ -5,16 +5,17 @@ todo:
 - [x] sibling container for database
 - [x] stopping & zip file
 - [x] deletion
-- [ ] more server types
+- [x] more server types
 - [ ] file uploads
 - [ ] world sources & downloading
 - [x] server panel w/ stats
 - [ ] authentication
-- [ ] backup downloads
-- [ ] more than one backup
+- [x] backup downloads
+- [x] more than one backup
 - [x] better whitelist
 - [ ] better server properties
 - [x] Database error handling across the whole project
+- [ ] Packwiz
 
 # Hermes Minecraft Server Manager
 

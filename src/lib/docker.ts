@@ -1,16 +1,14 @@
+import { env as penv } from '$env/dynamic/public';
+import compose, { execCompose, type IDockerComposeResult } from 'docker-compose/dist/v2';
+import { Result, ResultAsync, err, ok } from 'neverthrow';
 import childProcess from 'node:child_process';
 import fs from 'node:fs';
-import { serverPB } from './database';
-import { Collections, type ServerRecord, ServerState, type ServerResponse } from './database/types';
-import { env as penv } from '$env/dynamic/public';
 import path from 'node:path';
-import compose, { execCompose, type IDockerComposeResult } from 'docker-compose/dist/v2';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { zip } from './zip';
 import { removeCloudflareRecords } from './cloudflare';
-import { updateAllServerStates, updateServerState } from './servers';
-import { /* CustomError, */ ContainerState, CustomError, type ContainerData } from './types';
+import { serverPB } from './database';
+import { Collections, ServerState, type ServerRecord, type ServerResponse } from './database/types';
 import { createBackup } from './servers/backups';
+import { /* CustomError, */ ContainerState, CustomError, type ContainerData } from './types';
 
 type ContainerResult<T> = Promise<Result<T, CustomError>>;
 
@@ -170,7 +168,7 @@ export async function getContainerData(serverID: string): ContainerResult<Contai
 
 export async function getContainerRunningStatus(serverID: string): ContainerResult<boolean> {
   if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
-  return (await getContainerData(serverID)).map((d) => d.State == 'running');
+  return (await getContainerData(serverID)).map((d) => d.State == ContainerState.Running);
   // return (await getContainerData(serverID)).map(d => d.State == ContainerState.Running);
 }
 

@@ -7,6 +7,7 @@ import { CustomError } from '$lib/types';
 import { error } from '@sveltejs/kit';
 
 export const load = (async () => {
+  // TODO: Return a promise instead of awaiting pageload
   const backups = await serverPB.collection(Collections.Backups).getFullList();
   if (!backups) error(404, "This server doesn't exist");
 

@@ -20,14 +20,15 @@ export async function load({ locals }: PageServerLoadEvent) {
     [ServerState.Creating]: 0,
     [ServerState.Running]: 1,
     [ServerState.Paused]: 2,
-    [ServerState.Stopped]: 3
+    ['stoppedNoDelete']: 3,
+    [ServerState.Stopped]: 4
   };
 
   return {
     // Negative value if the first argument is less than the second argument
     // zero if they're equal
     // Positive value otherwise
-    servers: servers.sort((a, b) => StateOrderMap[a.state] - StateOrderMap[b.state])
+    servers: servers.sort((a, b) => (!a.canBeDeleted ? StateOrderMap['stoppedNoDelete'] : StateOrderMap[a.state]) - (!b.canBeDeleted ? StateOrderMap['stoppedNoDelete'] : StateOrderMap[b.state]))
   };
 }
 
