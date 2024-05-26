@@ -14,7 +14,7 @@ export async function load({ fetch, params, locals }: PageServerLoadEvent) {
   if (!server) error(404, "This server doesn't exist");
 
   const logs = getContainerLogs(params.serverID, 'all').then(resultToPromise);
-  const data = getContainerData(params.serverID).then(resultToPromise);
+  // const data = getContainerData(params.serverID).then(resultToPromise);
   const stats = getContainerUsageStats(params.serverID).then(resultToPromise);
 
   return {

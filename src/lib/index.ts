@@ -82,7 +82,7 @@ export function stateDisplay(state: ServerState): { indicatorColor: string; mess
   }
 }
 
-interface PromiseReject<T, E> extends Promise<T> {
+interface PromiseReject<T, E> extends Promise<T | void> {
   new <T, E = any>(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: E) => void) => void): PromiseReject<T, E>;
 }
 

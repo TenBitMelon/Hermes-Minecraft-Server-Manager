@@ -1,22 +1,21 @@
 <script lang="ts">
-  import type { ActionData, PageData } from './$types';
-  import { resultToPromise, stateDisplay } from '$lib';
-  import { enhance } from '$app/forms';
-  import { fade } from 'svelte/transition';
-  import FormLoadingButton from './FormLoadingButton.svelte';
-  import { ServerState } from '$lib/database/types';
   import { invalidateAll } from '$app/navigation';
   import { env } from '$env/dynamic/public';
+  import { stateDisplay } from '$lib';
+  import { ServerState } from '$lib/database/types';
   import type { ContainerUsageStats } from '$lib/docker';
   import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
+  import type { PageData } from './$types';
+  import FormLoadingButton from './FormLoadingButton.svelte';
 
   export let data: PageData;
   // export let form: ActionData;
 
   let stats: ContainerUsageStats | null = null;
-  $: data.stats.then((l) => (stats = l));
+  $: data.stats.then((l) => (stats = l ?? null));
   let logs: string[] | null = null;
-  $: data.logs.then((l) => (logs = l));
+  $: data.logs.then((l) => (logs = l ?? null));
 
   $: serverStatus = stateDisplay(data.server.state);
   let commandMessage = '';

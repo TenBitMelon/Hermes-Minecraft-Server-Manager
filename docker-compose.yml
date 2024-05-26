@@ -71,4 +71,11 @@ services:
       - POCKETBASE_INTERNAL_ADMIN_EMAIL=internal@example.com
       - POCKETBASE_INTERNAL_ADMIN_PASSWORD=password
 
+      # This is the maximum upload size to the website, the uploaded features are server icon,
+      # mod jars, resourcepacks, worlds, and datapacks. This will limit the size of the file uploaded
+      # You can change it to be infinity to remove the resitriction.
+      - BODY_SIZE_LIMIT=1073741824 # 1 gb
+      -  # BODY_SIZE_LIMIT=524288 # 512 kb
+      -  # BODY_SIZE_LIMIT=Infinity
+
     restart: unless-stopped

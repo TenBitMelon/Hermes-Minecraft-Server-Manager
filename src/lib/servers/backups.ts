@@ -7,6 +7,11 @@ import { Result, ResultAsync, err, ok } from 'neverthrow';
 import path from 'path';
 
 export async function createBackup(serverID: string, backupName: string = ''): Promise<Result<void, CustomError>> {
+  if (backupName == '') {
+    const dbResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).getOne(serverID), (e) => CustomError.from(e, 'Failed to get the existing server in the database'));
+    if (dbResult.isOk()) backupName = dbResult.value.title;
+  }
+
   const serverFolder = path.resolve(`servers/${serverID}/`);
   if (!fs.existsSync(serverFolder)) return err(new CustomError("Server folder doesn't exist!"));
 

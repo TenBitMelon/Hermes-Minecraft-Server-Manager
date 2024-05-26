@@ -13,6 +13,7 @@ export const actions: Actions = {
 
     const createServerResult = await createNewServer(data.data);
     if (createServerResult.isErr()) {
+      // TODO: Handle this on page
       return fail(500, { success: false, fields: {}, message: createServerResult.error.message });
     }
 

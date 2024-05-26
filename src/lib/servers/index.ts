@@ -14,6 +14,7 @@ import { writable, type Writable } from 'svelte/store';
 import { PORT_MAX, PORT_MIN, getUnusedPort } from './ports';
 import { ContainerState, CustomError, /* ServerUpdateError, */ ServerUpdateType } from '$lib/types';
 
+// TODO: Clean up this function
 export async function createNewServer(data: z.infer<typeof ServerCreationSchema>): Promise<Result<ServerResponse, Error>> {
   let portR = await getUnusedPort();
   if (portR.isErr()) return err(portR.error);
@@ -27,25 +28,25 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   const createResponse = await ResultAsync.fromPromise(
     serverPB.collection(Collections.Servers).create<Omit<ServerRecord, 'icon'> & { icon: File }, ServerResponse>({
       port,
-      title: data.title,
-      // icon: data.icon,
       icon: data.icon ? data.icon : new File([defaultIconBuffer], 'icon.png'),
+      title: data.title,
       subdomain: data.subdomain,
+
       serverSoftware: data.serverSoftware,
       gameVersion: data.gameVersion,
       worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : 'source',
-      timeToLive: data.timeToLive,
-
-      startDate: null,
-      deletionDate: null,
-      shutdownDate: null,
-      canBeDeleted: +PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN == -1 ? false : true,
 
       cloudflareCNAMERecordID: recordIds.value.cname,
       cloudflareSRVRecordID: recordIds.value.srv,
 
-      serverFilesMissing: false,
-      state: ServerState.Creating
+      timeToLive: data.timeToLive,
+
+      state: ServerState.Creating,
+      startDate: null,
+      shutdownDate: null,
+      deletionDate: null,
+      canBeDeleted: +PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN == -1 ? false : true,
+      serverFilesMissing: false
     }),
     () => new Error('Failed to create new server in DB')
   );
@@ -55,9 +56,6 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   const serverFolderPath = `servers/${record.id}`;
   const serverFilesPath = `${serverFolderPath}/server-files`;
   fs.mkdirSync(serverFilesPath, { recursive: true });
-
-  // Make the backups folder if it doesn't exist
-  fs.mkdirSync(`servers/backups`, { recursive: true });
 
   if (data.icon) fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(await data.icon.arrayBuffer()));
   else fs.writeFileSync(`${serverFilesPath}/icon.png`, Buffer.from(defaultIconBuffer));
@@ -73,8 +71,6 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
 
   /* 
   TODO: Files to create
-  - docker-compose.yml
-  - server.properties if not null
   - extract world if source is url
   */
 

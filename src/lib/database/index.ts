@@ -1,5 +1,5 @@
+import { building, dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
-import { dev, building } from '$app/environment';
 import PocketBase from 'pocketbase';
 import type { TypedPocketBase } from './types';
 

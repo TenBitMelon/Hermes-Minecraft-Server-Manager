@@ -21,7 +21,7 @@
   {/if}
   {@const display = stateDisplay(server.state)}
   <a class="my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800" href={`/${server.id}`} data-sveltekit-preload-data="false">
-    {#if server.state == ServerState.Stopped}
+    {#if server.state == ServerState.Stopped && server.canBeDeleted && server.deletionDate}
       <FormLoadingButton action={`/${server.id}/?/start`} text="Revive" class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4" buttonClass="bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed">
         Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
       </FormLoadingButton>
