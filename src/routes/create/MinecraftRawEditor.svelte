@@ -12,7 +12,7 @@
   import Underline from '@tiptap/extension-underline';
   import { generateJSON } from '@tiptap/html';
 
-  import { PUBLIC_DEFAULT_MOTD } from '$env/static/public';
+  import { env as publicENV } from '$env/dynamic/public';
   import { Editor, Extension } from '@tiptap/core';
   import HardBreak from '@tiptap/extension-hard-break';
   import { Plugin, PluginKey } from 'prosemirror-state';
@@ -98,7 +98,7 @@
           }
         })
       ],
-      content: `${PUBLIC_DEFAULT_MOTD}<br>`,
+      content: `${publicENV.PUBLIC_DEFAULT_MOTD}<br>`,
       editorProps: {
         attributes: {
           class: 'scroll-transparent font-minecraftia focus:outline-none focus:ring-2 p-2 ring-primary rounded-md whitespace-nowrap *:whitespace-nowrap overflow-x-auto'

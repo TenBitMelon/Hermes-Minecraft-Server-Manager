@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { PUBLIC_DEFAULT_ICON_URL } from '$env/static/public';
+  import { env as publicENV } from '$env/dynamic/public';
   import { ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType } from '$lib/database/types';
   import type { ServerCreationSchema } from '$lib/servers/schema';
   import { type SafeParseError, type typeToFlattenedError } from 'zod';
@@ -108,7 +108,7 @@
   <!-- Icon -->
   <label class={`rounded-md  bg-gray-800 ${errors.icon ? 'error-outline' : ''}`}>
     <div class="flex items-center gap-2 p-4 max-sm:flex-col">
-      <img class="aspect-square w-10 rounded-sm max-sm:w-36" alt="" bind:this={iconImageElement} src={PUBLIC_DEFAULT_ICON_URL} />
+      <img class="aspect-square w-10 rounded-sm max-sm:w-36" alt="" bind:this={iconImageElement} src={publicENV.PUBLIC_DEFAULT_ICON_URL} />
       <input
         type="file"
         name="icon"

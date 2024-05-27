@@ -3,7 +3,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
 import { words } from '$assets/words.json';
-import { env as penv } from '$env/dynamic/public';
+import { env as publicENV } from '$env/dynamic/public';
 import { Result } from 'neverthrow';
 import { ServerState } from './database/types';
 import type { CustomError } from './types';
@@ -44,7 +44,7 @@ export function randomWord() {
 }
 
 export function getFileURL(collectionID: string, recordID: string, filename: string, download: boolean = false) {
-  if (!collectionID || !recordID || !filename) return penv.PUBLIC_DEFAULT_ICON_URL;
+  if (!collectionID || !recordID || !filename) return publicENV.PUBLIC_DEFAULT_ICON_URL;
   return `/api/file?collectionID=${collectionID}&recordID=${recordID}&filename=${filename}${download ? '&download=true' : ''}`;
 }
 

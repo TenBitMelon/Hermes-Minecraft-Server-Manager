@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { env } from '$env/dynamic/public';
+  import { env as publicENV } from '$env/dynamic/public';
   import { getFileURL, stateDisplay, timeUntil } from '$lib';
   import { ServerState, TimeToLiveMiliseconds } from '$lib/database/types';
 
@@ -38,8 +38,8 @@
           <span class="px-2 text-sm font-thin text-gray-400">{server.id}</span>
         </h2>
         <p class="">{server.gameVersion} {server.serverSoftware} {server.worldType} world</p>
-        <button class="group flex items-center gap-2 font-bold active:scale-95 active:text-gray-300" on:click|preventDefault={() => navigator.clipboard.writeText(`${server.subdomain}.${env.PUBLIC_ROOT_DOMAIN}`)}>
-          {server.subdomain}.{env.PUBLIC_ROOT_DOMAIN}
+        <button class="group flex items-center gap-2 font-bold active:scale-95 active:text-gray-300" on:click|preventDefault={() => navigator.clipboard.writeText(`${server.subdomain}.${publicENV.PUBLIC_ROOT_DOMAIN}`)}>
+          {server.subdomain}.{publicENV.PUBLIC_ROOT_DOMAIN}
           <svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 fill-white group-hover:inline" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z" /></svg>
         </button>
         <div class="mt-2 flex items-center gap-2">

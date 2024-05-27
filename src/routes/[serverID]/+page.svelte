@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation';
-  import { env } from '$env/dynamic/public';
+  import { env as publicENV } from '$env/dynamic/public';
   import { stateDisplay } from '$lib';
   import { ServerState } from '$lib/database/types';
   import type { ContainerUsageStats } from '$lib/docker';
@@ -41,8 +41,8 @@
         <span class="text-sm text-gray-400">{data.server.id}</span>
       </h1>
       <p>{data.server.gameVersion} {data.server.serverSoftware} {data.server.worldType} world</p>
-      <button class="group flex items-center gap-2 font-bold active:scale-95 active:text-gray-300" on:click={() => navigator.clipboard.writeText(`${data.server.subdomain}.${env.PUBLIC_ROOT_DOMAIN}`)}>
-        {data.server.subdomain}.{env.PUBLIC_ROOT_DOMAIN}
+      <button class="group flex items-center gap-2 font-bold active:scale-95 active:text-gray-300" on:click={() => navigator.clipboard.writeText(`${data.server.subdomain}.${publicENV.PUBLIC_ROOT_DOMAIN}`)}>
+        {data.server.subdomain}.{publicENV.PUBLIC_ROOT_DOMAIN}
         <svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 fill-white group-hover:inline" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z" /></svg>
       </button>
     </div>
