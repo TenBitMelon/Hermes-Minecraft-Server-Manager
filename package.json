@@ -2,7 +2,6 @@
   "name": "hermes-minecraft-server-manager",
   "version": "0.7.0",
   "private": true,
-  "packageManager": "pnpm@9.0.6",
   "scripts": {
     "dev": "concurrently 'vite dev' 'POCKETBASE_INTERNAL_ADMIN_EMAIL='internalserveraccount1@craftingcomrades.net' POCKETBASE_INTERNAL_ADMIN_PASSWORD='bz1FuX9RiWY09QGp747f8tp90' ./database/pocketbase serve'",
     "database": "./database/pocketbase serve",
