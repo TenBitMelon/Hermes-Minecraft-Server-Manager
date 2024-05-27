@@ -1,6 +1,6 @@
 import { dev } from '$app/environment';
-import { env } from '$env/dynamic/private';
-import { env as penv } from '$env/dynamic/public';
+import { env as privateENV } from '$env/dynamic/private';
+import { env as publicENV } from '$env/dynamic/public';
 import { ResultAsync, err, ok, type Result } from 'neverthrow';
 import { CustomError } from './types';
 
@@ -8,15 +8,15 @@ export async function addCloudflareRecords(subdomain: string, port: number): Pro
   if (dev) return ok({ cname: '<DEV>', srv: '<DEV>' });
 
   const createCNAMEResult = await ResultAsync.fromPromise<{ result: { id: string }; success: true }, CustomError>(
-    fetch(`https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records`, {
+    fetch(`https://api.cloudflare.com/client/v4/zones/${privateENV.CLOUDFLARE_ZONE_ID}/dns_records`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.CLOUDFLARE_TOKEN}`
+        Authorization: `Bearer ${privateENV.CLOUDFLARE_TOKEN}`
       },
       body: JSON.stringify({
         name: `${subdomain}.servers`,
-        content: `${penv.PUBLIC_ROOT_DOMAIN}`,
+        content: `${publicENV.PUBLIC_ROOT_DOMAIN}`,
         proxied: false,
         type: 'CNAME',
         comment: 'Created by Hermes Minecraft Server Manager',
@@ -28,22 +28,22 @@ export async function addCloudflareRecords(subdomain: string, port: number): Pro
   if (createCNAMEResult.isErr()) return err(createCNAMEResult.error);
 
   const createSRVResult = await ResultAsync.fromPromise<{ result: { id: string }; success: true }, CustomError>(
-    fetch(`https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records`, {
+    fetch(`https://api.cloudflare.com/client/v4/zones/${privateENV.CLOUDFLARE_ZONE_ID}/dns_records`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.CLOUDFLARE_TOKEN}`
+        Authorization: `Bearer ${privateENV.CLOUDFLARE_TOKEN}`
       },
       body: JSON.stringify({
         type: 'SRV',
         data: {
           service: '_minecraft',
           proto: '_tcp',
-          name: `${subdomain}.${penv.PUBLIC_ROOT_DOMAIN}`,
+          name: `${subdomain}.${publicENV.PUBLIC_ROOT_DOMAIN}`,
           priority: 0,
           weight: 5,
           port,
-          target: `${subdomain}.${penv.PUBLIC_ROOT_DOMAIN}`
+          target: `${subdomain}.${publicENV.PUBLIC_ROOT_DOMAIN}`
         },
         proxied: false,
         comment: 'Created by Hermes Minecraft Server Manager',
@@ -64,11 +64,11 @@ export async function removeCloudflareRecords(cnameID: string, srvID: string): P
   if (dev) return ok(undefined);
 
   const deleteCNAMEResult = await ResultAsync.fromPromise(
-    fetch(`https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records/${cnameID}`, {
+    fetch(`https://api.cloudflare.com/client/v4/zones/${privateENV.CLOUDFLARE_ZONE_ID}/dns_records/${cnameID}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.CLOUDFLARE_TOKEN}`
+        Authorization: `Bearer ${privateENV.CLOUDFLARE_TOKEN}`
       }
     }),
     () => new CustomError('Failed to delete the CNAME record from Cloudflare')
@@ -76,11 +76,11 @@ export async function removeCloudflareRecords(cnameID: string, srvID: string): P
   if (deleteCNAMEResult.isErr()) return err(deleteCNAMEResult.error);
 
   const deleteSRVResult = await ResultAsync.fromPromise(
-    fetch(`https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/dns_records/${srvID}`, {
+    fetch(`https://api.cloudflare.com/client/v4/zones/${privateENV.CLOUDFLARE_ZONE_ID}/dns_records/${srvID}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.CLOUDFLARE_TOKEN}`
+        Authorization: `Bearer ${privateENV.CLOUDFLARE_TOKEN}`
       }
     }),
     () => new CustomError('Failed to delete the SRV record from Cloudflare')

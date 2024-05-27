@@ -1,4 +1,4 @@
-import { env as penv } from '$env/dynamic/public';
+import { env as publicENV } from '$env/dynamic/public';
 import compose, { execCompose, type IDockerComposeResult } from 'docker-compose/dist/v2';
 import { Result, ResultAsync, err, ok } from 'neverthrow';
 import childProcess from 'node:child_process';
@@ -75,7 +75,7 @@ export async function stopContainer(serverID: string): ContainerResult<void> {
       state: ServerState.Stopped,
       startDate: null,
       shutdownDate: new Date().toISOString(),
-      deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +penv.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null // 7 days
+      deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null // 7 days
     }),
     (e) => CustomError.from(e, 'Failed to update server data on stop')
   );

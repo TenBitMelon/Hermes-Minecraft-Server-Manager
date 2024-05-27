@@ -34,12 +34,12 @@ services:
       # The port range (inclusive) that the server will use for the public servers.
       # This should be changed based on how many servers you want to allow
       # and how many ports you have open on your server.
-      - PUBLIC_PORT_MIN=25563
-      - PUBLIC_PORT_MAX=25564
+      - PORT_MIN=25563
+      - PORT_MAX=25564
       # Wether to avoid the default Minecraft port 25565.
       # This can help with preventing the servers from getting scrapped and
       # being targeted for griefing.
-      - PRIVATE_AVOID_DEFAULT_PORT=true
+      - AVOID_DEFAULT_PORT=true
 
       # This is the default icon for the servers and can be changed to any URL.
       # A default icon is included with the container, feel free the change it.

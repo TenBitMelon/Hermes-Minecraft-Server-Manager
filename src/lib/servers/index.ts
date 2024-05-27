@@ -7,7 +7,6 @@ import { addCloudflareRecords } from '$lib/cloudflare';
 import { ComposeBuilder, containerDoesntExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import type { ServerCreationSchema } from './schema';
 // import DefaultIcon from '$lib/servers/icon.png';
-import { PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN } from '$env/static/public';
 import { ContainerState, CustomError } from '$lib/types';
 import { Result, ResultAsync, err } from 'neverthrow';
 import { z } from 'zod';
@@ -44,7 +43,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       startDate: null,
       shutdownDate: null,
       deletionDate: null,
-      canBeDeleted: +PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN == -1 ? false : true,
+      canBeDeleted: +publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN == -1 ? false : true,
       serverFilesMissing: false
     }),
     () => new Error('Failed to create new server in DB')

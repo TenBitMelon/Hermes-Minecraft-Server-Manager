@@ -3,11 +3,11 @@ import { serverPB } from '$lib/database';
 import { Collections, type ServerResponse } from '$lib/database/types';
 import { err, ok, type Result } from 'neverthrow';
 
-export const PORT_RANGE = [+privateENV.PRIVATE_PORT_MIN, +privateENV.PRIVATE_PORT_MAX];
+export const PORT_RANGE = [+privateENV.PORT_MIN, +privateENV.PORT_MAX];
 export const PORT_MIN = PORT_RANGE[0];
 export const PORT_MAX = PORT_RANGE[1];
 
-const AVOID_DEFAULT = Boolean(privateENV.PRIVATE_AVOID_DEFAULT_PORT);
+const AVOID_DEFAULT = Boolean(privateENV.AVOID_DEFAULT_PORT);
 const MINECRAFT_DEFAULT_PORT = 25565;
 
 export async function getUnusedPort(): Promise<Result<number, Error>> {

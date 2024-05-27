@@ -1,4 +1,4 @@
-import { PUBLIC_REQUIRE_WHITELIST } from '$env/static/public';
+import { env as publicENV } from '$env/dynamic/public';
 import { randomWord } from '$lib';
 import { Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldCreationMethod, WorldType } from '$lib/database/types';
 import { z } from 'zod';
@@ -95,7 +95,7 @@ export const ServerCreationSchema = z
               })
               .strip()
               .array();
-            if (PUBLIC_REQUIRE_WHITELIST) return pipeType;
+            if (publicENV.PUBLIC_REQUIRE_WHITELIST) return pipeType;
             else return pipeType.default([]);
           })()
         )
