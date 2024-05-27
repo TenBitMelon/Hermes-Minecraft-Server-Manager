@@ -1,8 +1,10 @@
-[![Docker Image](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml/badge.svg)](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml)
+[![Docker Image CI](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml/badge.svg)](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml)
 
 # Hermes Minecraft Server Manager
 
-Hermes Minecraft Server Manager is a tool for managing Minecraft servers. It provides a web interface for server management and uses Docker to run the servers.
+Hermes Minecraft Server Manager is a tool for managing Minecraft servers. It provides a web interface for server management and uses Docker to run the servers. The servers are created on-demand and can be started, stopped, and commands run from the web interface. The servers are created with a subdomain and can be accessed from the internet. The server uses Docker to run the servers and PocketBase for the database.
+
+[Docker Image](https://hub.docker.com/r/melonboy10/hermes-minecraft-server-manager)
 
 ## Getting Started
 
