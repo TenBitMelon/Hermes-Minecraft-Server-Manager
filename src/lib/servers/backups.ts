@@ -1,5 +1,5 @@
 import { serverPB } from '$lib/database';
-import { Collections, type BackupRecord, type BackupResponse } from '$lib/database/types';
+import { Collections, type BackupResponse } from '$lib/database/types';
 import { CustomError } from '$lib/types';
 import { zip } from '$lib/zip';
 import fs from 'fs';
@@ -25,7 +25,7 @@ export async function createBackup(serverID: string, backupName: string = ''): P
   if (zipFile.isErr()) return err(zipFile.error);
 
   return ResultAsync.fromPromise(
-    serverPB.collection(Collections.Backups).create<BackupRecord | { file: File }, BackupResponse>({
+    serverPB.collection(Collections.Backups).create<BackupResponse>({
       name: backupName,
       file: new File([zipFile.value], `${new Date().toISOString()} - ${backupName}.zip`),
       serverID: serverID,

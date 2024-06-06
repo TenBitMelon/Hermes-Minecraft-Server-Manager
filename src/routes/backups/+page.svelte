@@ -4,10 +4,10 @@
 
   export let data: PageServerData;
   const entries = Object.entries(data.backups);
-  entries.forEach(([key, value]) => {
+  entries.forEach(([, value]) => {
     value.sort((a, b) => Date.parse(b.created) - Date.parse(a.created));
   });
-  entries.sort(([a_k, a_v], [b_k, b_v]) => Date.parse(b_v[0].created) - Date.parse(a_v[0].created));
+  entries.sort(([, a_v], [, b_v]) => Date.parse(b_v[0].created) - Date.parse(a_v[0].created));
 </script>
 
 {#each entries as [serverID, backups]}

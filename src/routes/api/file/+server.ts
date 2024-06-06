@@ -4,7 +4,7 @@ import { serverPB } from '$lib/database/index.js';
 import { error } from '@sveltejs/kit';
 
 /** @type {import('./$types').RequestHandler} */
-export async function GET({ locals, url }) {
+export async function GET({ url }) {
   const queryParameters = url.searchParams;
 
   const collectionID = queryParameters.get('collectionID') || queryParameters.get('collection') || queryParameters.get('cid');

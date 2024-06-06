@@ -1,7 +1,6 @@
 import { latestUpdateResults } from '$lib/servers';
-import type { PageServerLoadEvent } from './$types';
 
-export async function load({}: PageServerLoadEvent) {
+export async function load(/* {}: PageServerLoadEvent */) {
   return {
     update: latestUpdateResults.map((serverUpdate) => ({
       server: serverUpdate.server,

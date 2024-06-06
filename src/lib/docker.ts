@@ -123,7 +123,7 @@ export async function sendCommandToContainer(serverID: string, command: string):
   );
 }
 
-export async function getContainerPlayerCount(serverID: string, command: string): ContainerResult<{ max: number; online: number }> {
+export async function getContainerPlayerCount(serverID: string): ContainerResult<{ max: number; online: number }> {
   if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
 
   const execResult = await ResultAsync.fromPromise(compose.exec('minecraft', `mc-monitor status`, { cwd: getServerFolder(serverID) }), () => new CustomError('Failed to execute command getting player count'));

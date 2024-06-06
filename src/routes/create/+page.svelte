@@ -54,7 +54,7 @@
     }
   }
 
-  let additionalDatapacks: { url: string; file: File | null }[] = [];
+  // let additionalDatapacks: { url: string; file: File | null }[] = [];
 </script>
 
 <!-- ORIGINAL FORM!!! -->
@@ -72,7 +72,7 @@
   method="post"
   class="flex w-full max-w-4xl flex-col gap-4 p-8 max-sm:p-0"
   enctype="multipart/form-data"
-  use:enhance={({ formData, formElement }) => {
+  use:enhance={() => {
     createButtonLoading = true;
     return ({ update }) => {
       createButtonLoading = false;

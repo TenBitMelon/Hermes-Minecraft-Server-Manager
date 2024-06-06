@@ -14,7 +14,7 @@ import { getUnusedPort } from './ports';
 
 // TODO: Clean up this function
 export async function createNewServer(data: z.infer<typeof ServerCreationSchema>): Promise<Result<ServerResponse, Error>> {
-  let portR = await getUnusedPort();
+  const portR = await getUnusedPort();
   if (portR.isErr()) return err(portR.error);
   const port = portR.value;
 
@@ -24,7 +24,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   if (recordIds.isErr()) return err(recordIds.error);
 
   const createResponse = await ResultAsync.fromPromise(
-    serverPB.collection(Collections.Servers).create<Omit<ServerRecord, 'icon'> & { icon: File }, ServerResponse>({
+    serverPB.collection(Collections.Servers).create<ServerResponse>({
       port,
       icon: data.icon ? data.icon : new File([defaultIconBuffer], 'icon.png'),
       title: data.title,
@@ -162,16 +162,16 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
 type UpdateResult =
   | {
       value: string;
-      variables: Record<string, any> & { time: string };
+      variables: Record<string, unknown> & { time: string };
       hasError: false;
     }
   | {
       error: CustomError;
-      variables: Record<string, any> & { time: string };
+      variables: Record<string, unknown> & { time: string };
       hasError: true;
     };
 
-export let latestUpdateResults: {
+export const latestUpdateResults: {
   server: ServerResponse;
   updates: UpdateResult[];
 }[] = [];
@@ -198,10 +198,10 @@ export async function updateAllServerStates() {
 export async function updateServerState(server: ServerResponse): Promise<UpdateResult[]> {
   const changeToServer: UpdateResult[] = [];
 
-  function addValue(value: string, variables: Record<string, any>) {
+  function addValue(value: string, variables: Record<string, unknown>) {
     changeToServer.push({ value, hasError: false, variables: { ...variables, time: new Date().toISOString() } });
   }
-  function addError(error: CustomError, variables: Record<string, any>) {
+  function addError(error: CustomError, variables: Record<string, unknown>) {
     changeToServer.push({ error, hasError: true, variables: { ...variables, time: new Date().toISOString() } });
     return changeToServer;
   }
