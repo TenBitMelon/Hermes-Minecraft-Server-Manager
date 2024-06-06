@@ -1,9 +1,6 @@
 name: Docker Image CI
 
-on:
-  pull_request:
-    types:
-      - closed
+on: [push]
 
 env:
   TEST_TAG: melonboy10/hermes-minecraft-server-manager:test
