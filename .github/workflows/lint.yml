@@ -12,7 +12,7 @@ env:
 jobs:
   build:
     if: github.event.pull_request.merged == true
-    name: Push Docker image to Docker Hub
+    name: Lint the code and check formatting
     runs-on: ubuntu-latest
 
     steps:
@@ -22,17 +22,28 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Svelte Check
+        run: npm run check
+
+      - name: ESLint Check
+        run: npm run lint
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: true
-          tags: ${{ env.LATEST_TAG }}
-          labels: ${{ env.LATEST_TAG }}
+          load: true
+          push: false
+          tags: ${{ env.TEST_TAG }}
+
+      - name: Test the Docker image
+        run: |
+          docker run -d --rm ${{ env.TEST_TAG }}
+          sleep 30
+          if [ "$(docker ps -q -f status=exited)" ]; then
+            echo "Error: Docker container exited before 30 seconds"
+            exit 1
+          fi
+          docker stop $(docker ps -q)
+          echo "Test passed"

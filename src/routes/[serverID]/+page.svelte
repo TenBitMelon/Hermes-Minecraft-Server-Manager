@@ -3,12 +3,10 @@
   import { env as publicENV } from '$env/dynamic/public';
   import { stateDisplay } from '$lib';
   import { ServerState } from '$lib/database/types';
-  import type { ContainerUsageStats } from '$lib/docker';
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import type { PageData } from './$types';
   import FormLoadingButton from './FormLoadingButton.svelte';
-  import type { ContainerResult } from '$lib/types';
 
   export let data: PageData;
   // export let form: ActionData;

@@ -48,10 +48,8 @@
 
 <div class="flex flex-col items-stretch rounded-md bg-gray-800 p-2">
   {#each list as n, index (n.id)}
-    <!-- svelte-ignore ondragover doesn't exist -->
-    <!-- @ts-ignore -->
-    <!-- /* @ts-ignore */ -->
-    <div ondragover="return false" role="listitem" class="flex gap-2 rounded-md p-2 before:text-2xl before:content-['≡']" draggable={true} on:dragstart={(event) => dragstart(event, index)} on:drop|preventDefault={(event) => drop(event, index)} on:dragenter={() => (hovering = index)} class:is-active={hovering === index}>
+    <!-- ondragover="return false" -->
+    <div on:dragover={(event) => event.preventDefault()} role="listitem" class="flex gap-2 rounded-md p-2 before:text-2xl before:content-['≡']" draggable={true} on:dragstart={(event) => dragstart(event, index)} on:drop|preventDefault={(event) => drop(event, index)} on:dragenter={() => (hovering = index)} class:is-active={hovering === index}>
       <input class="w-full rounded-md bg-gray-700 px-4 py-2" bind:value={n.block} placeholder="Layer Block" />
       <input class="w-20 rounded-md bg-gray-700 py-2 pl-4 pr-2 text-center hover:pr-[0.4rem]" min="1" max="1000" type="number" bind:value={n.height} />
       <button on:click={() => (list = list.filter((_, i) => i !== index))}>

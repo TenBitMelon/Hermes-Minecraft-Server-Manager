@@ -22,7 +22,6 @@ export async function getUnusedPort(): Promise<Result<number, Error>> {
 }
 
 export async function getPortsRemaining() {
-  return 0;
   const usedPorts = (
     await serverPB.collection(Collections.Servers).getFullList<ServerResponse>({
       fields: 'port'

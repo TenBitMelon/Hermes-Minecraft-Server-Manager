@@ -1,11 +1,11 @@
 import { serverPB } from '$lib/database';
 import { Collections, type ServerResponse } from '$lib/database/types';
-import { getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer, type ContainerUsageStats } from '$lib/docker';
+import { getContainerLogs, getContainerUsageStats, sendCommandToContainer, startContainer, stopContainer } from '$lib/docker';
 import type { CustomError } from '$lib/types';
 import { error, fail, type ActionFailure } from '@sveltejs/kit';
 import type { Actions, PageServerLoadEvent } from './$types';
 
-export async function load({ fetch, params, locals }: PageServerLoadEvent) {
+export async function load({ params }: PageServerLoadEvent) {
   const server = await serverPB
     .collection(Collections.Servers)
     .getOne<ServerResponse>(params.serverID)
@@ -86,10 +86,8 @@ export const actions = {
     // return result.value;
     return { value: result.value, action: 'command' };
   },
-  logs: async ({ params }): Result<'logs', string[], CustomError> => {
+  logs: async (): Result<'logs', string[], CustomError> => {
     return { action: 'logs', value: [] };
-    // const result = await getContainerLogs(params.serverID, 10);
-    // if (result.isErr()) return fail(400, { error: result.error });
-    // return result.value;
+    // It reladods the page on the clien side, this is here so incase it does gwt sent
   }
 } satisfies Actions;
