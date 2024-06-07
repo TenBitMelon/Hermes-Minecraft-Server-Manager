@@ -24,7 +24,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install pnpm -g && pnpm ci
+        run: npm install pnpm -g && pnpm install --frozen-lockfile
 
       - name: Svelte Check
         run: pnpm run check
