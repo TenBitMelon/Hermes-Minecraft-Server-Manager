@@ -18,8 +18,9 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
 
-      - name: Set up
-        run: npm install
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
 
       - name: Svelte Check
         run: npm run check
@@ -27,7 +28,7 @@ jobs:
       - name: ESLint Check
         run: npm run lint
 
-      - name: Build and push Docker image
+      - name: Build the Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
