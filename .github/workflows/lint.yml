@@ -24,13 +24,13 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install --force
+        run: npm install pnpm -g && pnpm install
 
       - name: Svelte Check
-        run: npm run check
+        run: pnpm run check
 
       - name: ESLint Check
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Build the Docker image
         uses: docker/build-push-action@v5
