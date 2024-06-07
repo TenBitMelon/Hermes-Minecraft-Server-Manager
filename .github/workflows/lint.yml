@@ -7,9 +7,10 @@ env:
   LATEST_TAG: melonboy10/hermes-minecraft-server-manager:latest
 
 jobs:
-  build:
+  lint:
     name: Lint the code and check formatting
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       # - name: Build the Docker image
@@ -23,7 +24,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install ci
+        run: npm install --force
 
       - name: Svelte Check
         run: npm run check
