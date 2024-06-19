@@ -43,11 +43,12 @@ jobs:
 
       - name: Test the Docker image
         run: |
-          docker run -d --rm ${{ env.TEST_TAG }}
+          CONTAINER_ID=$(docker run -d --name hermes-mcsm ${{ env.TEST_TAG }})
           sleep 30
-          if [ "$(docker ps -q -f status=exited)" ]; then
+          if [ "$(docker container inspect -f '{{.State.ExitCode}}' ${CONTAINER_ID})" != "0" ]; then
             echo "Error: Docker container exited before 30 seconds"
             exit 1
           fi
-          docker stop $(docker ps -q)
+          docker stop ${CONTAINER_ID}
+          docker rm ${CONTAINER_ID}
           echo "Test passed"
