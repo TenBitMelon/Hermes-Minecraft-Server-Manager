@@ -48,6 +48,7 @@ jobs:
           echo $(docker container inspect -f '{{.State.Status}}' ${CONTAINER_ID})
           if [ "$( docker container inspect -f '{{.State.Status}}' ${CONTAINER_ID})" != "running" ]; then
             echo "Error: Docker container exited before 30 seconds"
+            docker logs ${CONTAINER_ID}
             exit 1
           fi
           docker stop ${CONTAINER_ID}
