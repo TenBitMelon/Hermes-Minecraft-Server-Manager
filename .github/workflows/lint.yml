@@ -1,10 +1,6 @@
-name: Docker Image CI
+name: Lint the code
 
 on: [push]
-
-env:
-  TEST_TAG: melonboy10/hermes-minecraft-server-manager:test
-  LATEST_TAG: melonboy10/hermes-minecraft-server-manager:latest
 
 jobs:
   lint:
@@ -31,26 +27,3 @@ jobs:
 
       - name: ESLint Check
         run: pnpm run lint
-
-      - name: Build the Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          load: true
-          push: false
-          tags: ${{ env.TEST_TAG }}
-
-      - name: Test the Docker image
-        run: |
-          CONTAINER_ID=$(docker run -d --name hermes-mcsm ${{ env.TEST_TAG }})
-          sleep 30
-          echo $(docker container inspect -f '{{.State.Status}}' ${CONTAINER_ID})
-          if [ "$( docker container inspect -f '{{.State.Status}}' ${CONTAINER_ID})" != "running" ]; then
-            echo "Error: Docker container exited before 30 seconds"
-            docker logs ${CONTAINER_ID}
-            exit 1
-          fi
-          docker stop ${CONTAINER_ID}
-          docker rm ${CONTAINER_ID}
-          echo "Test passed"
