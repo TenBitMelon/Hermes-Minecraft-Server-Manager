@@ -6,3 +6,10 @@
 - [ ] maximum backup count
 - [ ] add a way to delete backups
 - [ ] add hint messages to the UI
+- [ ] fix error handling when cloudflare record already exists
+- [ ] find a way to do server iconds
+- [ ] packwiz links
+- [ ] test the world from source feature
+- [ ] Change logs to websocket
+- [ ] fix icons handling
+- [ ] error handlingo n server creation
