@@ -92,7 +92,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   builder.addVariable('TYPE', data.serverSoftware.toUpperCase());
   builder.addVariable('VERSION', data.gameVersion);
   builder.addVariable('MOTD', data.motd);
-  builder.addVariable('ICON', `https://${publicENV.PUBLIC_ROOT_DOMAIN}serverIconURL`);
+  builder.addVariable('ICON', `https://${publicENV.PUBLIC_ROOT_DOMAIN}${serverIconURL}`);
 
   builder.addVariable('DIFFICULTY', data.difficulty.toUpperCase());
   builder.addVariable('MODE', data.gamemode);
