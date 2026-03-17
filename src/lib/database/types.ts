@@ -96,7 +96,7 @@ export enum TimeToLive {
   '7 Days' = '7_days'
 }
 
-export const TimeToLiveMiliseconds: Record<TimeToLive, number> = {
+export const TimeToLiveMilliseconds: Record<TimeToLive, number> = {
   '12_hr': 43_200_000,
   '1_day': 86_400_000,
   '7_days': 604_800_000

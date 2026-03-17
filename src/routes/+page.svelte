@@ -1,7 +1,7 @@
 <script lang="ts">
   import { env as publicENV } from '$env/dynamic/public';
   import { getFileURL, stateDisplay, timeUntil } from '$lib';
-  import { ServerState, TimeToLiveMiliseconds } from '$lib/database/types';
+  import { ServerState, TimeToLiveMilliseconds } from '$lib/database/types';
 
   import type { PageData } from './$types';
   import FormLoadingButton from './[serverID]/FormLoadingButton.svelte';
@@ -27,7 +27,7 @@
       </FormLoadingButton>
     {:else if server.state == ServerState.Paused}
       <div class="flex w-full items-center justify-between rounded-t-sm bg-green-700 p-1 px-4">
-        Stopping {server.startDate && server.timeToLive ? timeUntil(Date.parse(server.startDate) + TimeToLiveMiliseconds[server.timeToLive]) : '...'}
+        Stopping {server.startDate && server.timeToLive ? timeUntil(Date.parse(server.startDate) + TimeToLiveMilliseconds[server.timeToLive]) : '...'}
       </div>
     {/if}
     <div class="flex gap-4 p-4">

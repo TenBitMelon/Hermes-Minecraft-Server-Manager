@@ -84,10 +84,10 @@
                 props: {
                   handleKeyDown: (view, event) => {
                     if (event.key === 'Enter') {
-                      const cursorPositon = view.state.selection.anchor;
-                      const beforeCursor = editor.getHTML().indexOf('<br>') - 1 <= cursorPositon;
+                      const cursorPosition = view.state.selection.anchor;
+                      const beforeCursor = editor.getHTML().indexOf('<br>') - 1 <= cursorPosition;
                       editor.commands.setContent(editor.getHTML().replace('<br>', ''));
-                      editor.commands.setTextSelection(cursorPositon + (beforeCursor ? -1 : 0));
+                      editor.commands.setTextSelection(cursorPosition + (beforeCursor ? -1 : 0));
                       editor.commands.setHardBreak();
                       return true;
                     }
@@ -112,10 +112,10 @@
         if (html.length > 2) {
           editor.commands.setContent(`${html[0]}<br>${html.slice(1).join('')}`);
         } else if (html.length == 1) {
-          const cursorPositon = editor.state.selection.anchor;
+          const cursorPosition = editor.state.selection.anchor;
           editor.commands.focus('end');
           editor.commands.setHardBreak();
-          editor.commands.setTextSelection(cursorPositon);
+          editor.commands.setTextSelection(cursorPosition);
         }
       }
     });

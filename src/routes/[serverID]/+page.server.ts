@@ -88,6 +88,6 @@ export const actions = {
   },
   logs: async (): Result<'logs', string[], CustomError> => {
     return { action: 'logs', value: [] };
-    // It reladods the page on the clien side, this is here so incase it does gwt sent
+    // It reloads the page on the client side, this is here so incase it does gwt sent
   }
 } satisfies Actions;

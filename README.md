@@ -53,7 +53,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./servers:/app/servers
       # Database volume
-      # This will store all fo the database data outside the container
+      # This will store all of the database data outside the container
       # allowing it to persist between restarts.
       - ./database:/app/database/pb_data
     ports:
@@ -103,7 +103,7 @@ services:
       - PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN=168 # In hours
 
       # This option allows you to require all created servers to start with a whitelist enabled.
-      # This will make people enter atleast one username when creating the server.
+      # This will make people enter at least one username when creating the server.
       - PUBLIC_REQUIRE_WHITELIST=true
 
       # These are the Cloudflare API keys that are used for managing the DNS records
@@ -120,7 +120,7 @@ services:
 
       # This is the maximum upload size to the website, the uploaded features are server icon,
       # mod jars, resourcepacks, worlds, and datapacks. This will limit the size of the file uploaded
-      # You can change it to be infinity to remove the resitriction.
+      # You can change it to be infinity to remove the restriction.
       - BODY_SIZE_LIMIT=1073741824 # 1 gb
       -  # BODY_SIZE_LIMIT=524288 # 512 kb
       -  # BODY_SIZE_LIMIT=Infinity

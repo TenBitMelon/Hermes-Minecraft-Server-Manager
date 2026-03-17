@@ -81,7 +81,7 @@ export function stateDisplay(state: ServerState): { indicatorColor: string; mess
     case ServerState.Paused:
       return {
         indicatorColor: 'bg-lime-500',
-        message: 'Online˜'
+        message: 'Online*'
       };
   }
 }

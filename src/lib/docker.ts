@@ -15,7 +15,7 @@ function getServerFolder(serverID: string): string {
   return path.resolve(relative);
 }
 
-export function containerDoesntExists(serverID: string): boolean {
+export function containerDoesNotExists(serverID: string): boolean {
   return !fs.existsSync(getServerFolder(serverID));
 }
 
@@ -24,7 +24,7 @@ function containerHasPauseFile(serverID: string): boolean {
 }
 
 export async function startContainer(serverID: string): ContainerResult<void> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
 
   const composeFile = getServerFolder(serverID);
   const containerStart = await ResultAsync.fromPromise(compose.upAll({ cwd: composeFile }), (e) => CustomError.from(e, 'Failed to start container'));
@@ -58,7 +58,7 @@ export async function startContainer(serverID: string): ContainerResult<void> {
 }
 
 export async function stopContainer(serverID: string): ContainerResult<void> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
 
   const containerStop = await ResultAsync.fromPromise(compose.stop({ cwd: getServerFolder(serverID) }), () => new CustomError('Failed to stop container'));
 
@@ -83,7 +83,7 @@ export async function stopContainer(serverID: string): ContainerResult<void> {
 }
 
 export async function getContainerLogs(serverID: string, lines: number | 'all'): ContainerResult<string[]> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
 
   const containerLogs = await ResultAsync.fromPromise(
     compose.logs([], {
@@ -98,7 +98,7 @@ export async function getContainerLogs(serverID: string, lines: number | 'all'):
       .split('\n')
       .map((s) => s.trim())
       .map((line) => {
-        // Do some line shortenting and rephrasing.
+        // Do some line shortening and rephrasing.
         if (/.*(RCON Client).*(Thread RCON Client).*(shutting down).*/.test(line)) return '';
         if (/.*(RCON Listener).*(Thread RCON Client).*(started).*/.test(line)) return '';
 
@@ -109,7 +109,7 @@ export async function getContainerLogs(serverID: string, lines: number | 'all'):
 }
 
 export async function sendCommandToContainer(serverID: string, command: string): ContainerResult<string[]> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
 
   const execResult = await ResultAsync.fromPromise(compose.exec('minecraft', `rcon-cli ${command}`, { cwd: getServerFolder(serverID) }), () => new CustomError('Failed to execute command in container'));
 
@@ -124,7 +124,7 @@ export async function sendCommandToContainer(serverID: string, command: string):
 }
 
 export async function getContainerPlayerCount(serverID: string): ContainerResult<{ max: number; online: number }> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
 
   const execResult = await ResultAsync.fromPromise(compose.exec('minecraft', `mc-monitor status`, { cwd: getServerFolder(serverID) }), (e) => CustomError.from(e, 'Failed to execute command getting player count'));
 
@@ -140,7 +140,7 @@ export async function getContainerPlayerCount(serverID: string): ContainerResult
 }
 
 export async function getContainerData(serverID: string): ContainerResult<ContainerData> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
 
   const psResult = await ResultAsync.fromPromise(execCompose('ps', ['-a', '--format', 'json'], { cwd: getServerFolder(serverID) }), (e) => CustomError.from(e, 'Failed to read container data'));
   if (psResult.isErr()) return err(psResult.error);
@@ -169,7 +169,7 @@ export async function getContainerData(serverID: string): ContainerResult<Contai
 }
 
 export async function getContainerRunningStatus(serverID: string): ContainerResult<boolean> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
   return (await getContainerData(serverID)).map((d) => d.State == ContainerState.Running);
   // return (await getContainerData(serverID)).map(d => d.State == ContainerState.Running);
 }
@@ -206,7 +206,7 @@ export type ContainerUsageStats = {
 };
 
 export async function getContainerUsageStats(serverID: string): ContainerResult<ContainerUsageStats> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
 
   const containerData = await getContainerData(serverID);
   if (containerData.isErr()) return err(containerData.error);
@@ -228,7 +228,7 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
         }, 500);
       });
     }),
-    () => new CustomError('Failed to the server usage stats')
+    () => new CustomError('Failed to get the server usage stats')
   );
 
   return containerStats.map((v) =>
@@ -266,7 +266,7 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
 }
 
 export async function removeContainer(serverID: string, forcibly = false): ContainerResult<void> {
-  if (containerDoesntExists(serverID)) return err(new CustomError('Server not found'));
+  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
 
   const stopped = await stopContainer(serverID);
   if (stopped.isErr()) return err(stopped.error);

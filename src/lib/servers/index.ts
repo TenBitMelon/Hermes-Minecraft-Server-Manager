@@ -1,6 +1,6 @@
 import { env as publicENV } from '$env/dynamic/public';
 import { serverPB } from '$lib/database';
-import { Collections, ServerState, TimeToLiveMiliseconds, WorldCreationMethod, WorldType, type ServerRecord, type ServerResponse } from '$lib/database/types';
+import { Collections, ServerState, TimeToLiveMilliseconds, WorldCreationMethod, WorldType, type ServerRecord, type ServerResponse } from '$lib/database/types';
 import fs from 'node:fs';
 
 import { addCloudflareRecords } from '$lib/cloudflare';
@@ -275,7 +275,7 @@ export async function updateServerState(server: ServerResponse): Promise<UpdateR
     }
   }
 
-  if (server.state == ServerState.Paused && server.startDate && Date.now() > Date.parse(server.startDate) + TimeToLiveMiliseconds[server.timeToLive]) {
+  if (server.state == ServerState.Paused && server.startDate && Date.now() > Date.parse(server.startDate) + TimeToLiveMilliseconds[server.timeToLive]) {
     // The server is paused and it has been up longer than the time to live
     // Stop the server
     const stopResult = await stopContainer(server.id);
