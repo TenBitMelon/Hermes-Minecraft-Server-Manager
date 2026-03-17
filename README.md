@@ -82,7 +82,8 @@ services:
       # and how many ports you have open on your server.
       - PORT_MIN=25563
       - PORT_MAX=25564
-      # Wether to avoid the default Minecraft port 25565.
+
+      # Whether to avoid the default Minecraft port 25565.
       # This can help with preventing the servers from getting scrapped and
       # being targeted for griefing.
       - AVOID_DEFAULT_PORT=true
@@ -93,7 +94,7 @@ services:
 
       # This allows you to set the default MOTD when creating a server
       # This will be used if a custom one isn't entered
-      # Do no put color codes here, they won't work
+      # Do not put color codes here, they won't work
       - PUBLIC_DEFAULT_MOTD=A Hermes Minecraft Server
 
       # This variable allows you to control how long you want to keep stopped servers
