@@ -4,7 +4,7 @@ import { Collections, ServerState, TimeToLiveMilliseconds, WorldCreationMethod, 
 import fs from 'node:fs';
 
 import { addCloudflareRecords } from '$lib/cloudflare';
-import { ComposeBuilder, containerDoesntExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
+import { ComposeBuilder, containerDoesNotExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import type { ServerCreationSchema } from './schema';
 // import DefaultIcon from '$lib/servers/icon.png';
 import { ContainerState, CustomError } from '$lib/types';
@@ -208,7 +208,7 @@ export async function updateServerState(server: ServerResponse): Promise<UpdateR
     return changeToServer;
   }
 
-  if (containerDoesntExists(server.id)) {
+  if (containerDoesNotExists(server.id)) {
     if (!server.serverFilesMissing)
       await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
         serverFilesMissing: true
