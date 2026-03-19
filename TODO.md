@@ -6,3 +6,4 @@
 - [ ] maximum backup count
 - [ ] add a way to delete backups
 - [ ] add hint messages to the UI
+- [ ] allow multiple physical servers to spin up mc servers
