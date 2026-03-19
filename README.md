@@ -1,10 +1,10 @@
-[![Docker Image CI](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml/badge.svg)](https://github.com/melonboy10/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml)
+[![Docker Image CI](https://github.com/tenbitmelon/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml/badge.svg)](https://github.com/tenbitmelon/Hermes-Minecraft-Server-Manager/actions/workflows/docker-image.yml)
 
 # Hermes Minecraft Server Manager
 
 Hermes Minecraft Server Manager is a tool for managing Minecraft servers. It provides a web interface for server management and uses Docker to run the servers. The servers are created on-demand and can be started, stopped, and commands run from the web interface. The servers are created with a subdomain and can be accessed from the internet. The server uses Docker to run the servers and PocketBase for the database.
 
-[Docker Image](https://hub.docker.com/r/melonboy10/hermes-minecraft-server-manager)
+[Docker Image](https://hub.docker.com/r/tenbitmelon/hermes-minecraft-server-manager)
 
 ## Getting Started
 
@@ -21,7 +21,7 @@ Hermes Minecraft Server Manager is a tool for managing Minecraft servers. It pro
 1. Clone the repository
 
 ```bash
-git clone "https://github.com/melonboy10/Hermes-Minecraft-Server-Manager.git"
+git clone "https://github.com/tenbitmelon/Hermes-Minecraft-Server-Manager.git"
 ```
 
 2. Install the dependencies
@@ -47,7 +47,7 @@ The [`docker-compose.yml`](./docker-compose.yml) file is used to configure the s
 version: '3'
 services:
   app:
-    image: 'melonboy10/hermes-minecraft-server-manager:latest'
+    image: 'tenbitmelon/hermes-minecraft-server-manager:latest'
     container_name: 'hermes-mcsm'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

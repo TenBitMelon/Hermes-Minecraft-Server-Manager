@@ -10,8 +10,8 @@ on:
       - main
 
 env:
-  TEST_TAG: melonboy10/hermes-minecraft-server-manager:test
-  LATEST_TAG: melonboy10/hermes-minecraft-server-manager:latest
+  TEST_TAG: tenbitmelon/hermes-minecraft-server-manager:test
+  LATEST_TAG: tenbitmelon/hermes-minecraft-server-manager:latest
 
 jobs:
   build:
