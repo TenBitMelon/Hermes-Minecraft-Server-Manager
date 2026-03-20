@@ -60,6 +60,9 @@
 
   let whitelistPlayers: { id: number; name: string }[] = [];
   let operatorPlayers: { id: number; name: string }[] = [];
+  $: hasWhitelistPlayers = whitelistPlayers.length > 0;
+  $: hasBlankWhitelistPlayers = whitelistPlayers.some((player) => player.name.trim().length === 0);
+  $: hasBlankOperatorPlayers = operatorPlayers.some((player) => player.name.trim().length === 0);
 
   let iconImageElement: HTMLImageElement;
   let iconFileElement: HTMLInputElement;
@@ -94,17 +97,6 @@
 
   // let additionalDatapacks: { url: string; file: File | null }[] = [];
 </script>
-
-<!-- ORIGINAL FORM!!! -->
-
-<!-- {JSON.stringify(form)} -->
-
-{#if form?.success == false}
-  {form.message}
-  <pre>
-{JSON.stringify(errors, null, 2)}
-  </pre>
-{/if}
 
 <form
   method="post"
@@ -476,6 +468,12 @@
     <div class="h-px w-full bg-gray-800" />
   </div>
 
+  {#if form?.message}
+    <div class={`rounded-md px-4 py-3 text-sm ${form.success ? 'bg-green-950/40 text-green-200' : 'bg-red-950/40 text-red-200'}`}>
+      {form.message}
+    </div>
+  {/if}
+
   <div class="grid grid-cols-3 gap-4 max-sm:flex max-sm:flex-col">
     <label class={`flex cursor-pointer items-center justify-center gap-2 rounded-md bg-gray-800 p-2 transition-all hover:bg-gray-750 ${errors.eula ? 'error-outline' : ''}`}>
       <input type="checkbox" name="eula" value="true" class="accent-primary" />
@@ -483,7 +481,7 @@
         <span>I agree to the</span> <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener noreferrer" class="underline">Minecraft EULA</a>
       </span>
     </label>
-    <button type="submit" disabled={createButtonLoading} class="flex items-center justify-center rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:bg-transparent disabled:hover:text-primary">
+    <button type="submit" disabled={createButtonLoading || !hasWhitelistPlayers || hasBlankWhitelistPlayers || hasBlankOperatorPlayers} class="flex items-center justify-center rounded-md border-2 border-primary bg-transparent p-2 px-4 text-lg font-bold text-primary transition-colors hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:bg-transparent disabled:hover:text-primary">
       {#if createButtonLoading}
         <svg class="-ml-1 mr-3 h-5 w-5 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

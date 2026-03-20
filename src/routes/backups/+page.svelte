@@ -1,14 +1,21 @@
 <script lang="ts">
   import { formatFileSize, getFileURL, timeUntil } from '$lib';
-  import type { PageData } from './$types';
+  import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
+  export let form: ActionData;
   const entries = Object.entries(data.backups);
   entries.forEach(([, value]) => {
     value.sort((a, b) => Date.parse(b.created) - Date.parse(a.created));
   });
   entries.sort(([, a_v], [, b_v]) => Date.parse(b_v[0].created) - Date.parse(a_v[0].created));
 </script>
+
+{#if form?.message}
+  <div class={`mb-4 rounded-md px-4 py-3 text-sm ${form.success ? 'bg-green-950/40 text-green-200' : 'bg-red-950/40 text-red-200'}`}>
+    {form.message}
+  </div>
+{/if}
 
 <div class="scroll-transparent flex w-full gap-4 overflow-x-auto overflow-y-hidden pb-8">
   {#each entries as [serverID, backups]}
@@ -37,6 +44,12 @@
               <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-secondary transition-colors group-hover:fill-black"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" /></svg>
               {backup.name}
             </a>
+            <form method="POST" action="?/deleteBackup">
+              <input type="hidden" name="backupId" value={backup.id} />
+              <button type="submit" class="group whitespace-nowrap rounded-md border-2 border-red-500 bg-transparent p-1 text-center text-red-400 transition-colors hover:bg-red-500 hover:text-black">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-red-400 transition-colors group-hover:fill-black"><path d="M261-120q-24 0-42.5-18.5T200-181v-499h-40v-80h200v-40h240v40h200v80h-40v499q0 24-18.5 42.5T699-120H261Zm418-560H281v499h418v-499ZM360-280h80v-320h-80v320Zm160 0h80v-320h-80v320ZM281-680v499-499Z" /></svg>
+              </button>
+            </form>
           </div>
           <!-- </div> -->
         </div>

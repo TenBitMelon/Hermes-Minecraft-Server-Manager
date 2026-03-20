@@ -1,8 +1,8 @@
 import { serverPB } from '$lib/database';
-import { Collections } from '$lib/database/types';
+import { Collections, type BackupResponse } from '$lib/database/types';
 import { requireAdministrator } from '$lib/server/auth';
-import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { error, fail } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load = (async ({ locals }) => {
   requireAdministrator({ user: locals.user });
@@ -28,3 +28,26 @@ export const load = (async ({ locals }) => {
 
   return { backups: groupObject };
 }) satisfies PageServerLoad;
+
+export const actions = {
+  deleteBackup: async ({ request, locals }) => {
+    requireAdministrator({ user: locals.user });
+
+    const formData = await request.formData();
+    const backupId = formData.get('backupId')?.toString();
+    if (!backupId) return fail(400, { message: 'Missing backup to delete.' });
+
+    let backupRecord: BackupResponse;
+    try {
+      backupRecord = await serverPB.collection(Collections.Backups).getOne<BackupResponse>(backupId);
+    } catch {
+      return fail(404, { message: 'Backup not found.' });
+    }
+
+    await serverPB.collection(Collections.Backups).delete(backupId);
+    return {
+      success: true,
+      message: `Deleted backup ${backupRecord.name}.`
+    };
+  }
+} satisfies Actions;

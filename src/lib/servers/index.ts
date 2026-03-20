@@ -3,7 +3,7 @@ import { serverPB } from '$lib/database';
 import { Collections, ServerState, TimeToLiveMilliseconds, WorldCreationMethod, WorldType, type ServerRecord, type ServerResponse } from '$lib/database/types';
 import fs from 'node:fs';
 
-import { addCloudflareRecords } from '$lib/cloudflare';
+import { addCloudflareRecords, removeCloudflareRecords } from '$lib/cloudflare';
 import { ComposeBuilder, containerDoesNotExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import type { ServerCreationSchema } from './schema';
 // import DefaultIcon from '$lib/servers/icon.png';
@@ -19,10 +19,38 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   if (portR.isErr()) return err(portR.error);
   const port = portR.value;
 
-  const defaultIconBuffer = await fetch(publicENV.PUBLIC_DEFAULT_ICON_URL).then((r) => r.arrayBuffer());
+  const defaultIconResult = await ResultAsync.fromPromise(
+    fetch(publicENV.PUBLIC_DEFAULT_ICON_URL).then((r) => r.arrayBuffer()),
+    (error) => CustomError.from(error, 'Failed to load the default server icon.')
+  );
+  if (defaultIconResult.isErr()) return err(defaultIconResult.error);
+  const defaultIconBuffer = defaultIconResult.value;
 
   const recordIds = await addCloudflareRecords(data.subdomain, port);
   if (recordIds.isErr()) return err(recordIds.error);
+  const dnsRecordIds = recordIds.value;
+  let createdRecord: ServerResponse | null = null;
+  let serverFolderPath = '';
+
+  async function cleanupCreationFailure(nestedError: Error) {
+    if (createdRecord) {
+      if (serverFolderPath && fs.existsSync(serverFolderPath)) {
+        const removeFilesResult = Result.fromThrowable(
+          () => fs.rmSync(serverFolderPath, { recursive: true, force: true }),
+          (error) => CustomError.from(error, 'Failed to remove partially created server files.')
+        )();
+        if (removeFilesResult.isErr()) return err(new CustomError(nestedError.message, removeFilesResult.error));
+      }
+
+      const deleteRecordResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).delete(createdRecord.id), (error) => CustomError.from(error, 'Failed to roll back the partially created server record.'));
+      if (deleteRecordResult.isErr()) return err(new CustomError(nestedError.message, deleteRecordResult.error));
+    }
+
+    const removeDnsResult = await removeCloudflareRecords(dnsRecordIds.cname, dnsRecordIds.srv);
+    if (removeDnsResult.isErr()) return err(new CustomError(nestedError.message, removeDnsResult.error));
+
+    return err(nestedError);
+  }
 
   const createResponse = await ResultAsync.fromPromise(
     serverPB.collection(Collections.Servers).create<ServerResponse>({
@@ -51,12 +79,21 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
     }),
     () => new Error('Failed to create new server in DB')
   );
-  if (createResponse.isErr()) return err(createResponse.error);
+  if (createResponse.isErr()) {
+    const removeDnsResult = await removeCloudflareRecords(dnsRecordIds.cname, dnsRecordIds.srv);
+    if (removeDnsResult.isErr()) return err(new CustomError(createResponse.error.message, removeDnsResult.error));
+    return err(createResponse.error);
+  }
   const record = createResponse.value;
+  createdRecord = record;
 
-  const serverFolderPath = `servers/${record.id}`;
+  serverFolderPath = `servers/${record.id}`;
   const serverFilesPath = `${serverFolderPath}/server-files`;
-  fs.mkdirSync(serverFilesPath, { recursive: true });
+  const createDirectoryResult = Result.fromThrowable(
+    () => fs.mkdirSync(serverFilesPath, { recursive: true }),
+    (error) => CustomError.from(error, 'Failed to prepare the server files directory.')
+  )();
+  if (createDirectoryResult.isErr()) return cleanupCreationFailure(createDirectoryResult.error);
 
   // TODO: This needs to write after the server is created or set the URL in the compose file
   // if (data.icon) fs.writeFileSync(`${serverFilesPath}/server-icon.png`, Buffer.from(await data.icon.arrayBuffer()));
@@ -68,8 +105,14 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   // if (data.bannedPlayers.length > 0) fs.writeFileSync(`${serverFilesPath}/banned-players.json`, JSON.stringify(data.bannedPlayers));
 
   if (data.serverProperties) {
-    const serverProperties = await data.serverProperties.text();
-    fs.writeFileSync(`${serverFilesPath}/server.properties`, serverProperties);
+    const serverPropertiesResult = await ResultAsync.fromPromise(data.serverProperties.text(), (error) => CustomError.from(error, 'Failed to read the uploaded server.properties file.'));
+    if (serverPropertiesResult.isErr()) return cleanupCreationFailure(serverPropertiesResult.error);
+
+    const writePropertiesResult = Result.fromThrowable(
+      () => fs.writeFileSync(`${serverFilesPath}/server.properties`, serverPropertiesResult.value),
+      (error) => CustomError.from(error, 'Failed to write the server.properties file.')
+    )();
+    if (writePropertiesResult.isErr()) return cleanupCreationFailure(writePropertiesResult.error);
   }
 
   /* 
@@ -156,10 +199,15 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   //     break;
   // }
 
-  fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, builder.build());
+  const writeComposeResult = Result.fromThrowable(
+    () => fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, builder.build()),
+    (error) => CustomError.from(error, 'Failed to write the docker-compose configuration for the new server.')
+  )();
+  if (writeComposeResult.isErr()) return cleanupCreationFailure(writeComposeResult.error);
 
   // Start the mc server's docker-compose file
   const containerResult = await startContainer(record.id);
+  if (containerResult.isErr()) return cleanupCreationFailure(new CustomError('Failed to start the server after creation.', containerResult.error));
   return containerResult.map(() => record);
 }
 

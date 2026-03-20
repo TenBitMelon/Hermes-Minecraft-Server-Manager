@@ -91,7 +91,7 @@ export const ServerCreationSchema = z
         .pipe(
           z
             .object({
-              name: z.string()
+              name: z.string().trim().min(1, { message: 'Whitelist entries need a username.' })
             })
             .strip()
             .array()
@@ -105,7 +105,7 @@ export const ServerCreationSchema = z
           z
             .object({
               // uuid: z.string(),
-              name: z.string()
+              name: z.string().trim().min(1, { message: 'Operator entries need a username.' })
               // level: z.number().default(4),
               // bypassesPlayerLimit: z.coerce.boolean().default(true)
             })

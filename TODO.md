@@ -1,16 +1,16 @@
-- [x] Add accounts and auth
-- [x] admin page
+- [x] error handlingo n server creation
+- [x] fix error handling when cloudflare record already exists
+- [x] add a way to delete backups
+- [ ] Change logs to websocket
+- [ ] allow multiple physical servers to spin up mc servers
 - [ ] update minecraft server docker image
-- [ ] better minecraft version control
 - [ ] bluemap support
 - [ ] maximum backup count
-- [ ] add a way to delete backups
-- [ ] add hint messages to the UI
-- [ ] allow multiple physical servers to spin up mc servers
-- [ ] fix error handling when cloudflare record already exists
-- [x] find a way to do server iconds
 - [ ] packwiz links
 - [ ] test the world from source feature
-- [ ] Change logs to websocket
+- [x] better minecraft version control
+- [x] Add accounts and auth
+- [x] admin page
+- [x] add hint messages to the UI
+- [x] find a way to do server iconds
 - [x] fix icons handling
-- [ ] error handlingo n server creation
