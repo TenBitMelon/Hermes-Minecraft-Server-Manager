@@ -20,7 +20,7 @@
     </div>
   {/if}
   {@const display = stateDisplay(server.state)}
-  <a class="my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800" href={`/${server.id}`} data-sveltekit-preload-data="false">
+  <svelte:element this={server.canVisitDashboard ? 'a' : 'div'} class={`my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800 ${server.canVisitDashboard ? '' : 'cursor-default'}`} href={server.canVisitDashboard ? `/${server.id}` : undefined} data-sveltekit-preload-data={server.canVisitDashboard ? 'false' : undefined}>
     {#if server.state == ServerState.Stopped && server.canBeDeleted && server.deletionDate}
       <FormLoadingButton action={`/${server.id}/?/start`} text="Revive" class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4" buttonClass="bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed">
         Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
@@ -47,9 +47,12 @@
           <p class="text-sm font-medium">{display.message}</p>
           <div class="text-sm font-thin text-gray-400">{server.serverFilesMissing ? 'um.. the server files are missing' : ''}</div>
         </div>
+        {#if !server.canVisitDashboard}
+          <div class="mt-2 text-sm text-gray-400">Dashboard access required to open controls and logs.</div>
+        {/if}
       </div>
     </div>
-  </a>
+  </svelte:element>
 {/each}
 {#if data.servers.length === 0}
   <p class="py-16 text-center text-lg">
