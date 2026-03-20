@@ -1,4 +1,3 @@
-import { env as publicENV } from '$env/dynamic/public';
 import { randomWord } from '$lib';
 import { Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldCreationMethod, WorldType } from '$lib/database/types';
 import { z } from 'zod';
@@ -38,9 +37,11 @@ export const ServerCreationSchema = z
       if (data.mods && !serverSoftware.modsUpload) return false;
       if (data.plugins && !serverSoftware.pluginsUpload) return false;
 
-      return serverSoftware.versions.flat().includes(data.gameVersion);
+      return true;
     },
-    { message: 'Invalid game version for software' }
+    {
+      message: 'Invalid game version for software'
+    }
   )
   .and(
     z.discriminatedUnion('worldCreator', [
@@ -88,16 +89,13 @@ export const ServerCreationSchema = z
         .string()
         .transform((v) => (v.trim() ? JSON.parse(v) : []))
         .pipe(
-          (() => {
-            const pipeType = z
-              .object({
-                name: z.string()
-              })
-              .strip()
-              .array();
-            if (publicENV.PUBLIC_REQUIRE_WHITELIST) return pipeType;
-            else return pipeType.default([]);
-          })()
+          z
+            .object({
+              name: z.string()
+            })
+            .strip()
+            .array()
+            .min(1, { message: 'Add at least one player to the whitelist.' })
         )
         .transform((v) => v.map((e) => e.name)),
       ops: z

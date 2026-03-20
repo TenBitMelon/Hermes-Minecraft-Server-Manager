@@ -10,7 +10,7 @@
     <h1 class="text-2xl font-bold">Administration</h1>
     <p class="text-gray-400">Manage users, quotas, global roles, and server ownership.</p>
     {#if form?.message}
-      <p class="mt-2 text-red-400">{form.message}</p>
+      <p class={`mt-2 ${form.success ? 'text-green-400' : 'text-red-400'}`}>{form.message}</p>
     {/if}
   </section>
 
@@ -46,25 +46,40 @@
     <h2 class="text-xl font-bold">Servers</h2>
     <div class="mt-4 grid gap-4">
       {#each data.servers as server}
-        <form method="POST" action="?/transferOwner" class="grid gap-3 rounded-md border border-gray-700 p-4 md:grid-cols-[2fr_2fr_auto] md:items-end">
-          <input type="hidden" name="serverId" value={server.id} />
-          <div>
-            <div class="font-semibold">{server.title}</div>
-            <div class="text-sm text-gray-400">{server.id}</div>
-          </div>
-          <label class="grid gap-1 text-sm">
-            <span>Owner</span>
-            <select class="rounded-md bg-gray-900 p-2" name="ownerUserId">
-              {#each data.users as entry}
-                <option value={entry.user.id} selected={server.owner === entry.user.id}>{entry.user.name || entry.user.username} ({entry.user.email})</option>
-              {/each}
-            </select>
-          </label>
-          <div class="flex gap-2">
-            <button class="rounded-md bg-secondary px-4 py-2 font-semibold text-black transition-colors hover:brightness-110" type="submit">Transfer</button>
-            <a class="rounded-md bg-gray-700 px-4 py-2 font-semibold transition-colors hover:bg-gray-600" href={`/${server.id}/access`}>Access</a>
-          </div>
-        </form>
+        <div class="grid gap-3 rounded-md border border-gray-700 p-4 md:grid-cols-[2fr_2fr_auto] md:items-end">
+          <form method="POST" action="?/transferOwner" class="contents">
+            <input type="hidden" name="serverId" value={server.id} />
+            <div>
+              <div class="font-semibold">{server.title}</div>
+              <div class="text-sm text-gray-400">{server.id}</div>
+            </div>
+            <label class="grid gap-1 text-sm">
+              <span>Owner</span>
+              <select class="rounded-md bg-gray-900 p-2" name="ownerUserId">
+                {#each data.users as entry}
+                  <option value={entry.user.id} selected={server.owner === entry.user.id}>{entry.user.name || entry.user.username} ({entry.user.email})</option>
+                {/each}
+              </select>
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <button class="rounded-md bg-secondary px-4 py-2 font-semibold text-black transition-colors hover:brightness-110" type="submit">Transfer</button>
+              <a class="rounded-md bg-gray-700 px-4 py-2 font-semibold transition-colors hover:bg-gray-600" href={`/${server.id}/access`}>Access</a>
+            </div>
+          </form>
+          <div class="md:col-span-2"></div>
+          <form
+            method="POST"
+            action="?/deleteServer"
+            on:submit={(event) => {
+              if (!confirm(`Delete ${server.title}? This permanently removes the server, files, DNS records, and backups.`)) {
+                event.preventDefault();
+              }
+            }}
+            class="md:col-start-3">
+            <input type="hidden" name="serverId" value={server.id} />
+            <button class="w-full rounded-md bg-red-700 px-4 py-2 font-semibold transition-colors hover:bg-red-600" type="submit">Delete Server</button>
+          </form>
+        </div>
       {/each}
     </div>
   </section>

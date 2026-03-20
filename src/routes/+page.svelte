@@ -47,9 +47,6 @@
           <p class="text-sm font-medium">{display.message}</p>
           <div class="text-sm font-thin text-gray-400">{server.serverFilesMissing ? 'um.. the server files are missing' : ''}</div>
         </div>
-        {#if !server.canVisitDashboard}
-          <div class="mt-2 text-sm text-gray-400">Dashboard access required to open controls and logs.</div>
-        {/if}
       </div>
     </div>
   </svelte:element>

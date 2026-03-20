@@ -1,5 +1,6 @@
 import { serverPB } from '$lib/database';
 import { Collections } from '$lib/database/types';
+import { removeContainer } from '$lib/docker';
 import { getUserDirectory, requireAdministrator } from '$lib/server/auth';
 import { fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
@@ -48,5 +49,17 @@ export const actions = {
     });
 
     return { success: true };
+  },
+  deleteServer: async ({ request, locals }) => {
+    requireAdministrator({ user: locals.user });
+
+    const formData = await request.formData();
+    const serverId = formData.get('serverId')?.toString();
+    if (!serverId) return fail(400, { message: 'Missing server to delete.' });
+
+    const removeResult = await removeContainer(serverId, true);
+    if (removeResult.isErr()) return fail(500, { message: removeResult.error.message });
+
+    return { success: true, message: 'Server deleted.' };
   }
 } satisfies Actions;

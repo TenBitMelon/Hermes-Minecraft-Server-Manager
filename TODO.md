@@ -1,5 +1,5 @@
-- [ ] Add accounts and auth
-- [ ] admin page
+- [x] Add accounts and auth
+- [x] admin page
 - [ ] update minecraft server docker image
 - [ ] better minecraft version control
 - [ ] bluemap support
@@ -8,9 +8,9 @@
 - [ ] add hint messages to the UI
 - [ ] allow multiple physical servers to spin up mc servers
 - [ ] fix error handling when cloudflare record already exists
-- [ ] find a way to do server iconds
+- [x] find a way to do server iconds
 - [ ] packwiz links
 - [ ] test the world from source feature
 - [ ] Change logs to websocket
-- [ ] fix icons handling
+- [x] fix icons handling
 - [ ] error handlingo n server creation

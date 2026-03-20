@@ -266,31 +266,26 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
 }
 
 export async function removeContainer(serverID: string, forcibly = false): ContainerResult<void> {
-  if (containerDoesNotExists(serverID)) return err(new CustomError('Server not found'));
+  const serverRecordResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).getOne<ServerResponse>(serverID), (e) => CustomError.from(e, 'Failed to get server data from DB'));
+  if (serverRecordResult.isErr()) return err(serverRecordResult.error);
+  const serverRecord = serverRecordResult.value;
 
-  const stopped = await stopContainer(serverID);
-  if (stopped.isErr()) return err(stopped.error);
+  if (!containerDoesNotExists(serverID)) {
+    const composeStop = await ResultAsync.fromPromise(compose.stop({ cwd: getServerFolder(serverID) }), (e) => CustomError.from(e, 'Failed to stop container'));
+    if (composeStop.isErr()) return err(composeStop.error);
 
-  const remove = Result.fromThrowable(
-    () => fs.rmSync(getServerFolder(serverID), { recursive: true, force: forcibly }),
-    () => new CustomError('Failed to remove server files')
-  )();
-  if (remove.isErr()) err(remove.error);
+    const remove = Result.fromThrowable(
+      () => fs.rmSync(getServerFolder(serverID), { recursive: true, force: forcibly }),
+      () => new CustomError('Failed to remove server files')
+    )();
+    if (remove.isErr()) return err(remove.error);
+  }
 
-  const serverRecord = await serverPB.collection(Collections.Servers).getOne<ServerResponse>(serverID);
   const removed = await removeCloudflareRecords(serverRecord.cloudflareCNAMERecordID, serverRecord.cloudflareSRVRecordID);
   if (removed.isErr()) return err(new CustomError(removed.error.message, removed.error));
 
   const dbResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).delete(serverID), () => new CustomError('Failed to update database after removing server'));
   return dbResult.map(() => undefined);
-
-  // new Promise((resolve) => {
-  //   exec(`cd ../; rm -rf ${serverID}`, { cwd: `servers/${serverID}` }, (error) => {
-  //     console.log(error);
-  //     if (error && !forcibly) resolve(1);
-  //     resolve(0);
-  //   });
-  // });
 }
 
 export class ComposeBuilder {

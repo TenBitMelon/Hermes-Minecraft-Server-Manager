@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { enhance } from '$app/forms';
   import { env as publicENV } from '$env/dynamic/public';
   import { ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldType } from '$lib/database/types';
   import type { ServerCreationSchema } from '$lib/servers/schema';
+  import { onMount } from 'svelte';
   import { type SafeParseError, type typeToFlattenedError } from 'zod';
   import type { ActionData } from './$types';
   import MinecraftRawEditor from './MinecraftRawEditor.svelte';
@@ -27,8 +29,29 @@
 
   let selectedTimeToLive: TimeToLive = TimeToLive['12 hr'];
   let selectedSoftware: ServerSoftware = ServerSoftware.Vanilla;
-  let selectedGameVersion: string;
-  $: if (!ServerSoftwareOptions[selectedSoftware]?.versions.flat().includes(selectedGameVersion)) selectedGameVersion = ServerSoftwareOptions[selectedSoftware]?.versions.at(-1)?.at(-1) ?? '';
+  type VersionOption = {
+    id: string;
+    type: 'release' | 'snapshot';
+    supported: boolean;
+  };
+  let selectedGameVersion = '';
+  let availableVersions: Record<ServerSoftware, VersionOption[]> = {
+    [ServerSoftware.Vanilla]: [],
+    [ServerSoftware.Fabric]: [],
+    [ServerSoftware.Paper]: []
+  };
+  let loadingVersions = true;
+  let versionsError = '';
+  let showExperimentalVersions = false;
+
+  $: softwareVersions = availableVersions[selectedSoftware] ?? [];
+  $: filteredSoftwareVersions = softwareVersions.filter((version) => showExperimentalVersions || version.type === 'release');
+  $: if (filteredSoftwareVersions.length > 0 && !filteredSoftwareVersions.some((version) => version.id === selectedGameVersion)) {
+    selectedGameVersion = filteredSoftwareVersions[0]?.id ?? '';
+  }
+  $: if (filteredSoftwareVersions.length === 0) {
+    selectedGameVersion = '';
+  }
 
   let worldCreator: 'new' | 'source' = 'new';
   $: selectedSoftware, (worldCreator = 'new');
@@ -42,6 +65,21 @@
   let iconFileElement: HTMLInputElement;
 
   let createButtonLoading = false;
+
+  onMount(async () => {
+    if (!browser) return;
+
+    try {
+      const response = await fetch('/api/server-software-versions');
+      if (!response.ok) throw new Error('Failed to load version data');
+      availableVersions = await response.json();
+    } catch (error) {
+      console.error(error);
+      versionsError = 'Unable to load live Minecraft versions right now. Please refresh and try again.';
+    } finally {
+      loadingVersions = false;
+    }
+  });
 
   function handleIconChange() {
     if (iconFileElement?.files?.length) {
@@ -91,6 +129,7 @@
   <div class="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
     <label class={`block`}>
       <span class="font-semibold text-gray-400">Server Title<sup class="text-red-400">*</sup></span>
+      <p class="mb-2 text-sm text-gray-500">What should players see in the server list?</p>
       <div class={`${errors.title ? 'error-outline' : ''}`}>
         <input type="text" name="title" id="title" placeholder="Server Title" class="w-full rounded-md bg-gray-800 p-2 px-4 py-2 transition-all hover:bg-gray-750 focus:outline-none focus:ring-2 focus:ring-primary" />
         <span class={`block w-full text-center font-handwriting ${errors.title ? '' : 'hidden'}`}>{errors.title}</span>
@@ -98,6 +137,7 @@
     </label>
     <label class={`block`}>
       <span class="font-semibold text-gray-400">Subdomain</span>
+      <p class="mb-2 text-sm text-gray-500">Optional. Leave blank and Hermes will generate one for you.</p>
       <div class={`${errors.subdomain ? 'error-outline' : ''}`}>
         <input type="text" name="subdomain" placeholder="Subdomain" class="w-full rounded-md bg-gray-800 p-2 px-4 py-2 transition-all hover:bg-gray-750 focus:outline-none focus:ring-2 focus:ring-primary" />
         <span class={`block w-full text-center font-handwriting ${errors.subdomain ? '' : 'hidden'}`}>{errors.subdomain}</span>
@@ -148,7 +188,11 @@
   <!-- SERVER CONFIG -->
 
   <!-- Time to Live -->
-  <div class="font-semibold text-gray-400">Time to Live</div>
+
+  <div class="font-semibold text-gray-400">
+    Time to Live
+    <p class="text-sm font-normal text-gray-500">How long Hermes should keep the server around before automatic shutdown or cleanup becomes eligible. This doesn't start until there are no players online.</p>
+  </div>
   <div class={`grid grid-cols-2 gap-4 md:grid-cols-4 ${errors.timeToLive ? 'error-outline' : ''}`}>
     {#each Object.entries(TimeToLive) as [timeName, time]}
       <label class={`flex cursor-pointer items-center gap-2 rounded-md bg-gray-800 px-4 py-2 capitalize transition-all hover:bg-gray-750 has-[:checked]:text-primary has-[:checked]:ring-2 has-[:checked]:ring-primary`}>
@@ -157,11 +201,15 @@
       </label>
     {/each}
   </div>
+
   <span class={`block w-full text-center font-handwriting ${errors.timeToLive ? '' : 'hidden'}`}>{errors.timeToLive}</span>
 
   <!-- Server Software -->
 
-  <div class="font-semibold text-gray-400">Server Software</div>
+  <div class="font-semibold text-gray-400">
+    Server Software
+    <p class="text-sm font-normal text-gray-500">Pick the server runtime first. The version list below updates to only show versions we can currently fetch for that software.</p>
+  </div>
   <div class={`grid grid-cols-2 gap-4 md:grid-cols-4 ${errors.serverSoftware ? 'error-outline' : ''}`}>
     {#each Object.keys(ServerSoftwareOptions) as software}
       <label class={`flex cursor-pointer items-center gap-2 rounded-md bg-gray-800 px-4 py-2 capitalize transition-all hover:bg-gray-750 has-[:checked]:text-primary has-[:checked]:ring-2 has-[:checked]:ring-primary`}>
@@ -174,39 +222,42 @@
 
   <!-- Game Version -->
 
-  <div class="font-semibold text-gray-400">Game Version</div>
-  <div class={` flex flex-wrap gap-4 ${errors.gameVersion ? 'error-outline' : ''}`}>
-    {#each ServerSoftwareOptions[selectedSoftware]?.versions ?? [] as version}
-      {@const hiddenNumber = version.includes(selectedGameVersion) ? selectedGameVersion : version[0]}
-      <div class="group relative">
-        <!-- Invisible first number just so the button are the right size and can be absolutely positioned -->
-        <div class={`invisible flex w-full justify-between gap-1 px-4 py-2`}>
-          {hiddenNumber}
-          {#if version.length > 1 && (version[0] == hiddenNumber || selectedGameVersion === hiddenNumber)}
-            <div class="h-4 w-4"></div>
+  <div class="font-semibold text-gray-400">
+    Game Version
+    <p class="text-sm font-normal text-gray-500">Pick a game version to run. Newer versions appear first.</p>
+  </div>
+  <div class={`grid gap-3 ${errors.gameVersion ? 'error-outline' : ''}`}>
+    <label class="rounded-md bg-gray-800 p-4">
+      <div class="mb-2 flex items-center justify-between gap-4">
+        <span class="font-semibold text-gray-300">Select a version</span>
+        <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-400">
+          <input type="checkbox" bind:checked={showExperimentalVersions} class="accent-primary" />
+          Show snapshots / experimental builds
+        </label>
+      </div>
+      {#if loadingVersions}
+        <div class="rounded-md bg-gray-700/60 px-4 py-3 text-sm text-gray-300">Loading available versions…</div>
+      {:else if versionsError}
+        <div class="rounded-md bg-red-950/40 px-4 py-3 text-sm text-red-300">{versionsError}</div>
+      {:else if filteredSoftwareVersions.length === 0}
+        <div class="rounded-md bg-yellow-950/40 px-4 py-3 text-sm text-yellow-200">No versions were found for {selectedSoftware}. Try another server software option.</div>
+      {:else}
+        <select name="gameVersion" bind:value={selectedGameVersion} class="w-full cursor-pointer rounded-md bg-gray-700 p-3 transition-all hover:bg-gray-650 focus:outline-none focus:ring-2 focus:ring-primary">
+          {#each filteredSoftwareVersions as version (version.id)}
+            <option value={version.id}>{version.type === 'release' ? 'Release' : 'Experimental'} • {version.id}</option>
+          {/each}
+        </select>
+        <div class="mt-2 text-sm text-gray-500">
+          {#if selectedSoftware === ServerSoftware.Paper}
+            Paper versions come from PaperMC’s downloads service and only include released builds.
+          {:else if selectedSoftware === ServerSoftware.Fabric}
+            Fabric versions come from Fabric metadata and may include snapshots when available.
+          {:else}
+            Vanilla versions come directly from Mojang’s published version manifest.
           {/if}
         </div>
-        <div class="absolute top-0 h-fit rounded-md bg-gray-800 shadow-lg hover:z-10">
-          {#each version as versionNumber}
-            <label
-              class={`
-                flex w-full cursor-pointer items-center justify-between gap-1 rounded-md px-4  py-2 text-left
-                transition-all first:relative checked:block hover:bg-gray-750 group-hover:flex
-                ${selectedGameVersion === versionNumber ? 'text-primary ring-2 ring-primary' : 'text-white'}
-                ${(version[0] == versionNumber && !version.includes(selectedGameVersion)) || selectedGameVersion == versionNumber ? 'block' : 'hidden'} 
-              `}>
-              {versionNumber}
-              {#if version.length > 1 && (version[0] == versionNumber || selectedGameVersion === versionNumber)}
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:invisible" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-              {/if}
-              <input type="radio" name="gameVersion" class="hidden" value={versionNumber} bind:group={selectedGameVersion} />
-            </label>
-          {/each}
-        </div>
-      </div>
-    {/each}
+      {/if}
+    </label>
   </div>
   <span class={`block w-full text-center font-handwriting ${errors.gameVersion ? '' : 'hidden'}`}>{errors.gameVersion}</span>
 
@@ -240,14 +291,20 @@
 
     {#if worldCreator == 'new'}
       <!-- Seed -->
-      <div class="font-semibold text-gray-400">World Seed</div>
+      <div class="font-semibold text-gray-400">
+        World Seed
+        <p class="text-sm font-normal text-gray-500">Optional. Use a seed if you want to recreate a specific world layout.</p>
+      </div>
       <label class={`block ${errors.worldSeed ? 'error-outline' : ''}`}>
         <input type="text" class="w-full rounded-md bg-gray-800 p-2 px-4 py-2 transition-all hover:bg-gray-750 focus:outline-none focus:ring-2 focus:ring-primary" name="worldSeed" placeholder="World Seed" />
         <span class={`block w-full text-center font-handwriting ${errors.worldSeed ? '' : 'hidden'}`}>{errors.worldSeed}</span>
       </label>
 
       <!-- World Type -->
-      <div class="font-semibold text-gray-400">World Type</div>
+      <div class="font-semibold text-gray-400">
+        World Type
+        <p class="text-sm font-normal text-gray-500">Normal is the default Minecraft terrain. Flat is best for testing or building-focused servers.</p>
+      </div>
       <div class={`grid grid-cols-2 gap-4 md:grid-cols-4 ${errors.worldType ? 'error-outline' : ''}`}>
         {#each Object.values(WorldType) as type}
           <label class="flex cursor-pointer items-center gap-2 rounded-md bg-gray-800 px-4 py-2 capitalize transition-all hover:bg-gray-750 has-[:checked]:text-primary has-[:checked]:ring-2 has-[:checked]:ring-primary">
@@ -268,6 +325,7 @@
       {/if}
     {:else if worldCreator == 'source'}
       <div class="font-semibold text-gray-400">World Source</div>
+      <p class="text-sm text-gray-500">Paste a direct download link to a zip file, or upload a world archive manually below.</p>
       <label class={`block ${errors.worldSourceURL ? 'error-outline' : ''}`}>
         <input type="url" class="w-full rounded-md bg-gray-800 p-2 px-4 py-2 transition-all hover:bg-gray-750 focus:outline-none focus:ring-2 focus:ring-primary" name="worldSourceURL" placeholder="www.downloadlink.com" />
         <span class={`block w-full text-center font-handwriting ${errors.worldSourceURL ? '' : 'hidden'}`}>{errors.worldSourceURL}</span>
@@ -302,6 +360,7 @@
     <div class="mx-4 whitespace-nowrap text-sm font-thin">Additional Configuration</div>
     <div class="h-px w-full bg-gray-800" />
   </div>
+  <p class="text-sm text-gray-500">These settings shape gameplay and performance.</p>
 
   <div class="grid grid-cols-2 gap-4 max-sm:flex max-sm:flex-col">
     <!-- Difficulty Selector -->
@@ -368,7 +427,8 @@
 
   <div class="grid grid-cols-2 gap-x-8 px-8 max-sm:flex max-sm:flex-col">
     <label class={`${errors.whitelist ? 'error-outline' : ''}`}>
-      <div class="font-semibold text-gray-400">Whitelist</div>
+      <div class="font-semibold text-gray-400">Whitelist<sup class="text-red-400">*</sup></div>
+      <p class="mb-2 text-sm text-gray-500">Players allowed to join immediately. At least one player must be on the whitelist before the server can be created.</p>
       <!-- <textarea class="h-full w-full" name="whitelist" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000",\n\t\tname: "username"\n\t}\n]`} /> -->
       <input name="whitelist" class="hidden" value={JSON.stringify(whitelistPlayers)} />
       <PlayerList bind:list={whitelistPlayers} />
@@ -376,6 +436,7 @@
     </label>
     <label class={`${errors.ops ? 'error-outline' : ''}`}>
       <div class="font-semibold text-gray-400">Operators</div>
+      <p class="mb-2 text-sm text-gray-500">Operators can use high-level Minecraft commands in-game.</p>
       <!-- <textarea class="h-full w-full" name="ops" placeholder={`[\n\t{\n\t\tuuid: "0000-0000-0000-0000"\n\t\tname: "username"\n\t\tlevel: 4,\n\t\tbypassesPlayerLimit: true\n\t}\n]`} /> -->
       <input name="ops" class="hidden" value={JSON.stringify(operatorPlayers)} />
       <PlayerList bind:list={operatorPlayers} />
