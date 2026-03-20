@@ -1,6 +1,9 @@
+import { requireAdministrator } from '$lib/server/auth';
 import { latestUpdateResults } from '$lib/servers';
 
-export async function load(/* {}: PageServerLoadEvent */) {
+export async function load({ locals }) {
+  requireAdministrator({ user: locals.user });
+
   return {
     update: latestUpdateResults.map((serverUpdate) => ({
       server: serverUpdate.server,

@@ -54,8 +54,11 @@
         <div class={`h-3 w-3 rounded-full ${serverStatus.indicatorColor}`}></div>
         <h2 class="text-lg">{serverStatus.message}</h2>
       </div>
-      <FormLoadingButton action="?/start" disabled={data.server.state == ServerState.Running || data.server.state == ServerState.Paused} text="Start" />
-      <FormLoadingButton action="?/stop" disabled={data.server.state == ServerState.Stopped} text="Stop" />
+      {#if data.access.canManageAccess}
+        <a href={`/${data.server.id}/access`} class="rounded-md bg-gray-800 px-4 py-2 font-semibold transition-colors hover:bg-gray-700">Access</a>
+      {/if}
+      <FormLoadingButton action="?/start" disabled={!data.access.canStartStop || data.server.state == ServerState.Running || data.server.state == ServerState.Paused} text="Start" />
+      <FormLoadingButton action="?/stop" disabled={!data.access.canStartStop || data.server.state == ServerState.Stopped} text="Stop" />
     </div>
   </div>
 
@@ -106,7 +109,7 @@
   <FormLoadingButton
     class="grid grid-cols-[1fr_auto] gap-2"
     action="?/command"
-    disabled={data.server.state == ServerState.Stopped}
+    disabled={!data.access.canSendConsole || data.server.state == ServerState.Stopped}
     text="Send"
     callback={({ result }) => {
       if (result.type == 'success' && result.data && result.data.action == 'command') commandMessage = result.data.value[0] ?? '';

@@ -14,7 +14,7 @@ import { getUnusedPort } from './ports';
 import { getFileURL } from '$lib';
 
 // TODO: Clean up this function
-export async function createNewServer(data: z.infer<typeof ServerCreationSchema>): Promise<Result<ServerResponse, Error>> {
+export async function createNewServer(data: z.infer<typeof ServerCreationSchema>, ownerUserId: string): Promise<Result<ServerResponse, Error>> {
   const portR = await getUnusedPort();
   if (portR.isErr()) return err(portR.error);
   const port = portR.value;
@@ -45,7 +45,9 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       shutdownDate: null,
       deletionDate: null,
       canBeDeleted: +publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN == -1 ? false : true,
-      serverFilesMissing: false
+      serverFilesMissing: false,
+      owner: ownerUserId,
+      createdBy: ownerUserId
     }),
     () => new Error('Failed to create new server in DB')
   );

@@ -60,6 +60,17 @@ services:
       # This will make people enter atleast one username when creating the server.
       - PUBLIC_REQUIRE_WHITELIST=true
 
+      # Comma-separated list of auth providers Hermes is allowed to show in the UI.
+      # Order is preserved and becomes the button order on the sign-in page.
+      # Supported Hermes values today are:
+      # - github
+      # - google
+      # - authentik
+      #
+      # Authentik maps to PocketBase's generic OIDC providers, so the sysadmin should
+      # configure PocketBase auth settings with one of: oidc, oidc2, or oidc3.
+      - PUBLIC_AUTH_PROVIDERS=github,google,authentik
+
       # These are the Cloudflare API keys that are used for managing the DNS records
       # This is used for creating the subdomains for the servers.
       # You can get these from the Cloudflare dashboard and setup a token with the necessary permissions.

@@ -3,20 +3,24 @@ import { createNewServer } from '$lib/servers';
 import { ServerCreationSchema } from '$lib/servers/schema';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { getPortsRemaining } from '$lib/servers/ports';
+import { canCreateServers, requireLogin } from '$lib/server/auth';
 
-export async function load(/* { params }: PageServerLoadEvent */) {
-  if ((await getPortsRemaining()) <= 0) return error(405, 'Servers cannot be created at this time.');
+export async function load({ locals }) {
+  requireLogin({ user: locals.user });
+  if (!(await canCreateServers(locals.user))) return error(403, 'You cannot create a server at this time.');
 }
 
 export const actions: Actions = {
-  default: async ({ request }) => {
+  default: async ({ request, locals }) => {
+    requireLogin({ user: locals.user });
+    if (!(await canCreateServers(locals.user))) return fail(403, { success: false, fields: {}, message: 'You have reached your server quota.' });
+
     const formData = formDataObject(await request.formData());
 
     const data = ServerCreationSchema.safeParse(formData);
     if (!data.success) return fail(400, { success: false, fields: data.error.flatten().fieldErrors, message: 'Some of the inputs are incorrect' });
 
-    const createServerResult = await createNewServer(data.data);
+    const createServerResult = await createNewServer(data.data, locals.user!.id);
     if (createServerResult.isErr()) {
       // TODO: Handle this on page
       return fail(500, { success: false, fields: {}, message: createServerResult.error.message });

@@ -1,9 +1,12 @@
 import { serverPB } from '$lib/database';
 import { Collections } from '$lib/database/types';
+import { requireAdministrator } from '$lib/server/auth';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load = (async () => {
+export const load = (async ({ locals }) => {
+  requireAdministrator({ user: locals.user });
+
   // TODO: Return a promise instead of awaiting pageload
   const backups = await serverPB.collection(Collections.Backups).getFullList();
   if (!backups) error(404, "This server doesn't exist");

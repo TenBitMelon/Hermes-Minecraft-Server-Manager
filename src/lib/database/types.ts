@@ -3,6 +3,7 @@ import type { RecordService } from 'pocketbase';
 
 export enum Collections {
   Backups = 'backups',
+  ServerMemberships = 'server_memberships',
   Servers = 'servers',
   Users = 'users'
 }
@@ -31,18 +32,31 @@ export type AuthSystemFields<T = never> = {
 } & BaseSystemFields<T>;
 
 export type UserRecord = {
-  name?: string;
+  administrator: boolean;
   avatar?: string;
+  name: string;
+  ownedServerLimit: number;
 };
 
 export type BackupRecord = {
   file: FileNameString;
+  fileSize: number;
   name: string;
   serverID: string;
-  fileSize: number;
+};
+
+export type ServerMembershipRecord = {
+  canManageAccess: boolean;
+  canManageConfig: boolean;
+  canManageFiles: boolean;
+  canSendConsole: boolean;
+  canStartStop: boolean;
+  server: RecordIdString;
+  user: RecordIdString;
 };
 
 export type ServerRecord = {
+  owner?: RecordIdString;
   port: number;
   icon: FileNameString;
   title: string;
@@ -67,6 +81,7 @@ export type ServerRecord = {
 
 // Response types include system fields and match responses from the PocketBase API
 export type BackupResponse<Texpand = unknown> = Required<BackupRecord> & BaseSystemFields<Texpand>;
+export type ServerMembershipResponse<Texpand = unknown> = Required<ServerMembershipRecord> & BaseSystemFields<Texpand>;
 export type ServerResponse<Texpand = unknown> = Required<ServerRecord> & BaseSystemFields<Texpand>;
 export type UserResponse<Texpand = unknown> = Required<UserRecord> & AuthSystemFields<Texpand>;
 
@@ -74,18 +89,21 @@ export type UserResponse<Texpand = unknown> = Required<UserRecord> & AuthSystemF
 
 export type CollectionRecords = {
   backups: BackupRecord;
+  server_memberships: ServerMembershipRecord;
   servers: ServerRecord;
   users: UserRecord;
 };
 
 export type CollectionResponses = {
   backups: BackupResponse;
+  server_memberships: ServerMembershipResponse;
   servers: ServerResponse;
   users: UserResponse;
 };
 
 export type TypedPocketBase = PocketBase & {
   collection(idOrName: 'backups'): RecordService<BackupResponse>;
+  collection(idOrName: 'server_memberships'): RecordService<ServerMembershipResponse>;
   collection(idOrName: 'servers'): RecordService<ServerResponse>;
   collection(idOrName: 'users'): RecordService<UserResponse>;
 };

@@ -3,18 +3,25 @@ import { env as privateENV } from '$env/dynamic/private';
 import PocketBase from 'pocketbase';
 import type { TypedPocketBase } from './types';
 
-const serverPB: TypedPocketBase = new PocketBase(dev ? 'http://127.0.0.1:8090' : 'http://0.0.0.0:8090');
+function getPocketBaseURL() {
+  return dev ? 'http://127.0.0.1:8090' : 'http://0.0.0.0:8090';
+}
+
+export function createPocketBaseClient(): TypedPocketBase {
+  const pb: TypedPocketBase = new PocketBase(getPocketBaseURL());
+  pb.autoCancellation(false);
+  return pb;
+}
+
+const serverPB = createPocketBaseClient();
 if (!building) {
-  serverPB.autoCancellation(false);
   try {
-    console.log(`Authenticating with PocketBase using email: ${privateENV.POCKETBASE_INTERNAL_ADMIN_EMAIL} password: ${privateENV.POCKETBASE_INTERNAL_ADMIN_PASSWORD}`);
     await serverPB.admins.authWithPassword(privateENV.POCKETBASE_INTERNAL_ADMIN_EMAIL, privateENV.POCKETBASE_INTERNAL_ADMIN_PASSWORD);
-    console.log('Authenticated with PocketBase');
   } catch (e) {
     console.log('Failed to authenticate with PocketBase (thats not good)');
   }
 }
-export { serverPB };
+export { getPocketBaseURL, serverPB };
 
 // export type HandledPBError = {
 //   failReturn: (errorData: object) => ActionFailure<{ message: string } & unknown>;
