@@ -228,18 +228,30 @@ export async function updateAllServerStates() {
   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
 
   for (const server of servers) {
-    updateServerState(server).then((r) => {
-      const existing = latestUpdateResults.find((l) => l.server.id == server.id);
-      if (existing) {
-        if (existing.updates.length >= 25) existing.updates.shift();
-        existing.updates.push(...r);
-      } else {
-        latestUpdateResults.push({
-          server,
-          updates: r
-        });
-      }
-    });
+    updateServerState(server)
+      .then((r) => {
+        const existing = latestUpdateResults.find((l) => l.server.id == server.id);
+        if (existing) {
+          if (existing.updates.length >= 25) existing.updates.shift();
+          existing.updates.push(...r);
+        } else {
+          latestUpdateResults.push({
+            server,
+            updates: r
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(`[hermes] state update failed for server ${server.id}`, error);
+        const failed: UpdateResult = { error: CustomError.from(error, 'Failed to update server state.'), hasError: true, variables: { time: new Date().toISOString() } };
+        const existing = latestUpdateResults.find((l) => l.server.id == server.id);
+        if (existing) {
+          if (existing.updates.length >= 25) existing.updates.shift();
+          existing.updates.push(failed);
+        } else {
+          latestUpdateResults.push({ server, updates: [failed] });
+        }
+      });
   }
 }
 

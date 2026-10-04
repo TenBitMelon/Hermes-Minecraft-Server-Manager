@@ -8,13 +8,14 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { canCreateServers, requireLogin } from '$lib/server/auth';
 import { getWorkersWithDerivedStatus } from '$lib/workers';
+import { workerPickerView } from '$lib/workers/view';
 
 export async function load({ locals }) {
   requireLogin({ user: locals.user });
   if (!(await canCreateServers(locals.user))) return error(403, 'You cannot create a server at this time.');
 
   return {
-    workers: await getWorkersWithDerivedStatus()
+    workers: (await getWorkersWithDerivedStatus()).map(workerPickerView)
   };
 }
 

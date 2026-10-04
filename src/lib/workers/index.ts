@@ -1,23 +1,12 @@
-import { serverPB } from '$lib/database';
-import { Collections, WorkerStatus, type WorkerRecord, type WorkerResponse } from '$lib/database/types';
-import { canRunControlPlane, getWorkerOfflineThresholdMs, getWorkerRestartingThresholdMs } from '$lib/runtime';
+import { WorkerStatus, type WorkerRecord, type WorkerResponse } from '$lib/database/types';
+import { canRunControlPlane } from '$lib/runtime';
 import { CustomError } from '$lib/types';
-import { createHash } from 'node:crypto';
+import { serverPB } from '$lib/database';
+import { Collections } from '$lib/database/types';
 import { getWorkerClientForWorker } from './client';
+import { deriveWorkerStatus, hashWorkerToken } from './status';
 
-export function hashWorkerToken(token: string) {
-  return createHash('sha256').update(token).digest('hex');
-}
-
-export function deriveWorkerStatus(worker: WorkerResponse) {
-  if (worker.status === WorkerStatus.Disabled) return WorkerStatus.Disabled;
-  if (!worker.lastHeartbeatAt) return WorkerStatus.Offline;
-
-  const age = Date.now() - Date.parse(worker.lastHeartbeatAt);
-  if (age >= getWorkerOfflineThresholdMs()) return WorkerStatus.Offline;
-  if (age >= getWorkerRestartingThresholdMs()) return WorkerStatus.Restarting;
-  return WorkerStatus.Online;
-}
+export { deriveWorkerStatus, hashWorkerToken };
 
 export async function syncWorkersHealth() {
   if (!canRunControlPlane()) return;
@@ -25,34 +14,39 @@ export async function syncWorkersHealth() {
   const workers = await serverPB.collection(Collections.Workers).getFullList<WorkerResponse>();
   for (const worker of workers) {
     if (worker.status === WorkerStatus.Disabled) continue;
+    try {
+      const workerClient = getWorkerClientForWorker(worker);
+      if (workerClient.isErr()) {
+        await markWorkerUnreachable(worker, workerClient.error);
+        continue;
+      }
 
-    const workerClient = getWorkerClientForWorker(worker);
-    if (workerClient.isErr()) {
+      const health = await workerClient.value.getHealth(worker);
+      if (health.isErr()) {
+        await markWorkerUnreachable(worker, health.error);
+        continue;
+      }
+
       await serverPB.collection(Collections.Workers).update(worker.id, {
-        status: WorkerStatus.Offline,
-        lastHeartbeatError: workerClient.error.message
+        status: WorkerStatus.Online,
+        runningServerCount: health.value.runningServerCount,
+        totalServerCount: health.value.totalServerCount,
+        lastHeartbeatAt: new Date().toISOString(),
+        lastHeartbeatVersion: health.value.version,
+        lastHeartbeatError: ''
       } satisfies Partial<WorkerRecord>);
-      continue;
+    } catch (error) {
+      console.error(`[hermes] health sync failed for worker ${worker.id}`, error);
+      await markWorkerUnreachable(worker, CustomError.from(error, `Failed to sync worker ${worker.name}.`)).catch(() => undefined);
     }
-
-    const health = await workerClient.value.getHealth(worker);
-    if (health.isErr()) {
-      await serverPB.collection(Collections.Workers).update(worker.id, {
-        status: WorkerStatus.Offline,
-        lastHeartbeatError: health.error.message
-      } satisfies Partial<WorkerRecord>);
-      continue;
-    }
-
-    await serverPB.collection(Collections.Workers).update(worker.id, {
-      status: WorkerStatus.Online,
-      runningServerCount: health.value.runningServerCount,
-      totalServerCount: health.value.totalServerCount,
-      lastHeartbeatAt: new Date().toISOString(),
-      lastHeartbeatVersion: health.value.version,
-      lastHeartbeatError: ''
-    } satisfies Partial<WorkerRecord>);
   }
+}
+
+async function markWorkerUnreachable(worker: WorkerResponse, error: CustomError) {
+  await serverPB.collection(Collections.Workers).update(worker.id, {
+    status: WorkerStatus.Offline,
+    lastHeartbeatError: error.message
+  } satisfies Partial<WorkerRecord>);
 }
 
 export async function getWorkersWithDerivedStatus() {

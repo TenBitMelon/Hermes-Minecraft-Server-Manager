@@ -1,0 +1,10 @@
+# pnpm 11 records build-script approvals here (written by `pnpm approve-builds`).
+# Without these, pnpm silently skips the postinstall scripts and vite/esbuild misbehave.
+allowBuilds:
+  '@sveltejs/kit': true
+  esbuild: true
+  svelte-preprocess: true
+  # Transitive dependency of pocketbase-typegen only. Hermes talks to PocketBase over
+  # HTTP and never links sqlite3, so its native build is skipped. It fails to compile
+  # on some macOS/Node combinations and nothing here needs it.
+  sqlite3: false

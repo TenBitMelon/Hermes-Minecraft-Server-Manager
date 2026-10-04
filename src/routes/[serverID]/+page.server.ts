@@ -4,11 +4,13 @@ import type { CustomError } from '$lib/types';
 import { fail, type ActionFailure } from '@sveltejs/kit';
 import type { Actions, PageServerLoadEvent } from './$types';
 import { getWorkersWithDerivedStatus } from '$lib/workers';
+import { workerSummary } from '$lib/workers/view';
 
 export async function load({ params, locals }: PageServerLoadEvent) {
   const { server, access } = await requireServerCapability(params.serverID, { user: locals.user }, 'canViewDashboard');
   const workers = await getWorkersWithDerivedStatus();
-  const workerInfo = server.worker ? workers.find((worker) => worker.id === server.worker) ?? null : null;
+  const worker = server.worker ? workers.find((worker) => worker.id === server.worker) : undefined;
+  const workerInfo = worker ? workerSummary(worker) : null;
 
   const stats = getContainerUsageStats(params.serverID).then((r) => {
     if (r.isErr()) return { value: null, error: r.error.json() };

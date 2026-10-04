@@ -1,5 +1,5 @@
 import { env as publicENV } from '$env/dynamic/public';
-import { ResultAsync, err, ok } from 'neverthrow';
+import { ResultAsync, err } from 'neverthrow';
 import { removeCloudflareRecords } from './cloudflare';
 import { serverPB } from './database';
 import { Collections, ServerState, type ServerRecord, type ServerResponse } from './database/types';

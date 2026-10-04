@@ -37,15 +37,19 @@ export async function handle({ event, resolve }) {
   return response;
 }
 
+function reportBackgroundSyncFailure(task: string) {
+  return (error: unknown) => {
+    console.error(`[hermes] ${task} failed`, error);
+  };
+}
+
 let interval = null;
 if (!building && !interval && canRunControlPlane()) {
-  syncWorkersHealth();
-  updateAllServerStates();
-  interval = setInterval(
-    () => {
-      syncWorkersHealth();
-      updateAllServerStates();
-    },
-    dev ? 1000 * 30 : 1000 * 60
-  );
+  const runBackgroundSync = () => {
+    syncWorkersHealth().catch(reportBackgroundSyncFailure('syncWorkersHealth'));
+    updateAllServerStates().catch(reportBackgroundSyncFailure('updateAllServerStates'));
+  };
+
+  runBackgroundSync();
+  interval = setInterval(runBackgroundSync, dev ? 1000 * 30 : 1000 * 60);
 }

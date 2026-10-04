@@ -31,3 +31,9 @@ export function getWorkerRestartingThresholdMs() {
   if (Number.isNaN(seconds) || seconds <= 0) return 45_000;
   return seconds * 1000;
 }
+
+export function getWorkerRequestTimeoutMs() {
+  const milliseconds = Number(privateEnv.HERMES_WORKER_REQUEST_TIMEOUT_MS || '30000');
+  if (Number.isNaN(milliseconds) || milliseconds <= 0) return 30_000;
+  return milliseconds;
+}

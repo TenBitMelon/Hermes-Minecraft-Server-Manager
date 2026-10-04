@@ -2,7 +2,8 @@ import { serverPB } from '$lib/database';
 import { Collections, WorkerStatus } from '$lib/database/types';
 import { removeContainer } from '$lib/docker';
 import { getUserDirectory, requireAdministrator } from '$lib/server/auth';
-import { hashWorkerToken } from '$lib/workers';
+import { deriveWorkerStatus, hashWorkerToken } from '$lib/workers';
+import { workerAdminView } from '$lib/workers/view';
 import { fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
@@ -16,7 +17,7 @@ export async function load({ locals }) {
   return {
     users,
     servers,
-    workers
+    workers: workers.map((worker) => workerAdminView({ ...worker, derivedStatus: deriveWorkerStatus(worker) }))
   };
 }
 
@@ -31,9 +32,6 @@ export const actions = {
 
     if (!userId) return fail(400, { message: 'Missing required user profile values.' });
 
-    // Number() happily produces Infinity, negatives and fractions, and the
-    // collection has no min or max, so reject anything that is not a plain
-    // count within range rather than just checking for NaN.
     if (!Number.isInteger(ownedServerLimit) || ownedServerLimit < 0 || ownedServerLimit > maxOwnedServerLimit) {
       return fail(400, { message: `Owned server limit must be a whole number between 0 and ${maxOwnedServerLimit}.` });
     }

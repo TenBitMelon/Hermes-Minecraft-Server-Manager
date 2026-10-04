@@ -123,6 +123,34 @@ services:
       - POCKETBASE_INTERNAL_ADMIN_EMAIL=internal@example.com
       - POCKETBASE_INTERNAL_ADMIN_PASSWORD=password
 
+      # -------------------------------------------------------------------
+      # Worker nodes (optional)
+      #
+      # Leave these commented out for a single machine install.
+      #
+      # To add a second machine that hosts game servers, set
+      # HERMES_RUNTIME_ROLE=worker on that machine and give it a
+      # HERMES_WORKER_API_TOKEN that matches the apiToken you save for it in the
+      # admin page. Add the worker from the admin page's Workers section first.
+      # -------------------------------------------------------------------
+
+      # Read by every process, to know which half it is:
+      #   control  web UI, database, Cloudflare. Does not host game servers.
+      #   worker   game servers only. Hosts game servers and connects to Control.
+      #   hybrid   both. The default.
+      # - HERMES_RUNTIME_ROLE=worker
+
+      # CONTROL ONLY. How stale a heartbeat may get before the worker is
+      # called offline, and before it is called restarting rather than healthy.
+      # - HERMES_WORKER_OFFLINE_AFTER_SECONDS=120
+      # - HERMES_WORKER_RESTARTING_AFTER_SECONDS=45
+      # - HERMES_WORKER_REQUEST_TIMEOUT_MS=30000
+
+      # WORKER ONLY. Shared secret presented on /api/worker/v1/*.
+      # This is how your worker authenticates with the Control. It will not
+      # connect if this is incorrect.
+      # - HERMES_WORKER_API_TOKEN=<shared-secret>
+
       # This is the maximum upload size to the website, the uploaded features are server icon,
       # mod jars, resourcepacks, worlds, and datapacks. This will limit the size of the file uploaded
       # You can change it to be infinity to remove the restriction.
