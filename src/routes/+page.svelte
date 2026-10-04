@@ -22,9 +22,15 @@
   {@const display = stateDisplay(server.state)}
   <svelte:element this={server.canVisitDashboard ? 'a' : 'div'} class={`my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800 ${server.canVisitDashboard ? '' : 'cursor-default'}`} href={server.canVisitDashboard ? `/${server.id}` : undefined} data-sveltekit-preload-data={server.canVisitDashboard ? 'false' : undefined}>
     {#if server.state == ServerState.Stopped && server.canBeDeleted && server.deletionDate}
-      <FormLoadingButton action={`/${server.id}/?/start`} text="Revive" class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4" buttonClass="bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed">
-        Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
-      </FormLoadingButton>
+      {#if server.canStartStop}
+        <FormLoadingButton action={`/${server.id}/?/start`} text="Revive" class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4" buttonClass="bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed">
+          Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
+        </FormLoadingButton>
+      {:else}
+        <div class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4">
+          Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
+        </div>
+      {/if}
     {:else if server.state == ServerState.Paused}
       <div class="flex w-full items-center justify-between rounded-t-sm bg-green-700 p-1 px-4">
         Stopping {server.startDate && server.timeToLive ? timeUntil(Date.parse(server.startDate) + TimeToLiveMilliseconds[server.timeToLive]) : '...'}
