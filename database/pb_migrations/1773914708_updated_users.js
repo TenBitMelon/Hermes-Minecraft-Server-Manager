@@ -1,16 +1,19 @@
 /// <reference path="../pb_data/types.d.ts" />
-migrate((db) => {
-  const dao = new Dao(db)
-  const collection = dao.findCollectionByNameOrId("_pb_users_auth_")
+migrate(
+  (db) => {
+    const dao = new Dao(db);
+    const collection = dao.findCollectionByNameOrId('_pb_users_auth_');
 
-  collection.createRule = "@request.context = \"oauth2\""
+    collection.createRule = '@request.context = "oauth2"';
 
-  return dao.saveCollection(collection)
-}, (db) => {
-  const dao = new Dao(db)
-  const collection = dao.findCollectionByNameOrId("_pb_users_auth_")
+    return dao.saveCollection(collection);
+  },
+  (db) => {
+    const dao = new Dao(db);
+    const collection = dao.findCollectionByNameOrId('_pb_users_auth_');
 
-  collection.createRule = null
+    collection.createRule = null;
 
-  return dao.saveCollection(collection)
-})
+    return dao.saveCollection(collection);
+  }
+);
