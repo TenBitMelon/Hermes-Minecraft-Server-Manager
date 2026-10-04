@@ -39,6 +39,12 @@ const config = {
 
   kit: {
     adapter: adapter(),
+    // Default is already true. It is pinned here so that upgrading SvelteKit cannot
+    // silently change the CSRF posture: every form POST is rejected unless its Origin
+    // header matches the app origin.
+    csrf: {
+      checkOrigin: true
+    },
     alias: {
       $assets: './src/assets/*'
     }
