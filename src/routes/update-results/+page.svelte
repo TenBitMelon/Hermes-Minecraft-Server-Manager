@@ -23,7 +23,7 @@
           <div class="mt-2 flex items-center gap-2">
             <div class={`h-3 w-3 rounded-full ${display.indicatorColor}`}></div>
             <p class="text-sm font-medium">{display.message}</p>
-            <div class="text-sm font-thin text-gray-400">{server.serverFilesMissing ? 'um.. the server files are missing' : ''}</div>
+            <div class="text-sm font-thin text-gray-400">{server.worker ? `Worker ${server.worker}` : 'Local runtime'}</div>
           </div>
           <div class="flex w-full flex-col-reverse">
             {#await resultPromise}

@@ -7,10 +7,15 @@ import { isSupportedServerVersion } from '$lib/server/serverVersions';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { canCreateServers, requireLogin } from '$lib/server/auth';
+import { getWorkersWithDerivedStatus } from '$lib/workers';
 
 export async function load({ locals }) {
   requireLogin({ user: locals.user });
   if (!(await canCreateServers(locals.user))) return error(403, 'You cannot create a server at this time.');
+
+  return {
+    workers: await getWorkersWithDerivedStatus()
+  };
 }
 
 export const actions: Actions = {
@@ -55,7 +60,7 @@ export const actions: Actions = {
       });
     }
 
-    const createServerResult = await createNewServer(data.data, locals.user!.id);
+    const createServerResult = await createNewServer(data.data, locals.user!.id, data.data.worker || null);
     if (createServerResult.isErr()) {
       const duplicateSubdomain = /subdomain is already in use|already in use in cloudflare/i.test(createServerResult.error.message);
       return fail(duplicateSubdomain ? 400 : 500, {

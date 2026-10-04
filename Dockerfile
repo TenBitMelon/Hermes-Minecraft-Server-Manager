@@ -33,7 +33,7 @@ CMD if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_A
   else \
   echo "PocketBase admin credentials not set. Skipping database startup."; \
   fi & \
-  (sleep 5; ORIGIN=https://$PUBLIC_ROOT_DOMAIN node build)
+  (sleep 5; ORIGIN=$PUBLIC_APP_ORIGIN node build)
 
 ### NODE ###
 
@@ -73,7 +73,7 @@ CMD if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_A
 # #   apk add --no-cache docker docker-compose-plugin
 
 # # Run both the website and the database
-# CMD ORIGIN=https://$PUBLIC_ROOT_DOMAIN node build & \
+# CMD ORIGIN=$PUBLIC_APP_ORIGIN node build & \
 #   if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_ADMIN_PASSWORD" ]; then \
 #   ./database/pocketbase serve --http=0.0.0.0:8090; \
 #   else \
@@ -123,9 +123,9 @@ CMD if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_A
 # RUN systemctl mask docker
 
 # # Run both the website and the database
-# CMD ORIGIN=https://$PUBLIC_ROOT_DOMAIN bun run ./build/index.js & \
+# CMD ORIGIN=$PUBLIC_APP_ORIGIN bun run ./build/index.js & \
 #   if [ -n "$POCKETBASE_INTERNAL_ADMIN_EMAIL" ] && [ -n "$POCKETBASE_INTERNAL_ADMIN_PASSWORD" ]; then \
-#   ORIGIN=https://$PUBLIC_ROOT_DOMAIN ./database/pocketbase serve --http=0.0.0.0:8090; \
+#   ORIGIN=$PUBLIC_APP_ORIGIN ./database/pocketbase serve --http=0.0.0.0:8090; \
 #   else \
 #   echo "PocketBase admin credentials not set. Skipping database startup."; \
 #   fi

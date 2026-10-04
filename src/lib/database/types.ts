@@ -5,6 +5,7 @@ export enum Collections {
   Backups = 'backups',
   ServerMemberships = 'server_memberships',
   Servers = 'servers',
+  Workers = 'workers',
   Users = 'users'
 }
 
@@ -58,6 +59,7 @@ export type ServerMembershipRecord = {
 export type ServerRecord = {
   owner?: RecordIdString;
   port: number;
+  workerPort?: number | null;
   icon: FileNameString;
   title: string;
   subdomain: string;
@@ -77,6 +79,25 @@ export type ServerRecord = {
   deletionDate: IsoDateString | null;
   canBeDeleted: boolean;
   serverFilesMissing: boolean;
+  worker?: RecordIdString;
+};
+
+export type WorkerRecord = {
+  name: string;
+  baseUrl: string;
+  apiToken?: string;
+  apiTokenHash: string;
+  status: WorkerStatus;
+  publicAddress: string;
+  portMin: number;
+  portMax: number;
+  avoidDefaultPort: boolean;
+  serverCapacity: number;
+  runningServerCount: number;
+  totalServerCount: number;
+  lastHeartbeatAt?: IsoDateString | null;
+  lastHeartbeatVersion?: string;
+  lastHeartbeatError?: string;
 };
 
 // Response types include system fields and match responses from the PocketBase API
@@ -84,6 +105,7 @@ export type BackupResponse<Texpand = unknown> = Required<BackupRecord> & BaseSys
 export type ServerMembershipResponse<Texpand = unknown> = Required<ServerMembershipRecord> & BaseSystemFields<Texpand>;
 export type ServerResponse<Texpand = unknown> = Required<ServerRecord> & BaseSystemFields<Texpand>;
 export type UserResponse<Texpand = unknown> = Required<UserRecord> & AuthSystemFields<Texpand>;
+export type WorkerResponse<Texpand = unknown> = Required<WorkerRecord> & BaseSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
 
@@ -91,6 +113,7 @@ export type CollectionRecords = {
   backups: BackupRecord;
   server_memberships: ServerMembershipRecord;
   servers: ServerRecord;
+  workers: WorkerRecord;
   users: UserRecord;
 };
 
@@ -98,6 +121,7 @@ export type CollectionResponses = {
   backups: BackupResponse;
   server_memberships: ServerMembershipResponse;
   servers: ServerResponse;
+  workers: WorkerResponse;
   users: UserResponse;
 };
 
@@ -105,8 +129,16 @@ export type TypedPocketBase = PocketBase & {
   collection(idOrName: 'backups'): RecordService<BackupResponse>;
   collection(idOrName: 'server_memberships'): RecordService<ServerMembershipResponse>;
   collection(idOrName: 'servers'): RecordService<ServerResponse>;
+  collection(idOrName: 'workers'): RecordService<WorkerResponse>;
   collection(idOrName: 'users'): RecordService<UserResponse>;
 };
+
+export enum WorkerStatus {
+  'Online' = 'online',
+  'Offline' = 'offline',
+  'Restarting' = 'restarting',
+  'Disabled' = 'disabled'
+}
 
 export enum TimeToLive {
   '12 hr' = '12_hr',

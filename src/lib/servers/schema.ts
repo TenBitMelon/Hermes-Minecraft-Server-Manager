@@ -19,6 +19,7 @@ export const ServerCreationSchema = z
       .default('A Hermes Minecraft Server'),
     serverSoftware: z.nativeEnum(ServerSoftware),
     gameVersion: z.string(),
+    worker: z.string().optional(),
 
     timeToLive: z.nativeEnum(TimeToLive).default(TimeToLive['12 hr']),
     eula: z.literal(true).or(z.literal('true')),

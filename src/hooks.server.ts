@@ -3,6 +3,8 @@ import { createPocketBaseClient } from '$lib/database';
 import { Collections, type UserResponse } from '$lib/database/types';
 import { updateAllServerStates } from '$lib/servers';
 import { ensureUserDefaults } from '$lib/server/auth';
+import { canRunControlPlane } from '$lib/runtime';
+import { syncWorkersHealth } from '$lib/workers';
 
 /** @type {import('@sveltejs/kit').Handle} */
 export async function handle({ event, resolve }) {
@@ -36,7 +38,14 @@ export async function handle({ event, resolve }) {
 }
 
 let interval = null;
-if (!building && !interval) {
+if (!building && !interval && canRunControlPlane()) {
+  syncWorkersHealth();
   updateAllServerStates();
-  interval = setInterval(updateAllServerStates, dev ? 1000 * 30 : 1000 * 60);
+  interval = setInterval(
+    () => {
+      syncWorkersHealth();
+      updateAllServerStates();
+    },
+    dev ? 1000 * 30 : 1000 * 60
+  );
 }

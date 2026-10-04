@@ -2,8 +2,11 @@ import { sortServers } from '$lib';
 import { serverPB } from '$lib/database';
 import { Collections } from '$lib/database/types';
 import { getVisibleServersForUser, isAdmin } from '$lib/server/auth';
+import { getWorkersWithDerivedStatus } from '$lib/workers';
 
 export async function load({ locals }) {
+  const workers = await getWorkersWithDerivedStatus();
+  const workerMap = new Map(workers.map((worker) => [worker.id, worker]));
   const servers = sortServers(
     await getVisibleServersForUser({
       user: locals.user
@@ -26,7 +29,8 @@ export async function load({ locals }) {
   return {
     servers: servers.map((server) => ({
       ...server,
-      canVisitDashboard: visibleDashboardServerIds.has(server.id)
+      canVisitDashboard: visibleDashboardServerIds.has(server.id),
+      workerInfo: server.worker ? workerMap.get(server.worker) ?? null : null
     }))
   };
 }

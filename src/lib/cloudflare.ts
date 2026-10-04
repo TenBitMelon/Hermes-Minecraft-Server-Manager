@@ -53,13 +53,15 @@ async function createCloudflareRecord<T extends { id: string }>(body: unknown, m
   }
 }
 
-export async function addCloudflareRecords(subdomain: string, port: number): Promise<Result<{ cname: string; srv: string }, CustomError>> {
+export async function addCloudflareRecords(subdomain: string, port: number, targetAddress?: string): Promise<Result<{ cname: string; srv: string }, CustomError>> {
   if (dev) return ok({ cname: '<DEV>', srv: '<DEV>' });
+  const recordTarget = targetAddress || publicENV.PUBLIC_SERVER_BASE_DOMAIN;
+  const serverHostname = `${subdomain}.${publicENV.PUBLIC_SERVER_BASE_DOMAIN}`;
 
   const createCNAMEResult = await createCloudflareRecord(
     {
-      name: `${subdomain}.servers`,
-      content: `${publicENV.PUBLIC_ROOT_DOMAIN}`,
+      name: serverHostname,
+      content: recordTarget,
       proxied: false,
       type: 'CNAME',
       comment: 'Created by Hermes Minecraft Server Manager',
@@ -72,12 +74,12 @@ export async function addCloudflareRecords(subdomain: string, port: number): Pro
   const createSRVResult = await createCloudflareRecord(
     {
       type: 'SRV',
-      name: `_minecraft._tcp.${subdomain}.${publicENV.PUBLIC_ROOT_DOMAIN}`,
+      name: `_minecraft._tcp.${serverHostname}`,
       data: {
         priority: 0,
         weight: 5,
         port,
-        target: `${subdomain}.${publicENV.PUBLIC_ROOT_DOMAIN}`
+        target: serverHostname
       },
       proxied: false,
       comment: 'Created by Hermes Minecraft Server Manager',

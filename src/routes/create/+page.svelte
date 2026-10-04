@@ -6,7 +6,7 @@
   import type { ServerCreationSchema } from '$lib/servers/schema';
   import { onMount } from 'svelte';
   import { type SafeParseError, type typeToFlattenedError } from 'zod';
-  import type { ActionData } from './$types';
+  import type { ActionData, PageData } from './$types';
   import MinecraftRawEditor from './MinecraftRawEditor.svelte';
   import PlayerList from './PlayerList.svelte';
   import DraggableList from './SuperflatLayersList.svelte';
@@ -14,6 +14,7 @@
   type ExtractErrorType<T> = T extends SafeParseError<infer V> ? V : never;
   type ErrorsObject = typeToFlattenedError<ExtractErrorType<ReturnType<typeof ServerCreationSchema.safeParse>>>['fieldErrors'];
 
+  export let data: PageData;
   export let form: ActionData;
   let errors: ErrorsObject = {
     //// resourcepackURL: ['true'],
@@ -68,6 +69,7 @@
   let iconFileElement: HTMLInputElement;
 
   let createButtonLoading = false;
+  let selectedWorker = '';
 
   onMount(async () => {
     if (!browser) return;
@@ -176,6 +178,17 @@
     <div class="mx-4 whitespace-nowrap text-sm font-thin">Servers Options</div>
     <div class="h-px w-full bg-gray-800" />
   </div>
+
+  <label class="grid gap-2">
+    <span class="font-semibold text-gray-400">Worker Host</span>
+    <p class="text-sm text-gray-500">Hermes picks the least-loaded healthy worker by default. You can override that here.</p>
+    <select name="worker" bind:value={selectedWorker} class="w-full rounded-md bg-gray-800 p-3 transition-all hover:bg-gray-750 focus:outline-none focus:ring-2 focus:ring-primary">
+      <option value="">Auto-pick worker</option>
+      {#each data.workers ?? [] as worker}
+        <option value={worker.id}>{worker.name} ({worker.derivedStatus}, {worker.runningServerCount} running / {worker.totalServerCount} total)</option>
+      {/each}
+    </select>
+  </label>
 
   <!-- SERVER CONFIG -->
 

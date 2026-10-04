@@ -1,8 +1,8 @@
 import { env as publicEnv } from '$env/dynamic/public';
 import { error, redirect } from '@sveltejs/kit';
-import { getUnusedPort } from '$lib/servers/ports';
 import { serverPB } from '$lib/database';
 import { Collections, type ServerMembershipResponse, type ServerResponse, type UserResponse } from '$lib/database/types';
+import { selectWorkerForNewServer } from '$lib/workers/placement';
 
 export type ServerCapability = 'canViewDashboard' | 'canStartStop' | 'canSendConsole' | 'canManageFiles' | 'canManageAccess' | 'canManageConfig';
 
@@ -49,8 +49,8 @@ export async function getOwnedServerCount(userId: string) {
 export async function canCreateServers(user: UserResponse | null) {
   if (!user) return false;
 
-  const [ownedServerPage, portResult] = await Promise.all([getOwnedServerCount(user.id), getUnusedPort()]);
-  return ownedServerPage.totalItems < user.ownedServerLimit && portResult.isOk();
+  const [ownedServerPage, workerResult] = await Promise.all([getOwnedServerCount(user.id), selectWorkerForNewServer()]);
+  return ownedServerPage.totalItems < user.ownedServerLimit && workerResult.isOk();
 }
 
 type AuthProviderId = 'github' | 'google' | 'authentik';
