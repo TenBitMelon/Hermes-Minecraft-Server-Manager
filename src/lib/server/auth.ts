@@ -183,7 +183,17 @@ export async function getServerMemberships(serverId: string) {
 }
 
 export function getPostLoginRedirect(url: URL) {
-  return url.searchParams.get('redirectTo') || '/';
+  const redirectTo = url.searchParams.get('redirectTo');
+  if (!redirectTo) return '/';
+
+  // Only ever send the user to a path on this site after logging in. Anything
+  // that could resolve to another origin (absolute URLs, protocol relative
+  // "//host" and backslash variants browsers normalise) falls back to the root.
+  if (!redirectTo.startsWith('/')) return '/';
+  if (redirectTo.startsWith('//') || redirectTo.startsWith('/\\')) return '/';
+  if (/^\/+[\\]/.test(redirectTo)) return '/';
+
+  return redirectTo;
 }
 
 export function redirectToLogin(url: URL) {
