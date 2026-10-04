@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Result, ResultAsync, err, ok } from 'neverthrow';
 import { zip } from '$lib/zip';
+import { parseComposePsOutput } from './compose-ps';
 import { ContainerState, CustomError, type ContainerData, type ContainerResult } from '$lib/types';
 
 function getServerFolder(serverID: string): string {
@@ -103,18 +104,9 @@ export async function getLocalContainerData(serverID: string): ContainerResult<C
   const psResult = await ResultAsync.fromPromise(execCompose('ps', ['-a', '--format', 'json'], { cwd: getServerFolder(serverID) }), (e) => CustomError.from(e, 'Failed to read container data'));
   if (psResult.isErr()) return err(psResult.error);
 
-  const containerJSONResult = Result.fromThrowable(
-    () =>
-      JSON.parse(
-        psResult.value.out
-          .trim()
-          .split('\n')
-          .filter((s) => s.trim() !== '')[0]
-      ),
-    (e) => CustomError.from(e, 'Failed to parse container data')
-  )();
-  if (containerJSONResult.isErr()) return err(containerJSONResult.error);
-  const containerJSON: ContainerData = containerJSONResult.value;
+  const parsed = parseComposePsOutput(psResult.value.out);
+  if (parsed.isErr()) return err(parsed.error);
+  const containerJSON = parsed.value;
 
   const paused = containerHasPauseFile(serverID);
   if (paused && containerJSON.State === ContainerState.Running) containerJSON.State = ContainerState.Paused;

@@ -82,6 +82,40 @@ describe('countAvailablePorts', () => {
   });
 });
 
+describe('a real single-host deployment', () => {
+  // Shape taken from a live database: three existing servers on 25550-25552 with the
+  // local range set to 25550-25560. This is the case the removed servers.workerPort
+  // column broke. That column defaulted to 0 rather than null, so reading it with
+  // `workerPort ?? port` yielded 0 for every pre-existing server and the used-set
+  // became {0} instead of {25550, 25551, 25552}. The allocator then handed back
+  // 25550, which was already bound, and the new server would have failed to bind its
+  // port or, worse, collided with an existing container.
+  const liveServers = [25550, 25551, 25552];
+  const liveRange = workerPortRange(25550, 25560, true, new Set(liveServers));
+
+  it('skips every port an existing server already holds', () => {
+    const result = findFirstAvailablePort(liveRange);
+
+    expect(result.isOk() && result.value).toBe(25553);
+    expect(liveServers).not.toContain(result.isOk() ? result.value : -1);
+  });
+
+  it('reports the remaining capacity accurately', () => {
+    // The range is inclusive at both ends, so 25550-25560 is 11 ports, and 25565 is
+    // outside it so avoiding the default port costs nothing here.
+    expect(countAvailablePorts(liveRange)).toBe(8);
+  });
+
+  it('would have collided if the used-set had come back as {0}', () => {
+    // Guards the regression itself: the zero default is what made ?? fall through.
+    const brokenUsedSet = new Set([0]);
+    const result = findFirstAvailablePort(workerPortRange(25550, 25560, true, brokenUsedSet));
+
+    expect(result.isOk() && result.value).toBe(25550);
+    expect(liveServers).toContain(result.isOk() ? result.value : -1);
+  });
+});
+
 describe('parseBooleanFlag', () => {
   // Boolean('false') is true, so a variable explicitly set to false used to read as set.
   it.each([
