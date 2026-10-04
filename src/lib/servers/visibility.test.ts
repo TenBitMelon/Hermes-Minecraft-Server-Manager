@@ -10,7 +10,6 @@ function server(): ServerResponse {
     title: 'Survival',
     subdomain: 'survival',
     port: 30000,
-    workerPort: 30000,
     worker: 'wrk_1',
     owner: 'usr_owner',
     icon: 'icon.png',
@@ -36,12 +35,6 @@ describe('withoutInternalFields', () => {
 
     expect(publicServer).not.toHaveProperty('owner');
     expect(publicServer).not.toHaveProperty('port');
-  });
-
-  it('strips workerPort, which would otherwise leak the port that port used to hide', () => {
-    // workerPort was added alongside the worker relation and carries the same value as
-    // port, so leaving it in place would undo the original redaction.
-    expect(withoutInternalFields(server())).not.toHaveProperty('workerPort');
   });
 
   it('strips the worker relation id', () => {

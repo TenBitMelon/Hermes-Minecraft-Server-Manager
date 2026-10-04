@@ -69,7 +69,6 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       owner: ownerUserId,
       createdBy: ownerUserId,
       worker: selectedWorker?.id ?? null,
-      workerPort: port,
       cloudflareCNAMERecordID: '',
       cloudflareSRVRecordID: ''
     }),

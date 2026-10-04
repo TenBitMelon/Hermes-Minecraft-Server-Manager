@@ -1,90 +1,48 @@
 import { serverPB } from '$lib/database';
 import { Collections, WorkerStatus, type ServerResponse, type WorkerResponse } from '$lib/database/types';
-import { canHostLocalWorker } from '$lib/runtime';
-import { env as privateEnv } from '$env/dynamic/private';
 import { Result, err, ok } from 'neverthrow';
 import { deriveWorkerStatus } from './index';
+import { countAvailablePorts, findFirstAvailablePort, localPortRangeFromEnv, workerPortRange, type PortRange } from './ports';
 
 type PlacementCandidate = {
-  worker: WorkerResponse | null;
-  availablePorts: number;
+  worker: WorkerResponse;
   runningServerCount: number;
   totalServerCount: number;
 };
-
-const minecraftDefaultPort = 25565;
 
 export async function getWorkers() {
   return serverPB.collection(Collections.Workers).getFullList<WorkerResponse>();
 }
 
-export async function getAvailablePortCountForWorker(worker: WorkerResponse | null): Promise<number> {
-  if (!worker) {
-    if (!canHostLocalWorker()) return 0;
-    const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>({
-      filter: 'worker = "" || worker = null',
-      fields: 'port,workerPort'
-    });
-    const usedPorts = new Set(servers.map((server) => server.workerPort ?? server.port));
-    let availablePorts = 0;
-    const portMin = +privateEnv.PORT_MIN;
-    const portMax = +privateEnv.PORT_MAX;
-    const avoidDefaultPort = Boolean(privateEnv.AVOID_DEFAULT_PORT);
-    for (let port = portMin; port <= portMax; port += 1) {
-      if (usedPorts.has(port)) continue;
-      if (avoidDefaultPort && port === minecraftDefaultPort) continue;
-      availablePorts += 1;
-    }
-    return availablePorts;
-  }
-
+async function getUsedPortsForWorker(worker: WorkerResponse | null) {
+  const filter = worker ? serverPB.filter('worker = {:workerId}', { workerId: worker.id }) : 'worker = ""';
   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>({
-    filter: serverPB.filter('worker = {:workerId}', { workerId: worker.id }),
-    fields: 'port,workerPort'
+    filter,
+    fields: 'port'
   });
+  return new Set(servers.map((server) => server.port));
+}
 
-  const usedPorts = new Set(servers.map((server) => server.workerPort ?? server.port));
-  let availablePorts = 0;
-  for (let port = worker.portMin; port <= worker.portMax; port += 1) {
-    if (usedPorts.has(port)) continue;
-    if (worker.avoidDefaultPort && port === minecraftDefaultPort) continue;
-    availablePorts += 1;
-  }
-  return availablePorts;
+/**
+ * The range a new server could take on the given worker, or on this host when the
+ * worker is null. Returns null when this host cannot host servers at all.
+ */
+export async function getPortRangeForWorker(worker: WorkerResponse | null): Promise<PortRange | null> {
+  const usedPorts = await getUsedPortsForWorker(worker);
+  if (!worker) return localPortRangeFromEnv(usedPorts);
+  return workerPortRange(worker.portMin, worker.portMax, worker.avoidDefaultPort, usedPorts);
+}
+
+export async function getAvailablePortCountForWorker(worker: WorkerResponse | null): Promise<number> {
+  const range = await getPortRangeForWorker(worker);
+  if (!range) return 0;
+  return countAvailablePorts(range);
 }
 
 export async function getUnusedPortForWorker(worker: WorkerResponse | null): Promise<Result<number, Error>> {
-  if (!worker) {
-    const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>({
-      filter: 'worker = "" || worker = null',
-      fields: 'port,workerPort'
-    });
-    const usedPorts = new Set(servers.map((server) => server.workerPort ?? server.port));
-    const portMin = +privateEnv.PORT_MIN;
-    const portMax = +privateEnv.PORT_MAX;
-    const avoidDefaultPort = Boolean(privateEnv.AVOID_DEFAULT_PORT);
-
-    for (let port = portMin; port <= portMax; port += 1) {
-      if (usedPorts.has(port)) continue;
-      if (avoidDefaultPort && port === minecraftDefaultPort) continue;
-      return ok(port);
-    }
-    return err(new Error('No Ports Available'));
-  }
-
-  const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>({
-    filter: serverPB.filter('worker = {:workerId}', { workerId: worker.id }),
-    fields: 'port,workerPort'
-  });
-  const usedPorts = new Set(servers.map((server) => server.workerPort ?? server.port));
-
-  for (let port = worker.portMin; port <= worker.portMax; port += 1) {
-    if (usedPorts.has(port)) continue;
-    if (worker.avoidDefaultPort && port === minecraftDefaultPort) continue;
-    return ok(port);
-  }
-
-  return err(new Error('No Ports Available'));
+  const range = await getPortRangeForWorker(worker);
+  if (!range) return err(new Error('This Hermes instance cannot host local servers.'));
+  return findFirstAvailablePort(range);
 }
 
 export async function selectWorkerForNewServer(manualWorkerId?: string | null): Promise<Result<WorkerResponse | null, Error>> {
@@ -109,15 +67,15 @@ export async function selectWorkerForNewServer(manualWorkerId?: string | null): 
     if (worker.totalServerCount >= worker.serverCapacity) continue;
     candidates.push({
       worker,
-      availablePorts,
       runningServerCount: worker.runningServerCount,
       totalServerCount: worker.totalServerCount
     });
   }
 
-  candidates.sort((a, b) => a.runningServerCount - b.runningServerCount || a.totalServerCount - b.totalServerCount || a.worker!.name.localeCompare(b.worker!.name));
+  candidates.sort((a, b) => a.runningServerCount - b.runningServerCount || a.totalServerCount - b.totalServerCount || a.worker.name.localeCompare(b.worker.name));
   if (candidates[0]) return ok(candidates[0].worker);
 
-  if (canHostLocalWorker()) return ok(null);
+  const localRange = localPortRangeFromEnv(await getUsedPortsForWorker(null));
+  if (localRange && countAvailablePorts(localRange) > 0) return ok(null);
   return err(new Error('No worker is currently available.'));
 }

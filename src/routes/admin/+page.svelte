@@ -169,7 +169,7 @@
             <div>
               <div class="font-semibold">{server.title}</div>
               <div class="text-sm text-gray-400">{server.id}</div>
-              <div class="text-xs text-gray-500">Worker: {server.worker || 'local runtime'} / Port: {server.workerPort || server.port}</div>
+              <div class="text-xs text-gray-500">Worker: {server.worker || 'local runtime'} / Port: {server.port}</div>
             </div>
             <label class="grid gap-1 text-sm">
               <span>Owner</span>

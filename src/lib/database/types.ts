@@ -59,7 +59,6 @@ export type ServerMembershipRecord = {
 export type ServerRecord = {
   owner?: RecordIdString;
   port: number;
-  workerPort?: number | null;
   icon: FileNameString;
   title: string;
   subdomain: string;

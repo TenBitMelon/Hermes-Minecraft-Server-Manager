@@ -23,23 +23,6 @@ migrate(
       })
     );
 
-    collection.schema.addField(
-      new SchemaField({
-        system: false,
-        id: 'srvwork2',
-        name: 'workerPort',
-        type: 'number',
-        required: false,
-        presentable: false,
-        unique: false,
-        options: {
-          min: null,
-          max: null,
-          noDecimal: true
-        }
-      })
-    );
-
     return dao.saveCollection(collection);
   },
   (db) => {
@@ -47,7 +30,6 @@ migrate(
     const collection = dao.findCollectionByNameOrId('80olb9b23s3qall');
 
     collection.schema.removeField('srvwork1');
-    collection.schema.removeField('srvwork2');
 
     return dao.saveCollection(collection);
   }
