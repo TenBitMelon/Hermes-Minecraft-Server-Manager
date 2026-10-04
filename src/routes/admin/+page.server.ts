@@ -5,6 +5,8 @@ import { getUserDirectory, requireAdministrator } from '$lib/server/auth';
 import { fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
+const maxOwnedServerLimit = 1000;
+
 export async function load({ locals }) {
   requireAdministrator({ user: locals.user });
 
@@ -25,8 +27,13 @@ export const actions = {
     const administrator = formData.get('administrator') === 'true';
     const ownedServerLimit = Number(formData.get('ownedServerLimit')?.toString() ?? '0');
 
-    if (!userId || Number.isNaN(ownedServerLimit)) {
-      return fail(400, { message: 'Missing required user profile values.' });
+    if (!userId) return fail(400, { message: 'Missing required user profile values.' });
+
+    // Number() happily produces Infinity, negatives and fractions, and the
+    // collection has no min or max, so reject anything that is not a plain
+    // count within range rather than just checking for NaN.
+    if (!Number.isInteger(ownedServerLimit) || ownedServerLimit < 0 || ownedServerLimit > maxOwnedServerLimit) {
+      return fail(400, { message: `Owned server limit must be a whole number between 0 and ${maxOwnedServerLimit}.` });
     }
 
     await serverPB.collection(Collections.Users).update(userId, {
