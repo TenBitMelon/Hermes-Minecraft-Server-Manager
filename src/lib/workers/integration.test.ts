@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 // Static and type-only. $lib/database/types has no side effects, unlike $lib/database
@@ -52,6 +53,17 @@ describe.skipIf(!integrationEnabled())('single-node lifecycle through the worker
     return false;
   };
 
+  // The usual reason a container never gets here is the itzg image treating a failed
+  // icon download as fatal, which exits 1 before Minecraft boots. Surfacing the last
+  // log lines turns that from a puzzling test failure into an obvious one.
+  const containerLogTail = () => {
+    try {
+      return execFileSync('docker', ['logs', '--tail', '12', containerName], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch {
+      return '(no logs available)';
+    }
+  };
+
   beforeAll(async () => {
     await loadLocalEnvironment();
     pb = await import('$lib/database');
@@ -64,7 +76,9 @@ describe.skipIf(!integrationEnabled())('single-node lifecycle through the worker
       if (started.isErr()) throw new Error(`startContainer failed: ${started.error.message}`);
     }
     const healthy = await waitForHealthy(180_000);
-    if (!healthy) throw new Error(`container never became healthy (status: ${containerStatus()})`);
+    if (!healthy) {
+      throw new Error(`Container ${containerName} never became healthy (status: ${containerStatus()}).\n` + `Check that the ICON url in servers/${serverID}/docker-compose.yml resolves, ` + `and that it does not collide with an existing container.\n` + `Last log lines:\n${containerLogTail()}`);
+    }
   }, 300_000);
 
   afterAll(async () => {
@@ -201,10 +215,11 @@ describe.skipIf(!integrationEnabled())('single-node lifecycle through the worker
   it('leaves the compose file it was given untouched', async () => {
     // The worker split moved compose generation but must not rewrite the file as a
     // side effect of a start or stop.
+    const server = await pb.serverPB.collection(Collections.Servers).getOne<ServerResponse>(serverID);
     const composePath = path.join(repoRoot, 'servers', serverID, 'docker-compose.yml');
-    const contents = execFileSync('cat', [composePath], { encoding: 'utf8' });
+    const contents = readFileSync(composePath, 'utf8');
 
     expect(contents).toContain('services:');
-    expect(contents).toContain(`"25551:25565"`);
+    expect(contents).toContain(`"${server.port}:25565"`);
   });
 });
