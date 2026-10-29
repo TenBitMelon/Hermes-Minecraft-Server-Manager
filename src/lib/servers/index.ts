@@ -103,7 +103,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   const builder = new ComposeBuilder(`servers/${record.id}/docker-compose.yml`);
   builder.setPort(port);
 
-  builder.addVariable('USE_AIKAR_FLAGS', 'true');
+  // builder.addVariable('USE_AIKAR_FLAGS', 'true');
   builder.addVariable('EULA', 'true');
   builder.addVariable('MEMORY', '2G');
   builder.addVariable('MAX_TICK_TIME', '-1');
