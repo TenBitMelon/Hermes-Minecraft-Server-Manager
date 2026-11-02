@@ -1,23 +1,12 @@
 import type { WorkerResponse } from '$lib/database/types';
 import type { WorkerStatus } from '$lib/database/types';
 
-// A WorkerResponse carries the credential the control plane uses to drive the worker.
-// It also carries the worker's internal address and its last heartbeat error. None of
-// that belongs in a page payload, so every worker value that crosses into the UI goes
-// through one of the projections below first.
-//
-// A worker record is never passed to a component directly. The projections are the only
-// supported way to hand one to SvelteKit, which serialises the load result into the page.
-
 type WorkerWithDerivedStatus = WorkerResponse & { derivedStatus: WorkerStatus };
 
 /** Everything a worker may hold that must never reach a browser. */
 const workerSecretFields = ['apiToken', 'apiTokenHash'] as const;
 
-/**
- * Safe for any page, including publicly reachable ones. Carries only what the UI
- * renders next to a server.
- */
+// Safe for ui on any page
 export function workerSummary(worker: WorkerWithDerivedStatus) {
   return {
     id: worker.id,
@@ -28,11 +17,7 @@ export function workerSummary(worker: WorkerWithDerivedStatus) {
 
 export type WorkerSummary = ReturnType<typeof workerSummary>;
 
-/**
- * Safe for any signed-in page that offers a host choice. Adds the capacity counters
- * and port range a user needs to pick a home for their data, but still omits the
- * worker's address and credential.
- */
+// Safe for any signed-in page
 export function workerPickerView(worker: WorkerWithDerivedStatus) {
   return {
     ...workerSummary(worker),
@@ -47,10 +32,7 @@ export function workerPickerView(worker: WorkerWithDerivedStatus) {
 
 export type WorkerPickerView = ReturnType<typeof workerPickerView>;
 
-/**
- * Fields for the admin page.
- * Drops the credential
- */
+// Fields for the admin page.
 export function workerAdminView(worker: WorkerWithDerivedStatus) {
   return {
     id: worker.id,

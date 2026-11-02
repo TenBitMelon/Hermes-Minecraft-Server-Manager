@@ -31,7 +31,7 @@ export type ServerVersionOption = {
 
 export type ServerVersionCatalog = Record<ServerSoftware, ServerVersionOption[]>;
 
-const USER_AGENT = 'HermesMinecraftServerManager/0.7.0 (https://github.com/melonboy10/Hermes-Minecraft-Server-Manager)';
+const USER_AGENT = 'HermesMinecraftServerManager/0.7.0 (https://github.com/TenBitMelon/Hermes-Minecraft-Server-Manager)';
 const CACHE_TTL_MS = 1000 * 60 * 30;
 
 let cachedCatalog: { expiresAt: number; value: ServerVersionCatalog } | null = null;

@@ -36,7 +36,5 @@
     </div>
   </div>
   <slot />
-  {#if data.currentUser?.administrator}
-    <a class="text-sm text-gray-400" href="/update-results">Version: 0.6.0</a>
-  {/if}
+  <a class="text-sm text-gray-400" href="/update-results">Version: 0.6.0</a>
 </div>

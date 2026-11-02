@@ -14,3 +14,5 @@
 - [x] add hint messages to the UI
 - [x] find a way to do server iconds
 - [x] fix icons handling
+- [ ] Update Pocketbase version
+- [ ] Upgrade sveltekit version

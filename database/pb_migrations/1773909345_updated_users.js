@@ -101,8 +101,8 @@ migrate(
         presentable: false,
         unique: false,
         options: {
-          min: null,
-          max: null,
+          min: 0,
+          max: 1000,
           noDecimal: true
         }
       })
