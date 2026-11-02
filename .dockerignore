@@ -8,3 +8,8 @@ docker-compose.yml
 .github
 .gitignore
 .git
+
+.env
+.env.*
+tests/acceptance/.state
+build

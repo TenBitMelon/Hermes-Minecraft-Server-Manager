@@ -136,7 +136,7 @@ services:
 
       # Read by every process, to know which half it is:
       #   control  web UI, database, Cloudflare. Does not host game servers.
-      #   worker   game servers only. Hosts game servers and connects to Control.
+      #   worker   game servers only. Hosts an API polled by Control.
       #   hybrid   both. The default.
       # - HERMES_RUNTIME_ROLE=worker
 
@@ -147,8 +147,8 @@ services:
       # - HERMES_WORKER_REQUEST_TIMEOUT_MS=30000
 
       # WORKER ONLY. Shared secret presented on /api/worker/v1/*.
-      # This is how your worker authenticates with the Control. It will not
-      # connect if this is incorrect.
+      # Control presents this secret when calling the worker API. Requests
+      # are rejected if it does not match.
       # - HERMES_WORKER_API_TOKEN=<shared-secret>
 
       # This is the maximum upload size to the website, the uploaded features are server icon,

@@ -51,6 +51,6 @@ export default tseslint.config(
     }
   },
   {
-    ignores: ['**/build', '**/.svelte-kit', '.env', '.env.*', '**/database']
+    ignores: ['tests/acceptance/.state/**', '**/build', '**/.svelte-kit', '.env', '.env.*', '**/database']
   }
 );
