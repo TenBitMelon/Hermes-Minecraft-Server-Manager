@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ServerResponse } from '$lib/database/types';
-import { withoutInternalFields } from './visibility';
+import { withoutInternalFields } from '$lib/servers/visibility';
 
 function server(): ServerResponse {
   return {

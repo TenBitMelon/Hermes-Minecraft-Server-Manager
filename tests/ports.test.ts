@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { env, resetEnv } from '../../test/stubs/private-env';
-import { MINECRAFT_DEFAULT_PORT, countAvailablePorts, findFirstAvailablePort, localPortRangeFromEnv, parseBooleanFlag, workerPortRange } from './ports';
+import { env, resetEnv } from './stubs/private-env';
+import { countAvailablePorts, findFirstAvailablePort, localPortRangeFromEnv, MINECRAFT_DEFAULT_PORT, parseBooleanFlag, workerPortRange } from '$lib/workers/ports';
 
 afterEach(() => resetEnv());
 

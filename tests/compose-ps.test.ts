@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ContainerState } from '$lib/types';
-import { parseComposePsOutput } from './compose-ps';
+import { parseComposePsOutput } from '$lib/workers/compose-ps';
 
 // Captured from `docker-compose ps -a --format json` on this machine, where
 // docker-compose is Compose v2.13.0 and emits a single JSON array.

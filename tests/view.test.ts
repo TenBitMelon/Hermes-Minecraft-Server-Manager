@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { WorkerStatus, type WorkerResponse } from '$lib/database/types';
-import { deriveWorkerStatus, hashWorkerToken } from './status';
-import { hasWorkerSecretFields, workerAdminView, workerPickerView, workerSummary } from './view';
-import { env, resetEnv } from '../../test/stubs/private-env';
+import { env, resetEnv } from './stubs/private-env';
+import { deriveWorkerStatus, hashWorkerToken } from '$lib/workers';
+import { hasWorkerSecretFields, workerAdminView, workerPickerView, workerSummary } from '$lib/workers/view';
 
 function workerWith(overrides: Partial<Pick<WorkerResponse, 'status' | 'lastHeartbeatAt'>>) {
   return { status: WorkerStatus.Online, lastHeartbeatAt: new Date().toISOString(), ...overrides } as WorkerResponse;
@@ -40,6 +40,10 @@ describe('deriveWorkerStatus', () => {
 
   it('treats a worker that never reported as offline', () => {
     expect(deriveWorkerStatus(workerWith({ lastHeartbeatAt: '' }))).toBe(WorkerStatus.Offline);
+  });
+
+  it('reports a failed health probe as offline even with a recent heartbeat', () => {
+    expect(deriveWorkerStatus(workerWith({ status: WorkerStatus.Offline }))).toBe(WorkerStatus.Offline);
   });
 
   it('reports a fresh heartbeat as online', () => {

@@ -1,5 +1,5 @@
+import { ComposeBuilder } from '$lib/docker';
 import { describe, expect, it } from 'vitest';
-import { ComposeBuilder } from './localRuntime';
 
 /**
  * Captured from a docker-compose.yml that the previous implementation wrote, before

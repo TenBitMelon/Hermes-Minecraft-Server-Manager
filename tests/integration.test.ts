@@ -8,7 +8,7 @@ import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 // namespace and break every `types.ServerResponse` reference in a type position.
 import { Collections, ServerState, type ServerResponse } from '$lib/database/types';
 import { ContainerState } from '$lib/types';
-import { integrationEnabled, loadLocalEnvironment } from '../../test/environment';
+import { integrationEnabled, loadLocalEnvironment } from './environment';
 
 /**
  * Exercises the real single-node path end to end: a server record in the developer's

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WorkerStatus, type WorkerResponse } from '$lib/database/types';
 import { CustomError } from '$lib/types';
 import { getWorkerRequestTimeoutMs } from '$lib/runtime';
-import { RemoteWorkerClient } from './transport';
-import { env, resetEnv } from '../../test/stubs/private-env';
+import { env, resetEnv } from './stubs/private-env';
+import { RemoteWorkerClient } from '$lib/workers/transport';
 
 afterEach(() => {
   resetEnv();
