@@ -76,6 +76,16 @@ export const actions = {
       return fail(400, { message: 'Missing required worker fields.' });
     }
     if (!workerId && !token) return fail(400, { message: 'A new worker needs an API token.' });
+    if (!Number.isInteger(portMin) || !Number.isInteger(portMax) || portMin < 1 || portMax > 65535 || portMin > portMax || !Number.isInteger(serverCapacity) || serverCapacity < 1) return fail(400, { message: 'Use a valid port range (1–65535) and a positive whole-number capacity.' });
+    if (!Object.values(WorkerStatus).includes(status)) return fail(400, { message: 'Invalid worker status.' });
+    if (baseUrl !== 'local') {
+      try {
+        const url = new URL(baseUrl);
+        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return fail(400, { message: 'Worker URL must use HTTP or HTTPS without embedded credentials.' });
+      } catch {
+        return fail(400, { message: 'Invalid worker URL.' });
+      }
+    }
 
     const payload: Record<string, unknown> = {
       name,
@@ -113,6 +123,8 @@ export const actions = {
     const formData = await request.formData();
     const workerId = formData.get('workerId')?.toString();
     if (!workerId) return fail(400, { message: 'Missing worker to delete.' });
+    const assigned = await serverPB.collection(Collections.Servers).getList(1, 1, { filter: serverPB.filter('worker = {:workerId}', { workerId }) });
+    if (assigned.totalItems > 0) return fail(400, { message: 'Delete the assigned servers before removing this worker.' });
 
     await serverPB.collection(Collections.Workers).delete(workerId);
     return { success: true, message: 'Worker deleted.' };

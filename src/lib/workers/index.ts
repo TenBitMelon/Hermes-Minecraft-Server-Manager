@@ -12,34 +12,36 @@ export async function syncWorkersHealth() {
   if (!canRunControlPlane()) return;
 
   const workers = await serverPB.collection(Collections.Workers).getFullList<WorkerResponse>();
-  for (const worker of workers) {
-    if (worker.status === WorkerStatus.Disabled) continue;
-    try {
-      const workerClient = getWorkerClientForWorker(worker);
-      if (workerClient.isErr()) {
-        await markWorkerUnreachable(worker, workerClient.error);
-        continue;
-      }
+  await Promise.all(
+    workers.map(async (worker) => {
+      if (worker.status === WorkerStatus.Disabled) return;
+      try {
+        const workerClient = getWorkerClientForWorker(worker);
+        if (workerClient.isErr()) {
+          await markWorkerUnreachable(worker, workerClient.error);
+          return;
+        }
 
-      const health = await workerClient.value.getHealth(worker);
-      if (health.isErr()) {
-        await markWorkerUnreachable(worker, health.error);
-        continue;
-      }
+        const health = await workerClient.value.getHealth(worker);
+        if (health.isErr()) {
+          await markWorkerUnreachable(worker, health.error);
+          return;
+        }
 
-      await serverPB.collection(Collections.Workers).update(worker.id, {
-        status: WorkerStatus.Online,
-        runningServerCount: health.value.runningServerCount,
-        totalServerCount: health.value.totalServerCount,
-        lastHeartbeatAt: new Date().toISOString(),
-        lastHeartbeatVersion: health.value.version,
-        lastHeartbeatError: ''
-      } satisfies Partial<WorkerRecord>);
-    } catch (error) {
-      console.error(`[hermes] health sync failed for worker ${worker.id}`, error);
-      await markWorkerUnreachable(worker, CustomError.from(error, `Failed to sync worker ${worker.name}.`)).catch(() => undefined);
-    }
-  }
+        await serverPB.collection(Collections.Workers).update(worker.id, {
+          status: WorkerStatus.Online,
+          runningServerCount: health.value.runningServerCount,
+          totalServerCount: health.value.totalServerCount,
+          lastHeartbeatAt: new Date().toISOString(),
+          lastHeartbeatVersion: health.value.version,
+          lastHeartbeatError: ''
+        } satisfies Partial<WorkerRecord>);
+      } catch (error) {
+        console.error(`[hermes] health sync failed for worker ${worker.id}`, error);
+        await markWorkerUnreachable(worker, CustomError.from(error, `Failed to sync worker ${worker.name}.`)).catch(() => undefined);
+      }
+    })
+  );
 }
 
 async function markWorkerUnreachable(worker: WorkerResponse, error: CustomError) {

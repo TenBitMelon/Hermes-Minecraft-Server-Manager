@@ -1,6 +1,7 @@
 import { canCreateServers, getAvailableAuthProviders } from '$lib/server/auth';
 
 export async function load({ locals }) {
+  const [availableAuthProviders, allowCreate] = await Promise.all([getAvailableAuthProviders(locals.pb), canCreateServers(locals.user)]);
   return {
     currentUser: locals.user
       ? {
@@ -13,7 +14,7 @@ export async function load({ locals }) {
           ownedServerLimit: locals.user.ownedServerLimit
         }
       : null,
-    availableAuthProviders: getAvailableAuthProviders(locals.pb),
-    allowCreate: canCreateServers(locals.user)
+    availableAuthProviders,
+    allowCreate
   };
 }

@@ -2,6 +2,8 @@ import compose, { execCompose, type IDockerComposeResult } from 'docker-compose/
 import childProcess from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
+import { env as privateEnv } from '$env/dynamic/private';
 import { Result, ResultAsync, err, ok } from 'neverthrow';
 import { zip } from '$lib/zip';
 import { parseComposePsOutput } from './compose-ps';
@@ -165,7 +167,7 @@ export async function getLocalContainerUsageStats(serverID: string): ContainerRe
 
 export async function removeLocalServer(serverID: string, forcibly = false): ContainerResult<void> {
   if (!localContainerDoesNotExist(serverID)) {
-    const composeStop = await ResultAsync.fromPromise(compose.stop({ cwd: getServerFolder(serverID) }), (e) => CustomError.from(e, 'Failed to stop container'));
+    const composeStop = await ResultAsync.fromPromise(compose.down({ cwd: getServerFolder(serverID) }), (e) => CustomError.from(e, 'Failed to remove container'));
     if (composeStop.isErr()) return err(composeStop.error);
 
     const remove = Result.fromThrowable(
@@ -182,13 +184,18 @@ export async function createLocalBackupArchive(serverID: string): Promise<Result
   const serverFolder = getServerFolder(serverID);
   if (!fs.existsSync(serverFolder)) return err(new CustomError("Server folder doesn't exist!"));
 
-  const zipResult = await zip(serverFolder, '/tmp/server-backup.zip', ['**/libraries/**', '**/.*/**', '**/.**']);
-  if (zipResult.isErr()) return err(zipResult.error);
-
-  return Result.fromThrowable(
-    () => fs.readFileSync('/tmp/server-backup.zip'),
-    (e) => CustomError.from(e, 'Failed to read the zip file')
-  )();
+  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-backup-'));
+  const archivePath = path.join(temporaryDirectory, 'server-backup.zip');
+  try {
+    const zipResult = await zip(serverFolder, archivePath, ['**/libraries/**', '**/.*/**', '**/.**']);
+    if (zipResult.isErr()) return err(zipResult.error);
+    return Result.fromThrowable(
+      () => fs.readFileSync(archivePath),
+      (e) => CustomError.from(e, 'Failed to read the zip file')
+    )();
+  } finally {
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
 }
 
 export type WorkerHealthSummary = {
@@ -199,6 +206,13 @@ export type WorkerHealthSummary = {
 };
 
 export async function getLocalWorkerHealth(portMin: number, portMax: number, avoidDefaultPort: boolean): Promise<Result<WorkerHealthSummary, CustomError>> {
+  const dockerHealth = await ResultAsync.fromPromise(
+    new Promise<void>((resolve, reject) => {
+      childProcess.execFile('docker', ['version', '--format', '{{.Server.Version}}'], { timeout: 5000 }, (error, stdout) => (error || !stdout.trim() ? reject(error || new Error('Docker did not return a server version.')) : resolve()));
+    }),
+    (error) => CustomError.from(error, 'Docker daemon is unavailable.')
+  );
+  if (dockerHealth.isErr()) return err(dockerHealth.error);
   const root = path.resolve('servers');
   const directories = fs.existsSync(root)
     ? fs
@@ -240,7 +254,7 @@ export async function getLocalWorkerHealth(portMin: number, portMax: number, avo
 
 export class ComposeBuilder {
   private readonly version = '3.9';
-  private readonly image = 'itzg/minecraft-server:latest';
+  private readonly image = privateEnv.HERMES_MINECRAFT_IMAGE || 'itzg/minecraft-server:latest';
   private port = 25565;
   private readonly volumes: string[] = ['./server-files:/data'];
   private readonly restart = 'no';

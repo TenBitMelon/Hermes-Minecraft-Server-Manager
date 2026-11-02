@@ -10,5 +10,5 @@ migrate((db) => {
   admin.setPassword(adminPassword);
 
   dao.saveAdmin(admin);
-  console.log(`Created admin account with email ${adminEmail}, password ${adminPassword}`);
+  console.log('Created internal database administrator.');
 });

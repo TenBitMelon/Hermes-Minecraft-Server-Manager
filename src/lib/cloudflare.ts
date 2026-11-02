@@ -16,6 +16,12 @@ type CloudflareApiResponse<T> = {
   messages?: { message?: string }[];
 };
 
+function dnsDisabled() {
+  const mode = privateENV.HERMES_DNS_MODE || 'cloudflare';
+  if (mode !== 'cloudflare' && mode !== 'disabled') throw new Error('HERMES_DNS_MODE must be cloudflare or disabled.');
+  return dev || mode === 'disabled';
+}
+
 function createCloudflareError(message: string, responseBody?: CloudflareApiResponse<unknown>) {
   const providerMessages = [...(responseBody?.errors ?? []).map((error) => error.message), ...(responseBody?.messages ?? []).map((entry) => entry.message)].filter((value): value is string => typeof value === 'string' && value.trim().length > 0).join(' ');
 
@@ -54,7 +60,7 @@ async function createCloudflareRecord<T extends { id: string }>(body: unknown, m
 }
 
 export async function addCloudflareRecords(subdomain: string, port: number, targetAddress?: string): Promise<Result<{ cname: string; srv: string }, CustomError>> {
-  if (dev) return ok({ cname: '<DEV>', srv: '<DEV>' });
+  if (dnsDisabled()) return ok({ cname: '<DISABLED>', srv: '<DISABLED>' });
   const recordTarget = targetAddress || publicENV.PUBLIC_SERVER_BASE_DOMAIN;
   const serverHostname = `${subdomain}.${publicENV.PUBLIC_SERVER_BASE_DOMAIN}`;
 
@@ -100,7 +106,7 @@ export async function addCloudflareRecords(subdomain: string, port: number, targ
 }
 
 export async function removeCloudflareCNAMERecord(cnameID: string): Promise<Result<void, CustomError>> {
-  if (dev) return ok(undefined);
+  if (dnsDisabled()) return ok(undefined);
 
   const deleteCNAMEResult = await ResultAsync.fromPromise(
     fetch(`https://api.cloudflare.com/client/v4/zones/${privateENV.CLOUDFLARE_ZONE_ID}/dns_records/${cnameID}`, {
@@ -115,7 +121,7 @@ export async function removeCloudflareCNAMERecord(cnameID: string): Promise<Resu
   return deleteCNAMEResult.map(() => undefined);
 }
 export async function removeCloudflareSRVRecord(srvID: string): Promise<Result<void, CustomError>> {
-  if (dev) return ok(undefined);
+  if (dnsDisabled()) return ok(undefined);
 
   const deleteSRVResult = await ResultAsync.fromPromise(
     fetch(`https://api.cloudflare.com/client/v4/zones/${privateENV.CLOUDFLARE_ZONE_ID}/dns_records/${srvID}`, {
@@ -131,7 +137,7 @@ export async function removeCloudflareSRVRecord(srvID: string): Promise<Result<v
 }
 
 export async function removeCloudflareRecords(cnameID: string, srvID: string): Promise<Result<void, CustomError>> {
-  if (dev) return ok(undefined);
+  if (dnsDisabled()) return ok(undefined);
 
   const deleteCNAMEResult = await removeCloudflareCNAMERecord(cnameID);
   if (deleteCNAMEResult.isErr()) return err(deleteCNAMEResult.error);

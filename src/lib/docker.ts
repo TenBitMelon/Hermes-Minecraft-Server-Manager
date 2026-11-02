@@ -3,6 +3,7 @@ import { ResultAsync, err } from 'neverthrow';
 import { removeCloudflareRecords } from './cloudflare';
 import { serverPB } from './database';
 import { Collections, ServerState, type ServerRecord, type ServerResponse } from './database/types';
+import { withServerOperation } from './servers/operationLock';
 import { createBackup } from './servers/backups';
 import { ContainerState, CustomError, type ContainerData, type ContainerResult } from './types';
 import { getWorkerClientForServer } from './workers/client';
@@ -11,7 +12,11 @@ import { ComposeBuilder, localContainerDoesNotExist, type LocalContainerUsageSta
 export { ComposeBuilder, ContainerState, localContainerDoesNotExist as containerDoesNotExists };
 export type { ContainerUsageStats };
 
-export async function startContainer(serverID: string): ContainerResult<void> {
+export function startContainer(serverID: string): ContainerResult<void> {
+  return withServerOperation(serverID, () => startContainerUnlocked(serverID));
+}
+
+async function startContainerUnlocked(serverID: string): ContainerResult<void> {
   const workerClient = await getWorkerClientForServer(serverID);
   if (workerClient.isErr()) return err(workerClient.error);
 
@@ -32,7 +37,11 @@ export async function startContainer(serverID: string): ContainerResult<void> {
   return dbResult.map(() => undefined);
 }
 
-export async function stopContainer(serverID: string): ContainerResult<void> {
+export function stopContainer(serverID: string): ContainerResult<void> {
+  return withServerOperation(serverID, () => stopContainerUnlocked(serverID));
+}
+
+async function stopContainerUnlocked(serverID: string): ContainerResult<void> {
   const workerClient = await getWorkerClientForServer(serverID);
   if (workerClient.isErr()) return err(workerClient.error);
 
@@ -40,7 +49,6 @@ export async function stopContainer(serverID: string): ContainerResult<void> {
   if (containerStop.isErr()) return err(containerStop.error);
 
   const backupResult = await createBackup(serverID);
-  if (backupResult.isErr()) return err(backupResult.error);
 
   const server = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).getOne(serverID), () => new CustomError('Failed to get server data from DB'));
   if (server.isErr()) return err(server.error);
@@ -50,11 +58,13 @@ export async function stopContainer(serverID: string): ContainerResult<void> {
       state: ServerState.Stopped,
       startDate: null,
       shutdownDate: new Date().toISOString(),
-      deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * +publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN).toISOString() : null,
+      deletionDate: server.value.canBeDeleted ? new Date(Date.now() + 1000 * 60 * 60 * Number(publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN || '168')).toISOString() : null,
       serverFilesMissing: false
     }),
     (e) => CustomError.from(e, 'Failed to update server data on stop')
   );
+  if (updateResult.isErr()) return err(updateResult.error);
+  if (backupResult.isErr()) return err(new CustomError('Server stopped, but its automatic backup failed.', backupResult.error));
   return updateResult.map(() => undefined);
 }
 
@@ -86,7 +96,11 @@ export async function getContainerUsageStats(serverID: string): ContainerResult<
   return workerClient.value.getStats(serverID);
 }
 
-export async function removeContainer(serverID: string, forcibly = false): ContainerResult<void> {
+export function removeContainer(serverID: string, forcibly = false): ContainerResult<void> {
+  return withServerOperation(serverID, () => removeContainerUnlocked(serverID, forcibly));
+}
+
+async function removeContainerUnlocked(serverID: string, forcibly = false): ContainerResult<void> {
   const serverRecordResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).getOne<ServerResponse>(serverID), (e) => CustomError.from(e, 'Failed to get server data from DB'));
   if (serverRecordResult.isErr()) return err(serverRecordResult.error);
   const serverRecord = serverRecordResult.value;

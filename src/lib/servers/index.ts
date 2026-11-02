@@ -1,3 +1,5 @@
+import { ClientResponseError } from 'pocketbase';
+import { withServerOperation } from './operationLock';
 import { env as publicENV } from '$env/dynamic/public';
 import { getFileURL } from '$lib';
 import { addCloudflareRecords, removeCloudflareRecords } from '$lib/cloudflare';
@@ -22,7 +24,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   const port = portR.value;
 
   const defaultIconResult = await ResultAsync.fromPromise(
-    fetch(publicENV.PUBLIC_DEFAULT_ICON_URL).then((r) => r.arrayBuffer()),
+    fetch(publicENV.PUBLIC_DEFAULT_ICON_URL || '').then((r) => r.arrayBuffer()),
     (error) => CustomError.from(error, 'Failed to load the default server icon.')
   );
   if (defaultIconResult.isErr()) return err(defaultIconResult.error);
@@ -64,7 +66,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       startDate: null,
       shutdownDate: null,
       deletionDate: null,
-      canBeDeleted: +publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN == -1 ? false : true,
+      canBeDeleted: Number(publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN || '168') == -1 ? false : true,
       serverFilesMissing: false,
       owner: ownerUserId,
       createdBy: ownerUserId,
@@ -85,7 +87,7 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   // else fs.writeFileSync(`${serverFilesPath}/server-icon.png`, Buffer.from(defaultIconBuffer));
   const appOrigin = publicENV.PUBLIC_APP_ORIGIN;
   if (!appOrigin) return cleanupCreationFailure(new CustomError('PUBLIC_APP_ORIGIN is not configured.'));
-  const serverIconURL = data.icon ? getFileURL(record.collectionId, record.id, record.icon) : publicENV.PUBLIC_DEFAULT_ICON_URL;
+  const serverIconURL = new URL(getFileURL(record.collectionId, record.id, record.icon) || '', appOrigin).toString();
 
   // if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
   // if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
@@ -110,13 +112,13 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
 
   if (data.serverProperties) {
     builder.addVariable('OVERRIDE_SERVER_PROPERTIES', 'true');
-    builder.addVariable('SERVER_PROPERTIES', '/data/server-files/server.properties');
+    builder.addVariable('SERVER_PROPERTIES', '/data/server.properties');
   }
 
   builder.addVariable('TYPE', data.serverSoftware.toUpperCase());
   builder.addVariable('VERSION', data.gameVersion);
   builder.addVariable('MOTD', data.motd);
-  builder.addVariable('ICON', `${appOrigin.replace(/\/$/, '')}${serverIconURL}`);
+  builder.addVariable('ICON', serverIconURL);
 
   builder.addVariable('DIFFICULTY', data.difficulty.toUpperCase());
   builder.addVariable('MODE', data.gamemode);
@@ -227,7 +229,7 @@ export async function updateAllServerStates() {
   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
 
   for (const server of servers) {
-    updateServerState(server)
+    await updateServerState(server)
       .then((r) => {
         const existing = latestUpdateResults.find((l) => l.server.id == server.id);
         if (existing) {
@@ -254,7 +256,20 @@ export async function updateAllServerStates() {
   }
 }
 
-export async function updateServerState(server: ServerResponse): Promise<UpdateResult[]> {
+export function updateServerState(server: ServerResponse): Promise<UpdateResult[]> {
+  return withServerOperation(server.id, async () => {
+    const current = await serverPB
+      .collection(Collections.Servers)
+      .getOne<ServerResponse>(server.id)
+      .catch((error: unknown) => {
+        if (error instanceof ClientResponseError && error.status === 404) return null;
+        throw error;
+      });
+    return current ? updateServerStateUnlocked(current) : [];
+  });
+}
+
+async function updateServerStateUnlocked(server: ServerResponse): Promise<UpdateResult[]> {
   const changeToServer: UpdateResult[] = [];
 
   function addValue(value: string, variables: Record<string, unknown>) {

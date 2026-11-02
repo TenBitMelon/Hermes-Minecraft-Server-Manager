@@ -5,13 +5,13 @@
   import { ServerState } from '$lib/database/types';
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import type { PageData } from './$types';
+  import type { ActionData, PageData } from './$types';
   import FormLoadingButton from './FormLoadingButton.svelte';
 
   export let data: PageData;
   let cacheLogs = data.logs;
   let cacheStats = data.stats;
-  // export let form: ActionData;
+  export let form: ActionData;
 
   $: serverStatus = stateDisplay(data.server.state);
   $: workerUnavailable = Boolean(data.workerInfo && data.workerInfo.derivedStatus !== 'online');
@@ -37,6 +37,9 @@
 </script>
 
 <div class="flex w-full max-w-3xl flex-col gap-4">
+  {#if form && 'error' in form && form.error}
+    <p role="alert" class="rounded-md bg-red-950 p-3 text-red-200">{form.error.message}</p>
+  {/if}
   <!-- Server Information -->
   <div class="grid grid-cols-[1fr_auto] items-center gap-4 max-sm:grid-cols-1">
     <div>

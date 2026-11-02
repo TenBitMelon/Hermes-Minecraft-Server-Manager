@@ -7,7 +7,7 @@ import { parseBooleanFlag } from '$lib/workers/ports';
 export async function GET(event) {
   requireWorkerBearerAuth(event);
 
-  const result = await getLocalWorkerHealth(+privateEnv.PORT_MIN, +privateEnv.PORT_MAX, parseBooleanFlag(privateEnv.AVOID_DEFAULT_PORT, true));
+  const result = await getLocalWorkerHealth(Number(privateEnv.PORT_MIN), Number(privateEnv.PORT_MAX), parseBooleanFlag(privateEnv.AVOID_DEFAULT_PORT, true));
   if (result.isErr()) return json({ message: result.error.message }, { status: 500 });
   return json(result.value);
 }

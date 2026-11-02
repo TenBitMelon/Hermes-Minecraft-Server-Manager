@@ -2,7 +2,7 @@
 - [x] fix error handling when cloudflare record already exists
 - [x] add a way to delete backups
 - [ ] Change logs to websocket
-- [ ] allow multiple physical servers to spin up mc servers
+- [x] allow multiple physical servers to spin up mc servers
 - [ ] update minecraft server docker image
 - [ ] bluemap support
 - [ ] maximum backup count

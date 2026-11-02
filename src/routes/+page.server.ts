@@ -33,6 +33,7 @@ export async function load({ locals }) {
 
       return {
         ...(locals.user ? server : withoutInternalFields(server)),
+        workerInfo: server.worker ? workerSummaryById.get(server.worker) ?? null : null,
         canVisitDashboard: administrator || isOwner || Boolean(membership),
         canStartStop: administrator || isOwner || Boolean(membership?.canStartStop)
       };

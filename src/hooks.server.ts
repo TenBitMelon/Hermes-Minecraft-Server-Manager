@@ -3,11 +3,12 @@ import { createPocketBaseClient } from '$lib/database';
 import { Collections, type UserResponse } from '$lib/database/types';
 import { updateAllServerStates } from '$lib/servers';
 import { ensureUserDefaults } from '$lib/server/auth';
-import { canRunControlPlane } from '$lib/runtime';
+import { canRunControlPlane, getWorkerRestartingThresholdMs } from '$lib/runtime';
 import { syncWorkersHealth } from '$lib/workers';
 
 /** @type {import('@sveltejs/kit').Handle} */
 export async function handle({ event, resolve }) {
+  if (!canRunControlPlane() && !event.url.pathname.startsWith('/api/worker/v1/')) return new Response('Not found', { status: 404 });
   event.locals.pb = createPocketBaseClient();
   event.locals.pb.authStore.loadFromCookie(event.request.headers.get('cookie') || '');
 
@@ -45,11 +46,19 @@ function reportBackgroundSyncFailure(task: string) {
 
 let interval = null;
 if (!building && !interval && canRunControlPlane()) {
-  const runBackgroundSync = () => {
-    syncWorkersHealth().catch(reportBackgroundSyncFailure('syncWorkersHealth'));
-    updateAllServerStates().catch(reportBackgroundSyncFailure('updateAllServerStates'));
+  let syncing = false;
+  const runBackgroundSync = async () => {
+    if (syncing) return;
+    syncing = true;
+    try {
+      await syncWorkersHealth().catch(reportBackgroundSyncFailure('syncWorkersHealth'));
+      await updateAllServerStates().catch(reportBackgroundSyncFailure('updateAllServerStates'));
+    } finally {
+      syncing = false;
+    }
   };
 
-  runBackgroundSync();
-  interval = setInterval(runBackgroundSync, dev ? 1000 * 30 : 1000 * 60);
+  void runBackgroundSync();
+  // Poll before a healthy worker could be classified as restarting.
+  interval = setInterval(runBackgroundSync, Math.max(1000, Math.min(30000, getWorkerRestartingThresholdMs() / 2)));
 }

@@ -23,6 +23,14 @@ async function getUsedPortsForWorker(worker: WorkerResponse | null) {
   return new Set(servers.map((server) => server.port));
 }
 
+async function getRecordedServerCount(worker: WorkerResponse) {
+  const page = await serverPB.collection(Collections.Servers).getList(1, 1, {
+    filter: serverPB.filter('worker = {:workerId}', { workerId: worker.id }),
+    fields: 'id'
+  });
+  return page.totalItems;
+}
+
 /**
  * The range a new server could take on the given worker, or on this host when the
  * worker is null. Returns null when this host cannot host servers at all.
@@ -54,7 +62,7 @@ export async function selectWorkerForNewServer(manualWorkerId?: string | null): 
     if (status === WorkerStatus.Disabled || status === WorkerStatus.Offline) return err(new Error('Selected worker is not available.'));
     const availablePorts = await getAvailablePortCountForWorker(worker);
     if (availablePorts < 1) return err(new Error('Selected worker has no remaining ports.'));
-    if (worker.totalServerCount >= worker.serverCapacity) return err(new Error('Selected worker is already at capacity.'));
+    if ((await getRecordedServerCount(worker)) >= worker.serverCapacity) return err(new Error('Selected worker is already at capacity.'));
     return ok(worker);
   }
 
@@ -64,11 +72,12 @@ export async function selectWorkerForNewServer(manualWorkerId?: string | null): 
     if (status === WorkerStatus.Disabled || status === WorkerStatus.Offline) continue;
     const availablePorts = await getAvailablePortCountForWorker(worker);
     if (availablePorts < 1) continue;
-    if (worker.totalServerCount >= worker.serverCapacity) continue;
+    const recordedCount = await getRecordedServerCount(worker);
+    if (recordedCount >= worker.serverCapacity) continue;
     candidates.push({
       worker,
       runningServerCount: worker.runningServerCount,
-      totalServerCount: worker.totalServerCount
+      totalServerCount: recordedCount
     });
   }
 

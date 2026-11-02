@@ -18,7 +18,7 @@ export async function createBackup(serverID: string, backupName: string = ''): P
   return ResultAsync.fromPromise(
     serverPB.collection(Collections.Backups).create<BackupResponse>({
       name: backupName,
-      file: new File([zipFile.value], `${new Date().toISOString()} - ${backupName}.zip`),
+      file: new File([zipFile.value], `${new Date().toISOString()} - ${backupName}.zip`, { type: 'application/zip' }),
       serverID: serverID,
       fileSize: zipFile.value.byteLength
     }),

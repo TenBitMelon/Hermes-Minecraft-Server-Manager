@@ -13,6 +13,7 @@ export function hashWorkerToken(token: string) {
  */
 export function deriveWorkerStatus(worker: Pick<WorkerResponse, 'status' | 'lastHeartbeatAt'>, now: number = Date.now()) {
   if (worker.status === WorkerStatus.Disabled) return WorkerStatus.Disabled;
+  if (worker.status === WorkerStatus.Offline) return WorkerStatus.Offline;
   if (!worker.lastHeartbeatAt) return WorkerStatus.Offline;
 
   const age = now - Date.parse(worker.lastHeartbeatAt);

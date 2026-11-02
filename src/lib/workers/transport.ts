@@ -1,5 +1,5 @@
 import type { WorkerResponse } from '$lib/database/types';
-import { canHostLocalWorker, getWorkerRequestTimeoutMs } from '$lib/runtime';
+import { canHostLocalWorker, getWorkerRequestTimeoutMs, getWorkerRestartingThresholdMs } from '$lib/runtime';
 import { CustomError, type ContainerData } from '$lib/types';
 import { Result, ResultAsync, err, ok, type Result as NeverthrowResult } from 'neverthrow';
 import { createLocalBackupArchive, getLocalContainerData, getLocalContainerLogs, getLocalContainerUsageStats, getLocalWorkerHealth, materializeLocalServer, removeLocalServer, sendLocalCommandToContainer, startLocalContainer, stopLocalContainer, type LocalContainerUsageStats, type WorkerHealthSummary } from './localRuntime';
@@ -164,7 +164,7 @@ export class RemoteWorkerClient implements WorkerClient {
   }
 
   async getHealth(_worker: WorkerResponse) {
-    const response = await this.fetchWorker('/api/worker/v1/health', { method: 'GET' });
+    const response = await this.fetchWorker('/api/worker/v1/health', { method: 'GET' }, Math.min(getWorkerRequestTimeoutMs(), Math.max(1000, getWorkerRestartingThresholdMs() / 3)));
     if (response.isErr()) return err(response.error);
     return ResultAsync.fromPromise(response.value.json() as Promise<WorkerHealthSummary>, (error) => CustomError.from(error, 'Failed to parse worker health response.'));
   }
