@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 // These tests tie the variables the code reads to the ones .env.example documents,
 // so a rename has to update both or fail here.
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const srcRoot = path.join(repoRoot, 'src');
 const examplePath = path.join(repoRoot, '.env.example');
 

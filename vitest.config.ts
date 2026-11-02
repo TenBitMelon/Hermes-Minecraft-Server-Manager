@@ -9,15 +9,15 @@ export default defineConfig({
     alias: {
       $lib: path.resolve('./src/lib'),
       $assets: path.resolve('./src/assets'),
-      '$env/dynamic/public': path.resolve('./src/test/stubs/public-env.ts'),
-      '$env/dynamic/private': path.resolve('./src/test/stubs/private-env.ts'),
+      '$env/dynamic/public': path.resolve('./tests/stubs/public-env.ts'),
+      '$env/dynamic/private': path.resolve('./tests/stubs/private-env.ts'),
       // Application code asks whether it is in dev and whether a build is running.
       // The integration tests import that code for real, so it has to resolve.
-      '$app/environment': path.resolve('./src/test/stubs/app-environment.ts')
+      '$app/environment': path.resolve('./tests/stubs/app-environment.ts')
     }
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['tests/*.test.ts'],
     environment: 'node',
     // The integration suite starts and stops real containers.
     testTimeout: 180_000,

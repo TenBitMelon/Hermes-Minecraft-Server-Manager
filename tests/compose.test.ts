@@ -1,4 +1,4 @@
-import { ComposeBuilder } from '$lib/docker';
+import { ComposeBuilder } from '$lib/workers/localRuntime';
 import { describe, expect, it } from 'vitest';
 
 /**

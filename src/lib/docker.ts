@@ -7,10 +7,7 @@ import { withServerOperation } from './servers/operationLock';
 import { createBackup } from './servers/backups';
 import { ContainerState, CustomError, type ContainerData, type ContainerResult } from './types';
 import { getWorkerClientForServer } from './workers/client';
-import { ComposeBuilder, localContainerDoesNotExist, type LocalContainerUsageStats as ContainerUsageStats } from './workers/localRuntime';
-
-export { ComposeBuilder, ContainerState, localContainerDoesNotExist as containerDoesNotExists };
-export type { ContainerUsageStats };
+import { type LocalContainerUsageStats as ContainerUsageStats } from './workers/localRuntime';
 
 export function startContainer(serverID: string): ContainerResult<void> {
   return withServerOperation(serverID, () => startContainerUnlocked(serverID));

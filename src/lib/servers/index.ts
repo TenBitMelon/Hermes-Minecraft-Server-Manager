@@ -5,13 +5,14 @@ import { getFileURL } from '$lib';
 import { addCloudflareRecords, removeCloudflareRecords } from '$lib/cloudflare';
 import { serverPB } from '$lib/database';
 import { Collections, ServerState, TimeToLiveMilliseconds, WorkerStatus, WorldCreationMethod, WorldType, type ServerRecord, type ServerResponse, type WorkerResponse } from '$lib/database/types';
-import { ComposeBuilder, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
+import { getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import { ContainerState, CustomError } from '$lib/types';
 import { getWorkerClientForWorker } from '$lib/workers/client';
 import { getUnusedPortForWorker, selectWorkerForNewServer } from '$lib/workers/placement';
 import { Result, ResultAsync, err } from 'neverthrow';
 import { z } from 'zod';
 import type { ServerCreationSchema } from './schema';
+import { ComposeBuilder } from '$lib/workers/localRuntime';
 
 // TODO: Clean up this function
 export async function createNewServer(data: z.infer<typeof ServerCreationSchema>, ownerUserId: string, manualWorkerId?: string | null): Promise<Result<ServerResponse, Error>> {

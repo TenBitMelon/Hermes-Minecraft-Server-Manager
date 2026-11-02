@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { WorkerStatus, type WorkerResponse } from '$lib/database/types';
 import { env, resetEnv } from './stubs/private-env';
-import { deriveWorkerStatus, hashWorkerToken } from '$lib/workers';
+import { deriveWorkerStatus, hashWorkerToken } from '$lib/workers/status';
 import { hasWorkerSecretFields, workerAdminView, workerPickerView, workerSummary } from '$lib/workers/view';
 
 function workerWith(overrides: Partial<Pick<WorkerResponse, 'status' | 'lastHeartbeatAt'>>) {

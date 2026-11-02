@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest';
 
-import { ComposeBuilder } from '$lib/docker';
+import { ComposeBuilder } from '$lib/workers/localRuntime';
 import { env, resetEnv } from './stubs/private-env';
 
 afterEach(resetEnv);
