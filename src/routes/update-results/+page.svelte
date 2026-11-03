@@ -48,7 +48,7 @@
                       <details>
                         <summary class="cursor-pointer text-red-200"> Show Error </summary>
                         <pre>
-                          {JSON.stringify(record.error?.error, null, 2).replace(/\\n/g, '\n')}
+                          {(JSON.stringify(record.error?.error, null, 2) ?? '').replace(/\\n/g, '\n')}
                         </pre>
                       </details>
                     </details>

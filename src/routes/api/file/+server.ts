@@ -2,7 +2,7 @@
 
 import { serverPB } from '$lib/database/index.js';
 import { Collections } from '$lib/database/types';
-import { requireAdministrator, requireServerCapability } from '$lib/server/auth';
+import { isAdmin, requireAdministrator, requireServerCapability } from '$lib/server/auth';
 import { error } from '@sveltejs/kit';
 
 function contentDispositionFilename(filename: string) {
@@ -43,7 +43,7 @@ export async function GET({ url, locals }) {
       .getOne(recordID)
       .catch(() => null);
     if (backupRecord?.collectionId === collectionID) {
-      await requireServerCapability(backupRecord.serverID, viewer, 'canViewDashboard');
+      if (!isAdmin(locals.user)) await requireServerCapability(backupRecord.serverID, viewer, 'canViewDashboard');
       needsFileToken = true;
     } else {
       const userRecord = await serverPB
