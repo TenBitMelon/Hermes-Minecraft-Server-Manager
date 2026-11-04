@@ -1,37 +1,42 @@
+import { sortServers } from '$lib';
 import { serverPB } from '$lib/database';
-import { Collections, ServerState, type ServerResponse } from '$lib/database/types';
+import { Collections, type ServerMembershipResponse } from '$lib/database/types';
+import { getVisibleServersForUser, isAdmin } from '$lib/server/auth';
+import { withoutInternalFields } from '$lib/servers/visibility';
+import { getWorkersWithDerivedStatus } from '$lib/workers';
+import { workerSummary } from '$lib/workers/view';
 
-export async function load() {
-  const servers: ServerResponse[] = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
-  // servers.forEach((server) => {
-  //   if (server.icon) server.icon = getFileURL(server.collectionId, server.id, server.icon);
-  // });
+export async function load({ locals }) {
+  const workers = await getWorkersWithDerivedStatus();
+  const workerSummaryById = new Map(workers.map((worker) => [worker.id, workerSummary(worker)]));
+  const servers = sortServers(
+    await getVisibleServersForUser({
+      user: locals.user
+    })
+  );
 
-  // export enum ServerState {
-  //   'Creating' = 'creating', // first
-  //   'Running' = 'running', // second
-  //   'Paused' = 'paused' // third
-  //   'Stopped' = 'stopped', // fourth
-  // }
+  const administrator = Boolean(locals.user && isAdmin(locals.user));
 
-  const StateOrderMap = {
-    [ServerState.Creating]: 0,
-    [ServerState.Running]: 1,
-    [ServerState.Paused]: 2,
-    ['stoppedNoDelete']: 3,
-    [ServerState.Stopped]: 4
-  };
+  const membershipsByServerId = new Map<string, ServerMembershipResponse>();
+  if (locals.user && !administrator) {
+    const memberships = await serverPB.collection(Collections.ServerMemberships).getFullList<ServerMembershipResponse>({
+      filter: serverPB.filter('user = {:userId}', { userId: locals.user.id })
+    });
+
+    for (const membership of memberships) membershipsByServerId.set(membership.server, membership);
+  }
 
   return {
-    // Negative value if the first argument is less than the second argument
-    // zero if they're equal
-    // Positive value otherwise
-    servers: servers.sort((a, b) => (!a.canBeDeleted ? StateOrderMap['stoppedNoDelete'] : StateOrderMap[a.state]) - (!b.canBeDeleted ? StateOrderMap['stoppedNoDelete'] : StateOrderMap[b.state]))
+    servers: servers.map((server) => {
+      const membership = membershipsByServerId.get(server.id);
+      const isOwner = Boolean(locals.user && server.owner === locals.user.id);
+
+      return {
+        ...(locals.user ? server : withoutInternalFields(server)),
+        workerInfo: server.worker ? workerSummaryById.get(server.worker) ?? null : null,
+        canVisitDashboard: administrator || isOwner || Boolean(membership),
+        canStartStop: administrator || isOwner || Boolean(membership?.canStartStop)
+      };
+    })
   };
 }
-
-// export const actions: Actions = {
-// 	default: async ({ params }) => {
-// 		return {};
-// 	}
-// };

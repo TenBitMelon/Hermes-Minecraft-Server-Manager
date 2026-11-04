@@ -20,11 +20,17 @@
     </div>
   {/if}
   {@const display = stateDisplay(server.state)}
-  <a class="my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800" href={`/${server.id}`} data-sveltekit-preload-data="false">
+  <svelte:element this={server.canVisitDashboard ? 'a' : 'div'} class={`my-2 flex w-full max-w-2xl flex-col rounded-md bg-gray-800 ${server.canVisitDashboard ? '' : 'cursor-default'}`} href={server.canVisitDashboard ? `/${server.id}` : undefined} data-sveltekit-preload-data={server.canVisitDashboard ? 'false' : undefined}>
     {#if server.state == ServerState.Stopped && server.canBeDeleted && server.deletionDate}
-      <FormLoadingButton action={`/${server.id}/?/start`} text="Revive" class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4" buttonClass="bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed">
-        Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
-      </FormLoadingButton>
+      {#if server.canStartStop}
+        <FormLoadingButton action={`/${server.id}/?/start`} text="Revive" class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4" buttonClass="bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed">
+          Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
+        </FormLoadingButton>
+      {:else}
+        <div class="flex w-full items-center justify-between rounded-t-sm bg-red-800 p-1 px-4">
+          Deleting {server.deletionDate ? timeUntil(server.deletionDate) : '...'}
+        </div>
+      {/if}
     {:else if server.state == ServerState.Paused}
       <div class="flex w-full items-center justify-between rounded-t-sm bg-green-700 p-1 px-4">
         Stopping {server.startDate && server.timeToLive ? timeUntil(Date.parse(server.startDate) + TimeToLiveMilliseconds[server.timeToLive]) : '...'}
@@ -38,18 +44,24 @@
           <span class="px-2 text-sm font-thin text-gray-400">{server.id}</span>
         </h2>
         <p class="">{server.gameVersion} {server.serverSoftware} {server.worldType} world</p>
-        <button class="group flex items-center gap-2 font-bold active:scale-95 active:text-gray-300" on:click|preventDefault={() => navigator.clipboard.writeText(`${server.subdomain}.${publicENV.PUBLIC_ROOT_DOMAIN}`)}>
-          {server.subdomain}.{publicENV.PUBLIC_ROOT_DOMAIN}
+        <button class="group flex items-center gap-2 font-bold active:scale-95 active:text-gray-300" on:click|preventDefault={() => navigator.clipboard.writeText(`${server.subdomain}.${publicENV.PUBLIC_SERVER_BASE_DOMAIN}`)}>
+          {server.subdomain}.{publicENV.PUBLIC_SERVER_BASE_DOMAIN}
           <svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 fill-white group-hover:inline" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z" /></svg>
         </button>
         <div class="mt-2 flex items-center gap-2">
           <div class={`h-3 w-3 rounded-full ${display.indicatorColor}`}></div>
           <p class="text-sm font-medium">{display.message}</p>
-          <div class="text-sm font-thin text-gray-400">{server.serverFilesMissing ? 'um.. the server files are missing' : ''}</div>
+          <div class="text-sm font-thin text-gray-400">
+            {#if server.workerInfo}
+              {server.workerInfo.name} · {server.workerInfo.derivedStatus}
+            {:else}
+              Local runtime
+            {/if}
+          </div>
         </div>
       </div>
     </div>
-  </a>
+  </svelte:element>
 {/each}
 {#if data.servers.length === 0}
   <p class="py-16 text-center text-lg">

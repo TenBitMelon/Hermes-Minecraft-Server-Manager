@@ -5,7 +5,7 @@ dayjs.extend(relativeTime);
 import { words } from '$assets/words.json';
 import { env as publicENV } from '$env/dynamic/public';
 import { Result } from 'neverthrow';
-import { ServerState } from './database/types';
+import { ServerState, type ServerResponse } from './database/types';
 import type { CustomError } from './types';
 
 export type NotNull<T> = T extends null ? never : T;
@@ -92,4 +92,16 @@ export function stateDisplay(state: ServerState): { indicatorColor: string; mess
 
 export function resultToPromise<T, E extends CustomError>(r: Result<T, E>) {
   return r.mapErr((e) => e.json());
+}
+
+export function sortServers(servers: ServerResponse[]) {
+  const StateOrderMap = {
+    creating: 0,
+    running: 1,
+    paused: 2,
+    stoppedNoDelete: 3,
+    stopped: 4
+  } as const;
+
+  return servers.sort((a, b) => (!a.canBeDeleted ? StateOrderMap.stoppedNoDelete : StateOrderMap[a.state]) - (!b.canBeDeleted ? StateOrderMap.stoppedNoDelete : StateOrderMap[b.state]));
 }

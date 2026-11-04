@@ -17,13 +17,16 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '22.18.0'
 
       - name: Install dependencies
-        run: npm install pnpm -g && pnpm install --frozen-lockfile
+        run: npm install pnpm@11.8.0 -g && pnpm install --frozen-lockfile
 
       - name: Svelte Check
         run: pnpm run check
 
       - name: ESLint Check
         run: pnpm run lint
+
+      - name: Unit tests
+        run: pnpm test

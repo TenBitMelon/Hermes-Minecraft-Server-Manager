@@ -59,7 +59,7 @@ services:
     ports:
       # The website will be accessible at http://localhost:3000 by default
       # and you can setup a reverse proxy to change the domain.
-      # Just make sure to change the PUBLIC_ROOT_DOMAIN environment variable
+      # Just make sure to change the PUBLIC_APP_ORIGIN environment variable
       #
       # Website external port (changeable) : internal port (don't change)
       - '3000:3000'
@@ -72,10 +72,15 @@ services:
     environment:
       # The following environment variables are required for the server to run
 
-      # This is the public domain that the server will be accessible at
-      # This is used for generating the server URLs and for the Cloudflare API
-      # This should be the domain that the server is accessible at from the internet
-      - PUBLIC_ROOT_DOMAIN=example.com
+      # This is the public origin for the Hermes web interface.
+      # Include the scheme, for example https://servers.example.com
+      - PUBLIC_APP_ORIGIN=https://servers.example.com
+
+      # This is the DNS suffix Hermes creates Minecraft servers under.
+      # Examples:
+      # - example.com -> sand.example.com
+      # - servers.example.com -> sand.servers.example.com
+      - PUBLIC_SERVER_BASE_DOMAIN=example.com
 
       # The port range (inclusive) that the server will use for the public servers.
       # This should be changed based on how many servers you want to allow
@@ -117,6 +122,34 @@ services:
       # Feel free to change the email and password, it will create the account if it doesn't exist
       - POCKETBASE_INTERNAL_ADMIN_EMAIL=internal@example.com
       - POCKETBASE_INTERNAL_ADMIN_PASSWORD=password
+
+      # -------------------------------------------------------------------
+      # Worker nodes (optional)
+      #
+      # Leave these commented out for a single machine install.
+      #
+      # To add a second machine that hosts game servers, set
+      # HERMES_RUNTIME_ROLE=worker on that machine and give it a
+      # HERMES_WORKER_API_TOKEN that matches the apiToken you save for it in the
+      # admin page. Add the worker from the admin page's Workers section first.
+      # -------------------------------------------------------------------
+
+      # Read by every process, to know which half it is:
+      #   control  web UI, database, Cloudflare. Does not host game servers.
+      #   worker   game servers only. Hosts an API polled by Control.
+      #   hybrid   both. The default.
+      # - HERMES_RUNTIME_ROLE=worker
+
+      # CONTROL ONLY. How stale a heartbeat may get before the worker is
+      # called offline, and before it is called restarting rather than healthy.
+      # - HERMES_WORKER_OFFLINE_AFTER_SECONDS=120
+      # - HERMES_WORKER_RESTARTING_AFTER_SECONDS=45
+      # - HERMES_WORKER_REQUEST_TIMEOUT_MS=30000
+
+      # WORKER ONLY. Shared secret presented on /api/worker/v1/*.
+      # Control presents this secret when calling the worker API. Requests
+      # are rejected if it does not match.
+      # - HERMES_WORKER_API_TOKEN=<shared-secret>
 
       # This is the maximum upload size to the website, the uploaded features are server icon,
       # mod jars, resourcepacks, worlds, and datapacks. This will limit the size of the file uploaded

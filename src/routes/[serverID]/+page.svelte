@@ -5,15 +5,16 @@
   import { ServerState } from '$lib/database/types';
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import type { PageData } from './$types';
+  import type { ActionData, PageData } from './$types';
   import FormLoadingButton from './FormLoadingButton.svelte';
 
   export let data: PageData;
   let cacheLogs = data.logs;
   let cacheStats = data.stats;
-  // export let form: ActionData;
+  export let form: ActionData;
 
   $: serverStatus = stateDisplay(data.server.state);
+  $: workerUnavailable = Boolean(data.workerInfo && data.workerInfo.derivedStatus !== 'online');
   let commandMessage = '';
 
   let updateButtonLoading = false;
@@ -36,6 +37,9 @@
 </script>
 
 <div class="flex w-full max-w-3xl flex-col gap-4">
+  {#if form && 'error' in form && form.error}
+    <p role="alert" class="rounded-md bg-red-950 p-3 text-red-200">{form.error.message}</p>
+  {/if}
   <!-- Server Information -->
   <div class="grid grid-cols-[1fr_auto] items-center gap-4 max-sm:grid-cols-1">
     <div>
@@ -44,8 +48,16 @@
         <span class="text-sm text-gray-400">{data.server.id}</span>
       </h1>
       <p>{data.server.gameVersion} {data.server.serverSoftware} {data.server.worldType} world</p>
-      <button class="group flex items-center gap-2 font-bold active:scale-95 active:text-gray-300" on:click={() => navigator.clipboard.writeText(`${data.server.subdomain}.${publicENV.PUBLIC_ROOT_DOMAIN}`)}>
-        {data.server.subdomain}.{publicENV.PUBLIC_ROOT_DOMAIN}
+      <p class="text-sm text-gray-400">
+        Worker:
+        {#if data.workerInfo}
+          {data.workerInfo.name} ({data.workerInfo.derivedStatus})
+        {:else}
+          Local runtime
+        {/if}
+      </p>
+      <button class="group flex items-center gap-2 font-bold active:scale-95 active:text-gray-300" on:click={() => navigator.clipboard.writeText(`${data.server.subdomain}.${publicENV.PUBLIC_SERVER_BASE_DOMAIN}`)}>
+        {data.server.subdomain}.{publicENV.PUBLIC_SERVER_BASE_DOMAIN}
         <svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 fill-white group-hover:inline" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z" /></svg>
       </button>
     </div>
@@ -54,8 +66,11 @@
         <div class={`h-3 w-3 rounded-full ${serverStatus.indicatorColor}`}></div>
         <h2 class="text-lg">{serverStatus.message}</h2>
       </div>
-      <FormLoadingButton action="?/start" disabled={data.server.state == ServerState.Running || data.server.state == ServerState.Paused} text="Start" />
-      <FormLoadingButton action="?/stop" disabled={data.server.state == ServerState.Stopped} text="Stop" />
+      {#if data.access.canManageAccess}
+        <a href={`/${data.server.id}/access`} class="rounded-md bg-gray-800 px-4 py-2 font-semibold transition-colors hover:bg-gray-700">Access</a>
+      {/if}
+      <FormLoadingButton action="?/start" disabled={!data.access.canStartStop || data.server.state == ServerState.Running || data.server.state == ServerState.Paused || workerUnavailable} text="Start" />
+      <FormLoadingButton action="?/stop" disabled={!data.access.canStartStop || data.server.state == ServerState.Stopped || workerUnavailable} text="Stop" />
     </div>
   </div>
 
@@ -106,7 +121,7 @@
   <FormLoadingButton
     class="grid grid-cols-[1fr_auto] gap-2"
     action="?/command"
-    disabled={data.server.state == ServerState.Stopped}
+    disabled={!data.access.canSendConsole || data.server.state == ServerState.Stopped || workerUnavailable}
     text="Send"
     callback={({ result }) => {
       if (result.type == 'success' && result.data && result.data.action == 'command') commandMessage = result.data.value[0] ?? '';

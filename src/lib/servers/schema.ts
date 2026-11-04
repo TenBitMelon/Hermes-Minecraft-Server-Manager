@@ -1,4 +1,3 @@
-import { env as publicENV } from '$env/dynamic/public';
 import { randomWord } from '$lib';
 import { Difficulty, Gamemode, ServerSoftware, ServerSoftwareOptions, TimeToLive, WorldCreationMethod, WorldType } from '$lib/database/types';
 import { z } from 'zod';
@@ -20,6 +19,7 @@ export const ServerCreationSchema = z
       .default('A Hermes Minecraft Server'),
     serverSoftware: z.nativeEnum(ServerSoftware),
     gameVersion: z.string(),
+    worker: z.string().optional(),
 
     timeToLive: z.nativeEnum(TimeToLive).default(TimeToLive['12 hr']),
     eula: z.literal(true).or(z.literal('true')),
@@ -38,9 +38,11 @@ export const ServerCreationSchema = z
       if (data.mods && !serverSoftware.modsUpload) return false;
       if (data.plugins && !serverSoftware.pluginsUpload) return false;
 
-      return serverSoftware.versions.flat().includes(data.gameVersion);
+      return true;
     },
-    { message: 'Invalid game version for software' }
+    {
+      message: 'Invalid game version for software'
+    }
   )
   .and(
     z.discriminatedUnion('worldCreator', [
@@ -88,16 +90,13 @@ export const ServerCreationSchema = z
         .string()
         .transform((v) => (v.trim() ? JSON.parse(v) : []))
         .pipe(
-          (() => {
-            const pipeType = z
-              .object({
-                name: z.string()
-              })
-              .strip()
-              .array();
-            if (publicENV.PUBLIC_REQUIRE_WHITELIST) return pipeType;
-            else return pipeType.default([]);
-          })()
+          z
+            .object({
+              name: z.string().trim().min(1, { message: 'Whitelist entries need a username.' })
+            })
+            .strip()
+            .array()
+            .min(1, { message: 'Add at least one player to the whitelist.' })
         )
         .transform((v) => v.map((e) => e.name)),
       ops: z
@@ -107,7 +106,7 @@ export const ServerCreationSchema = z
           z
             .object({
               // uuid: z.string(),
-              name: z.string()
+              name: z.string().trim().min(1, { message: 'Operator entries need a username.' })
               // level: z.number().default(4),
               // bypassesPlayerLimit: z.coerce.boolean().default(true)
             })

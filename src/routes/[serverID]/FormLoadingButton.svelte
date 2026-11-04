@@ -38,8 +38,8 @@
   use:enhance={() => {
     loading = true;
     return async (data) => {
-      if (invalidate) data.update();
-      else applyAction(data.result);
+      if (invalidate) await data.update();
+      else await applyAction(data.result);
       loading = false;
       // @ts-expect-error I made the type more specific
       if (callback) callback(data);

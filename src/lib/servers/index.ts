@@ -1,28 +1,54 @@
+import { ClientResponseError } from 'pocketbase';
+import { withServerOperation } from './operationLock';
 import { env as publicENV } from '$env/dynamic/public';
+import { getFileURL } from '$lib';
+import { addCloudflareRecords, removeCloudflareRecords } from '$lib/cloudflare';
 import { serverPB } from '$lib/database';
-import { Collections, ServerState, TimeToLiveMilliseconds, WorldCreationMethod, WorldType, type ServerRecord, type ServerResponse } from '$lib/database/types';
-import fs from 'node:fs';
-
-import { addCloudflareRecords } from '$lib/cloudflare';
-import { ComposeBuilder, containerDoesNotExists, getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
-import type { ServerCreationSchema } from './schema';
-// import DefaultIcon from '$lib/servers/icon.png';
+import { Collections, ServerState, TimeToLiveMilliseconds, WorkerStatus, WorldCreationMethod, WorldType, type ServerRecord, type ServerResponse, type WorkerResponse } from '$lib/database/types';
+import { getContainerData, removeContainer, startContainer, stopContainer } from '$lib/docker';
 import { ContainerState, CustomError } from '$lib/types';
+import { getWorkerClientForWorker } from '$lib/workers/client';
+import { getUnusedPortForWorker, selectWorkerForNewServer } from '$lib/workers/placement';
 import { Result, ResultAsync, err } from 'neverthrow';
 import { z } from 'zod';
-import { getUnusedPort } from './ports';
-import { getFileURL } from '$lib';
+import type { ServerCreationSchema } from './schema';
+import { ComposeBuilder } from '$lib/workers/localRuntime';
 
 // TODO: Clean up this function
-export async function createNewServer(data: z.infer<typeof ServerCreationSchema>): Promise<Result<ServerResponse, Error>> {
-  const portR = await getUnusedPort();
+export async function createNewServer(data: z.infer<typeof ServerCreationSchema>, ownerUserId: string, manualWorkerId?: string | null): Promise<Result<ServerResponse, Error>> {
+  const selectedWorkerResult = await selectWorkerForNewServer(manualWorkerId);
+  if (selectedWorkerResult.isErr()) return err(selectedWorkerResult.error);
+  const selectedWorker = selectedWorkerResult.value;
+
+  const portR = await getUnusedPortForWorker(selectedWorker);
   if (portR.isErr()) return err(portR.error);
   const port = portR.value;
 
-  const defaultIconBuffer = await fetch(publicENV.PUBLIC_DEFAULT_ICON_URL).then((r) => r.arrayBuffer());
+  const defaultIconResult = await ResultAsync.fromPromise(
+    fetch(publicENV.PUBLIC_DEFAULT_ICON_URL || '').then((r) => r.arrayBuffer()),
+    (error) => CustomError.from(error, 'Failed to load the default server icon.')
+  );
+  if (defaultIconResult.isErr()) return err(defaultIconResult.error);
+  const defaultIconBuffer = defaultIconResult.value;
+  let createdRecord: ServerResponse | null = null;
+  let dnsRecordIds: { cname: string; srv: string } | null = null;
 
-  const recordIds = await addCloudflareRecords(data.subdomain, port);
-  if (recordIds.isErr()) return err(recordIds.error);
+  async function cleanupCreationFailure(nestedError: Error) {
+    if (createdRecord) {
+      const workerClient = getWorkerClientForWorker(selectedWorker);
+      if (workerClient.isOk()) await workerClient.value.removeServer(createdRecord.id, true);
+
+      const deleteRecordResult = await ResultAsync.fromPromise(serverPB.collection(Collections.Servers).delete(createdRecord.id), (error) => CustomError.from(error, 'Failed to roll back the partially created server record.'));
+      if (deleteRecordResult.isErr()) return err(new CustomError(nestedError.message, deleteRecordResult.error));
+    }
+
+    if (dnsRecordIds) {
+      const removeDnsResult = await removeCloudflareRecords(dnsRecordIds.cname, dnsRecordIds.srv);
+      if (removeDnsResult.isErr()) return err(new CustomError(nestedError.message, removeDnsResult.error));
+    }
+
+    return err(nestedError);
+  }
 
   const createResponse = await ResultAsync.fromPromise(
     serverPB.collection(Collections.Servers).create<ServerResponse>({
@@ -35,40 +61,41 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
       gameVersion: data.gameVersion,
       worldType: data.worldCreator === WorldCreationMethod.New ? data.worldType : 'source',
 
-      cloudflareCNAMERecordID: recordIds.value.cname,
-      cloudflareSRVRecordID: recordIds.value.srv,
-
       timeToLive: data.timeToLive,
 
       state: ServerState.Creating,
       startDate: null,
       shutdownDate: null,
       deletionDate: null,
-      canBeDeleted: +publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN == -1 ? false : true,
-      serverFilesMissing: false
+      canBeDeleted: Number(publicENV.PUBLIC_TIME_UNTIL_DELETION_AFTER_SHUTDOWN || '168') == -1 ? false : true,
+      serverFilesMissing: false,
+      owner: ownerUserId,
+      createdBy: ownerUserId,
+      worker: selectedWorker?.id ?? null,
+      cloudflareCNAMERecordID: '',
+      cloudflareSRVRecordID: ''
     }),
     () => new Error('Failed to create new server in DB')
   );
-  if (createResponse.isErr()) return err(createResponse.error);
+  if (createResponse.isErr()) {
+    return err(createResponse.error);
+  }
   const record = createResponse.value;
-
-  const serverFolderPath = `servers/${record.id}`;
-  const serverFilesPath = `${serverFolderPath}/server-files`;
-  fs.mkdirSync(serverFilesPath, { recursive: true });
+  createdRecord = record;
 
   // TODO: This needs to write after the server is created or set the URL in the compose file
   // if (data.icon) fs.writeFileSync(`${serverFilesPath}/server-icon.png`, Buffer.from(await data.icon.arrayBuffer()));
   // else fs.writeFileSync(`${serverFilesPath}/server-icon.png`, Buffer.from(defaultIconBuffer));
-  const serverIconURL = data.icon ? getFileURL(record.collectionId, record.id, record.icon) : publicENV.PUBLIC_DEFAULT_ICON_URL;
+  const appOrigin = publicENV.PUBLIC_APP_ORIGIN;
+  if (!appOrigin) return cleanupCreationFailure(new CustomError('PUBLIC_APP_ORIGIN is not configured.'));
+  const serverIconURL = new URL(getFileURL(record.collectionId, record.id, record.icon) || '', appOrigin).toString();
 
   // if (data.whitelist.length > 0) fs.writeFileSync(`${serverFilesPath}/whitelist.json`, JSON.stringify(data.whitelist));
   // if (data.ops.length > 0) fs.writeFileSync(`${serverFilesPath}/ops.json`, JSON.stringify(data.ops));
   // if (data.bannedPlayers.length > 0) fs.writeFileSync(`${serverFilesPath}/banned-players.json`, JSON.stringify(data.bannedPlayers));
 
-  if (data.serverProperties) {
-    const serverProperties = await data.serverProperties.text();
-    fs.writeFileSync(`${serverFilesPath}/server.properties`, serverProperties);
-  }
+  const serverPropertiesResult = data.serverProperties ? await ResultAsync.fromPromise(data.serverProperties.text(), (error) => CustomError.from(error, 'Failed to read the uploaded server.properties file.')) : null;
+  if (serverPropertiesResult?.isErr()) return cleanupCreationFailure(serverPropertiesResult.error);
 
   /* 
   TODO: Files to create
@@ -76,23 +103,23 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   */
 
   // Docker compose file
-  const builder = new ComposeBuilder(`${serverFolderPath}/docker-compose.yml`);
+  const builder = new ComposeBuilder(`servers/${record.id}/docker-compose.yml`);
   builder.setPort(port);
 
-  builder.addVariable('USE_AIKAR_FLAGS', 'true');
+  // builder.addVariable('USE_AIKAR_FLAGS', 'true');
   builder.addVariable('EULA', 'true');
   builder.addVariable('MEMORY', '2G');
   builder.addVariable('MAX_TICK_TIME', '-1');
 
   if (data.serverProperties) {
     builder.addVariable('OVERRIDE_SERVER_PROPERTIES', 'true');
-    builder.addVariable('SERVER_PROPERTIES', '/data/server-files/server.properties');
+    builder.addVariable('SERVER_PROPERTIES', '/data/server.properties');
   }
 
   builder.addVariable('TYPE', data.serverSoftware.toUpperCase());
   builder.addVariable('VERSION', data.gameVersion);
   builder.addVariable('MOTD', data.motd);
-  builder.addVariable('ICON', `https://${publicENV.PUBLIC_ROOT_DOMAIN}${serverIconURL}`);
+  builder.addVariable('ICON', serverIconURL);
 
   builder.addVariable('DIFFICULTY', data.difficulty.toUpperCase());
   builder.addVariable('MODE', data.gamemode);
@@ -154,10 +181,31 @@ export async function createNewServer(data: z.infer<typeof ServerCreationSchema>
   //     break;
   // }
 
-  fs.writeFileSync(`${serverFolderPath}/docker-compose.yml`, builder.build());
+  const workerClient = getWorkerClientForWorker(selectedWorker);
+  if (workerClient.isErr()) return cleanupCreationFailure(workerClient.error);
 
-  // Start the mc server's docker-compose file
+  const provisionResult = await workerClient.value.provisionServer({
+    serverID: record.id,
+    composeContent: builder.build(),
+    serverProperties: serverPropertiesResult && serverPropertiesResult.isOk() ? serverPropertiesResult.value : null
+  });
+  if (provisionResult.isErr()) return cleanupCreationFailure(provisionResult.error);
+
+  const recordIds = await addCloudflareRecords(data.subdomain, port, selectedWorker?.publicAddress);
+  if (recordIds.isErr()) return cleanupCreationFailure(recordIds.error);
+  dnsRecordIds = recordIds.value;
+
+  const updateDnsResult = await ResultAsync.fromPromise(
+    serverPB.collection(Collections.Servers).update<ServerRecord>(record.id, {
+      cloudflareCNAMERecordID: dnsRecordIds.cname,
+      cloudflareSRVRecordID: dnsRecordIds.srv
+    }),
+    (error) => CustomError.from(error, 'Failed to save the Cloudflare record IDs on the new server.')
+  );
+  if (updateDnsResult.isErr()) return cleanupCreationFailure(updateDnsResult.error);
+
   const containerResult = await startContainer(record.id);
+  if (containerResult.isErr()) return cleanupCreationFailure(new CustomError('Failed to start the server after creation.', containerResult.error));
   return containerResult.map(() => record);
 }
 
@@ -182,22 +230,47 @@ export async function updateAllServerStates() {
   const servers = await serverPB.collection(Collections.Servers).getFullList<ServerResponse>();
 
   for (const server of servers) {
-    updateServerState(server).then((r) => {
-      const existing = latestUpdateResults.find((l) => l.server.id == server.id);
-      if (existing) {
-        if (existing.updates.length >= 25) existing.updates.shift();
-        existing.updates.push(...r);
-      } else {
-        latestUpdateResults.push({
-          server,
-          updates: r
-        });
-      }
-    });
+    await updateServerState(server)
+      .then((r) => {
+        const existing = latestUpdateResults.find((l) => l.server.id == server.id);
+        if (existing) {
+          if (existing.updates.length >= 25) existing.updates.shift();
+          existing.updates.push(...r);
+        } else {
+          latestUpdateResults.push({
+            server,
+            updates: r
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(`[hermes] state update failed for server ${server.id}`, error);
+        const failed: UpdateResult = { error: CustomError.from(error, 'Failed to update server state.'), hasError: true, variables: { time: new Date().toISOString() } };
+        const existing = latestUpdateResults.find((l) => l.server.id == server.id);
+        if (existing) {
+          if (existing.updates.length >= 25) existing.updates.shift();
+          existing.updates.push(failed);
+        } else {
+          latestUpdateResults.push({ server, updates: [failed] });
+        }
+      });
   }
 }
 
-export async function updateServerState(server: ServerResponse): Promise<UpdateResult[]> {
+export function updateServerState(server: ServerResponse): Promise<UpdateResult[]> {
+  return withServerOperation(server.id, async () => {
+    const current = await serverPB
+      .collection(Collections.Servers)
+      .getOne<ServerResponse>(server.id)
+      .catch((error: unknown) => {
+        if (error instanceof ClientResponseError && error.status === 404) return null;
+        throw error;
+      });
+    return current ? updateServerStateUnlocked(current) : [];
+  });
+}
+
+async function updateServerStateUnlocked(server: ServerResponse): Promise<UpdateResult[]> {
   const changeToServer: UpdateResult[] = [];
 
   function addValue(value: string, variables: Record<string, unknown>) {
@@ -208,13 +281,20 @@ export async function updateServerState(server: ServerResponse): Promise<UpdateR
     return changeToServer;
   }
 
-  if (containerDoesNotExists(server.id)) {
-    if (!server.serverFilesMissing)
+  let worker: WorkerResponse | null = null;
+  if (server.worker) {
+    worker = await serverPB
+      .collection(Collections.Workers)
+      .getOne<WorkerResponse>(server.worker)
+      .catch(() => null);
+    if (!worker) return addError(new CustomError('The assigned worker no longer exists.'), { workerId: server.worker });
+    if (worker.status === WorkerStatus.Offline || worker.status === WorkerStatus.Restarting || worker.status === WorkerStatus.Disabled) {
       await serverPB.collection(Collections.Servers).update<ServerRecord>(server.id, {
-        serverFilesMissing: true
+        serverFilesMissing: false
       });
-    // return err(new CustomError("The server doesn't exist"));
-    return addError(new CustomError("The server doesn't exist"), {});
+      addValue('Worker unavailable; skipped direct runtime reconciliation', { worker: worker.name, workerStatus: worker.status });
+      return changeToServer;
+    }
   }
 
   const statsResult = await getContainerData(server.id);

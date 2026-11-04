@@ -3,6 +3,7 @@ node_modules
 /build
 /.svelte-kit
 /package
+.env
 .env*.local
 !.env.example
 vite.config.js.timestamp-*
@@ -14,3 +15,4 @@ database/*
 _this_was_a_mistake_compose
 ccicon.png
 .ottotime
+/tests/acceptance/.state/

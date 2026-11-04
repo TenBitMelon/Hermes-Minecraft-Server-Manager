@@ -3,7 +3,9 @@ import type { RecordService } from 'pocketbase';
 
 export enum Collections {
   Backups = 'backups',
+  ServerMemberships = 'server_memberships',
   Servers = 'servers',
+  Workers = 'workers',
   Users = 'users'
 }
 
@@ -31,18 +33,31 @@ export type AuthSystemFields<T = never> = {
 } & BaseSystemFields<T>;
 
 export type UserRecord = {
-  name?: string;
+  administrator: boolean;
   avatar?: string;
+  name: string;
+  ownedServerLimit: number;
 };
 
 export type BackupRecord = {
   file: FileNameString;
+  fileSize: number;
   name: string;
   serverID: string;
-  fileSize: number;
+};
+
+export type ServerMembershipRecord = {
+  canManageAccess: boolean;
+  canManageConfig: boolean;
+  canManageFiles: boolean;
+  canSendConsole: boolean;
+  canStartStop: boolean;
+  server: RecordIdString;
+  user: RecordIdString;
 };
 
 export type ServerRecord = {
+  owner?: RecordIdString;
   port: number;
   icon: FileNameString;
   title: string;
@@ -63,32 +78,66 @@ export type ServerRecord = {
   deletionDate: IsoDateString | null;
   canBeDeleted: boolean;
   serverFilesMissing: boolean;
+  worker?: RecordIdString;
+};
+
+export type WorkerRecord = {
+  name: string;
+  baseUrl: string;
+  apiToken?: string;
+  apiTokenHash: string;
+  status: WorkerStatus;
+  publicAddress: string;
+  portMin: number;
+  portMax: number;
+  avoidDefaultPort: boolean;
+  serverCapacity: number;
+  runningServerCount: number;
+  totalServerCount: number;
+  lastHeartbeatAt?: IsoDateString | null;
+  lastHeartbeatVersion?: string;
+  lastHeartbeatError?: string;
 };
 
 // Response types include system fields and match responses from the PocketBase API
 export type BackupResponse<Texpand = unknown> = Required<BackupRecord> & BaseSystemFields<Texpand>;
+export type ServerMembershipResponse<Texpand = unknown> = Required<ServerMembershipRecord> & BaseSystemFields<Texpand>;
 export type ServerResponse<Texpand = unknown> = Required<ServerRecord> & BaseSystemFields<Texpand>;
 export type UserResponse<Texpand = unknown> = Required<UserRecord> & AuthSystemFields<Texpand>;
+export type WorkerResponse<Texpand = unknown> = Required<WorkerRecord> & BaseSystemFields<Texpand>;
 
 // Types containing all Records and Responses, useful for creating typing helper functions
 
 export type CollectionRecords = {
   backups: BackupRecord;
+  server_memberships: ServerMembershipRecord;
   servers: ServerRecord;
+  workers: WorkerRecord;
   users: UserRecord;
 };
 
 export type CollectionResponses = {
   backups: BackupResponse;
+  server_memberships: ServerMembershipResponse;
   servers: ServerResponse;
+  workers: WorkerResponse;
   users: UserResponse;
 };
 
 export type TypedPocketBase = PocketBase & {
   collection(idOrName: 'backups'): RecordService<BackupResponse>;
+  collection(idOrName: 'server_memberships'): RecordService<ServerMembershipResponse>;
   collection(idOrName: 'servers'): RecordService<ServerResponse>;
+  collection(idOrName: 'workers'): RecordService<WorkerResponse>;
   collection(idOrName: 'users'): RecordService<UserResponse>;
 };
+
+export enum WorkerStatus {
+  'Online' = 'online',
+  'Offline' = 'offline',
+  'Restarting' = 'restarting',
+  'Disabled' = 'disabled'
+}
 
 export enum TimeToLive {
   '12 hr' = '12_hr',
@@ -119,33 +168,13 @@ export const ServerSoftwareOptions: Record<
     fromSource: boolean;
     modsUpload: boolean;
     pluginsUpload: boolean;
-    versions: string[][];
   }
 > = {
   [ServerSoftware.Vanilla]: {
     newWorld: true,
     fromSource: true,
     modsUpload: false,
-    pluginsUpload: false,
-    versions: [
-      //
-      ['SNAPSHOT'],
-      ['1.8', '1.8.1', '1.8.2', '1.8.3', '1.8.4', '1.8.5', '1.8.6', '1.8.7', '1.8.8', '1.8.9'],
-      // ['1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4'],
-      // ['1.10', '1.10.1', '1.10.2'],
-      // ['1.11', '1.11.1', '1.11.2'],
-      ['1.12', '1.12.1', '1.12.2'],
-      // ['1.13', '1.13.1', '1.13.2'],
-      // ['1.14', '1.14.1', '1.14.2', '1.14.3', '1.14.4'],
-      // ['1.15', '1.15.1', '1.15.2'],
-      // ['1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5'],
-      // ['1.17', '1.17.1'],
-      ['1.18', '1.18.1', '1.18.2'],
-      ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
-      ['1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.6'],
-      ['1.21'],
-      ['LATEST']
-    ]
+    pluginsUpload: false
   },
   // [ServerSoftware.Forge]: {
   //   newWorld: true,
@@ -164,14 +193,7 @@ export const ServerSoftwareOptions: Record<
     newWorld: true,
     fromSource: false,
     modsUpload: false,
-    pluginsUpload: false,
-    versions: [
-      ['1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5'],
-      ['1.17', '1.17.1'],
-      ['1.18', '1.18.1', '1.18.2'],
-      ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
-      ['1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.6']
-    ]
+    pluginsUpload: false
   },
   // [ServerSoftware.Quilt]: {
   //   newWorld: true,
@@ -201,14 +223,7 @@ export const ServerSoftwareOptions: Record<
     newWorld: true,
     fromSource: false,
     modsUpload: false,
-    pluginsUpload: false,
-    versions: [
-      ['1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5'],
-      ['1.17', '1.17.1'],
-      ['1.18', '1.18.1', '1.18.2'],
-      ['1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'],
-      ['1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.6']
-    ]
+    pluginsUpload: false
   }
 };
 
